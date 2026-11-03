@@ -251,6 +251,14 @@ body[data-bg="plain"]{background-image:none}
 .welcome .lang{align-self:center}
 @media (prefers-reduced-motion:no-preference){.hero .float{animation:bob 5s ease-in-out infinite}.hero .f2{animation-delay:-1.2s}.hero .f3{animation-delay:-2.4s}.hero .f4{animation-delay:-3.6s}}
 @keyframes bob{50%{translate:0 -6px}}
+/* theorem bank */
+.bank{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.bank li{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:14px;background:var(--surface-2)}
+.bank .num{flex:none;min-width:28px;height:28px;border-radius:50%;background:var(--pen-soft);color:var(--pen);font:700 13px/28px var(--sans);text-align:center}
+.bank .t{flex:1;min-width:0;font-size:15px;line-height:1.5}
+.bank .t small{display:block;color:var(--muted);font-size:12px;font-weight:600;margin-bottom:2px}
+.bank .t b{color:var(--pen);font-weight:700}
+.bank mark{background:var(--mark);color:inherit;border-radius:3px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -311,6 +319,12 @@ body[data-bg="plain"]{background-image:none}
     <button class="btn" id="calc" type="button"><span data-t="calc"></span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
   </section>
   <section id="geoResults" class="panel" hidden aria-live="polite"></section>
+  <section id="bankPanel" class="panel" hidden>
+    <div class="phead"><h2 data-t="bankTitle"></h2><p data-t="bankSub"></p></div>
+    <input id="bankSearch" type="search" dir="auto" autocomplete="off" style="font-family:var(--sans);font-size:16px">
+    <div class="chips" id="bankCats"></div>
+    <ol class="bank" id="bankList"></ol>
+  </section>
 
   <!-- MINE: account, history, favorites -->
   <div id="mePanel" hidden style="display:flex;flex-direction:column;gap:16px"></div>
@@ -338,6 +352,7 @@ const UI = {
   en: {
     sub:"Snap it, type it, solved step by step",
     tabMe:"Mine",
+    bankTitle:"Theorem bank", bankSub:"Every theorem, definition and reason you can write in a proof", bankSearch:"Search a theorem…", bankAll:"All", bankNone:"No theorem matches that search.",
     custom:"Customize", done:"Done", reset:"Reset to default", themeH:"Theme", themeSystem:"Like the phone", themeLight:"Light", themeDark:"Dark",
     accentH:"Main color", markH:"Highlighter", bgH:"Background", bgGrid:"Grid", bgDots:"Dots", bgLines:"Lines", bgPlain:"Plain",
     sizeH:"Text size", fontH:"Font", fontRubik:"Rubik", fontSystem:"Phone font", langH:"Language", previewH:"Preview", previewBtn:"Solve",
@@ -382,6 +397,7 @@ const UI = {
   he: {
     sub:"מצלמים, מקלידים, ומקבלים פתרון שלב אחרי שלב",
     tabMe:"שלי",
+    bankTitle:"בנק משפטים", bankSub:"כל המשפטים, ההגדרות והנימוקים שאפשר לכתוב בהוכחה", bankSearch:"חיפוש משפט…", bankAll:"הכול", bankNone:"אין משפט שמתאים לחיפוש.",
     custom:"התאמה אישית", done:"סיום", reset:"חזרה לברירת המחדל", themeH:"ערכת צבעים", themeSystem:"כמו בטלפון", themeLight:"בהיר", themeDark:"כהה",
     accentH:"צבע ראשי", markH:"צבע מרקר", bgH:"רקע", bgGrid:"משבצות", bgDots:"נקודות", bgLines:"שורות", bgPlain:"חלק",
     sizeH:"גודל טקסט", fontH:"גופן", fontRubik:"Rubik", fontSystem:"הגופן של הטלפון", langH:"שפה", previewH:"תצוגה מקדימה", previewBtn:"פתור",
@@ -441,6 +457,7 @@ function setLang(l){
   document.querySelectorAll("[data-tlabel]").forEach(e => e.setAttribute("aria-label", T(e.dataset.tlabel)));
   $("geoText").placeholder = T("givensPh");
   fillShapes(); fillUnits(); fillFormulas(); renderExamples(); renderToolChips();
+  if (typeof renderBank === "function" && $("bankList")) renderBank();
   if (typeof renderMe === "function" && !$("mePanel").hidden) renderMe();
   if (!$("customize").hidden) renderCustomize();
   if (typeof refreshSaveBars === "function") refreshSaveBars();
@@ -459,7 +476,7 @@ function tab(which){
   $("tabGeo").setAttribute("aria-selected", String(geo));
   $("tabMe").setAttribute("aria-selected", String(me));
   $("solvePanel").hidden = !sol; $("results").hidden = !sol || !$("results").childElementCount;
-  $("geoPanel").hidden = !geo; $("toolPanel").hidden = !geo; $("geoResults").hidden = !geo || !$("geoResults").childElementCount;
+  $("geoPanel").hidden = !geo; $("toolPanel").hidden = !geo; $("bankPanel").hidden = !geo; $("geoResults").hidden = !geo || !$("geoResults").childElementCount;
   $("mePanel").hidden = !me; if (me) renderMe();
   window.scrollTo({top:0, behavior:"smooth"});
 }
@@ -1510,6 +1527,96 @@ function renderSignIn(box){
   p.append(links);
   box.append(p);
 }
+
+// ---------- theorem bank ----------
+const BANK_CATS = [
+  ["angles",["Angles and parallel lines","זוויות וישרים מקבילים"]],
+  ["tri",["Triangles","משולשים"]],
+  ["cong",["Congruent triangles","חפיפת משולשים"]],
+  ["qty",["Equal quantities","גדלים שווים"]],
+  ["def",["Definitions","הגדרות"]],
+  ["iso",["Isosceles triangle","משולש שווה שוקיים"]],
+  ["trap",["Trapezoid","טרפז"]],
+  ["kite",["Kite","דלתון"]],
+];
+// [category, English, Hebrew]
+const BANK = [
+  ["angles","The sum of adjacent angles is 180°.","סכום זוויות צמודות הוא 180°."],
+  ["angles","The sum of the angles on a straight line is 180°.","סכום הזוויות על ישר הוא 180°."],
+  ["angles","The angles around a point (a full angle) add up to 360°.","סכום הזוויות בזווית מלאה הוא 360°."],
+  ["angles","Vertical angles are equal.","זוויות קודקודיות שוות."],
+  ["angles","Angles adjacent to equal angles are equal.","זוויות צמודות לזוויות שוות, שוות."],
+  ["angles","If the lines are parallel, corresponding angles are equal.","אם הישרים מקבילים, אז הזוויות המתאימות שוות."],
+  ["angles","If the lines are parallel, alternate angles are equal.","אם הישרים מקבילים, אז הזוויות המתחלפות שוות."],
+  ["angles","If the lines are parallel, co-interior angles add up to 180°.","אם הישרים מקבילים, אז סכום הזוויות החד-צדדיות 180°."],
+  ["angles","Converse: if corresponding angles are equal, the lines are parallel.","הפוך: אם הזוויות המתאימות שוות, אז הישרים מקבילים."],
+  ["angles","Converse: if alternate angles are equal, the lines are parallel.","הפוך: אם הזוויות המתחלפות שוות, אז הישרים מקבילים."],
+  ["angles","Converse: if co-interior angles add up to 180°, the lines are parallel.","הפוך: אם סכום הזוויות החד-צדדיות 180°, אז הישרים מקבילים."],
+  ["tri","The angles of a triangle add up to 180°.","סכום הזוויות במשולש הוא 180°."],
+  ["tri","An exterior angle of a triangle equals the sum of the two interior angles that are not adjacent to it.","זווית חיצונית למשולש שווה לסכום שתי הזוויות הפנימיות שאינן צמודות לה."],
+  ["tri","If two triangles have two pairs of equal angles, the third pair is equal too (the angles of a triangle add up to 180°).","אם בשני משולשים יש שני זוגות של זוויות שוות, אז גם הזוג השלישי שווה (לפי סכום הזוויות במשולש 180°)."],
+  ["cong","<b>SAS:</b> two sides and the angle between them.","<b>צ.ז.צ</b> (צלע, זווית, צלע): שתי צלעות והזווית שביניהן."],
+  ["cong","<b>ASA:</b> a side and the two angles next to it.","<b>ז.צ.ז</b> (זווית, צלע, זווית): צלע ושתי הזוויות שלידה."],
+  ["cong","<b>SSS:</b> three sides.","<b>צ.צ.צ</b> (צלע, צלע, צלע): שלוש צלעות."],
+  ["cong","<b>SSA:</b> two sides and the angle opposite the longer of them.","<b>צ.צ.ז</b> (צלע, צלע, זווית): שתי צלעות והזווית שמול הגדולה מביניהן."],
+  ["cong","In congruent triangles, corresponding sides are equal.","במשולשים חופפים, הצלעות שוות בהתאמה."],
+  ["cong","In congruent triangles, corresponding angles are equal.","במשולשים חופפים, הזוויות שוות בהתאמה."],
+  ["qty","Every quantity equals itself (a shared side, a shared angle).","כל גודל שווה לעצמו (צלע משותפת, זווית משותפת)."],
+  ["qty","<b>Shared side:</b> a side that belongs to both triangles is equal to itself.","<b>צלע משותפת:</b> צלע ששייכת לשני המשולשים שווה לעצמה."],
+  ["qty","<b>Shared angle:</b> an angle that belongs to both triangles is equal to itself.","<b>זווית משותפת:</b> זווית ששייכת לשני המשולשים שווה לעצמה."],
+  ["qty","If two quantities equal a third quantity, they are equal to each other.","אם שני גדלים שווים לגודל שלישי, אז הם שווים זה לזה."],
+  ["qty","Adding equal quantities to equal quantities gives equal quantities.","חיבור גדלים שווים לגדלים שווים נותן גדלים שווים."],
+  ["qty","Subtracting equal quantities from equal quantities gives equal quantities.","חיסור גדלים שווים מגדלים שווים נותן גדלים שווים."],
+  ["qty","Halves of equal angles are equal.","חצאי זוויות שוות, שווים."],
+  ["def","<b>Given:</b> the reason for anything stated in the question.","<b>נתון:</b> הנימוק לכל עובדה שכתובה בשאלה."],
+  ["def","<b>Perpendicular:</b> a line that makes a 90° angle with another line.","<b>הגדרת אנך:</b> ישר שיוצר זווית של 90° עם ישר אחר."],
+  ["def","<b>Angle bisector:</b> a ray that splits an angle into two equal angles.","<b>הגדרת חוצה זווית:</b> קרן שמחלקת זווית לשתי זוויות שוות."],
+  ["def","<b>Midpoint:</b> a point that splits a segment into two equal segments.","<b>הגדרת אמצע קטע:</b> נקודה שמחלקת קטע לשני קטעים שווים."],
+  ["iso","<b>Definition:</b> a triangle with two equal sides is isosceles.","<b>הגדרה:</b> משולש בעל שתי צלעות שוות נקרא משולש שווה שוקיים."],
+  ["iso","In an isosceles triangle, the base angles are equal.","במשולש שווה שוקיים, זוויות הבסיס שוות."],
+  ["iso","In an isosceles triangle, the median to the base is also the height and bisects the vertex angle.","במשולש שווה שוקיים, התיכון לבסיס הוא גם גובה וגם חוצה זווית הראש."],
+  ["iso","In an isosceles triangle, the height to the base is also the median and the bisector of the vertex angle.","במשולש שווה שוקיים, הגובה לבסיס הוא גם תיכון וגם חוצה זווית הראש."],
+  ["iso","In an isosceles triangle, the bisector of the vertex angle is also the height and the median to the base.","במשולש שווה שוקיים, חוצה זווית הראש הוא גם גובה וגם תיכון לבסיס."],
+  ["iso","Converse: if a triangle has two equal angles, it is isosceles.","הפוך: אם במשולש יש שתי זוויות שוות, אז הוא שווה שוקיים."],
+  ["iso","Converse: if a height matches an angle bisector, the triangle is isosceles.","הפוך: אם במשולש גובה מתלכד עם חוצה זווית, אז הוא שווה שוקיים."],
+  ["iso","Converse: if a median matches an angle bisector, the triangle is isosceles.","הפוך: אם במשולש תיכון מתלכד עם חוצה זווית, אז הוא שווה שוקיים."],
+  ["iso","Converse: if a height matches a median, the triangle is isosceles.","הפוך: אם במשולש גובה מתלכד עם תיכון, אז הוא שווה שוקיים."],
+  ["trap","<b>Definition:</b> a quadrilateral with exactly one pair of parallel sides is a trapezoid. The parallel sides are the bases, the others are the legs.","<b>הגדרה:</b> מרובע בעל זוג אחד בלבד של צלעות מקבילות נקרא טרפז. הצלעות המקבילות הן הבסיסים, והאחרות הן השוקיים."],
+  ["trap","In a trapezoid, the angles next to the same leg add up to 180°.","בטרפז, סכום הזוויות שליד אותה שוק הוא 180°."],
+  ["trap","To prove a trapezoid: one pair of sides is parallel and the other pair is not.","כדי להוכיח טרפז: זוג אחד של צלעות מקביל, והזוג השני לא מקביל."],
+  ["trap","The angles of a quadrilateral add up to 360°.","סכום הזוויות במרובע הוא 360°."],
+  ["kite","<b>Definition:</b> a quadrilateral made of two isosceles triangles with a shared base.","<b>הגדרה:</b> מרובע המורכב משני משולשים שווי שוקיים בעלי בסיס משותף."],
+  ["kite","<b>Definition:</b> a quadrilateral with two separate pairs of equal adjacent sides.","<b>הגדרה:</b> מרובע בעל שני זוגות זרים של צלעות סמוכות שוות."],
+  ["kite","In a kite, the angles opposite the main diagonal are equal.","בדלתון, הזוויות מול האלכסון הראשי שוות זו לזו."],
+  ["kite","In a kite, the main diagonal bisects the vertex angles.","בדלתון, האלכסון הראשי חוצה את זוויות הראש."],
+  ["kite","In a kite, the main diagonal is perpendicular to the other diagonal and bisects it.","בדלתון, האלכסון הראשי מאונך לאלכסון המשני וחוצה אותו."],
+  ["kite","Kite area = half the product of the diagonals.","שטח דלתון = מחצית מכפלת האלכסונים."],
+];
+let bankCat = "all";
+function renderBank(){
+  const cats = $("bankCats"); if (!cats) return;
+  cats.innerHTML = "";
+  cats.append(chip(T("bankAll") + " · " + BANK.length, "", () => { bankCat = "all"; renderBank(); }, bankCat === "all"));
+  for (const [k, l] of BANK_CATS) cats.append(chip(pick(...l), "", () => { bankCat = k; renderBank(); }, bankCat === k));
+  $("bankSearch").placeholder = T("bankSearch");
+  const q = $("bankSearch").value.trim().toLowerCase();
+  const list = $("bankList"); list.innerHTML = "";
+  let n = 0;
+  BANK.forEach(([c, en, he], i) => {
+    const txt = pick(en, he);
+    if (bankCat !== "all" && c !== bankCat) return;
+    const plainTxt = txt.replace(/<[^>]+>/g, "");
+    if (q && !plainTxt.toLowerCase().includes(q)) return;
+    n++;
+    const li = el("li"); li.append(el("span", "num", String(i + 1)));
+    const t = el("div", "t");
+    if (bankCat === "all") t.append(el("small", null, pick(...BANK_CATS.find(x => x[0] === c)[1])));
+    const body = el("span"); body.innerHTML = q ? txt.replace(new RegExp("(" + q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")(?![^<]*>)", "gi"), "<mark>$1</mark>") : txt;
+    t.append(body); li.append(t); list.append(li);
+  });
+  if (!n) list.append(el("li", "empty", T("bankNone")));
+}
+$("bankSearch").oninput = renderBank;
 
 // ---------- personalization: everyone can change the look ----------
 const UI_DEFAULT = {theme:"system", accent:"indigo", mark:"yellow", bg:"grid", size:"m", font:"rubik"};
