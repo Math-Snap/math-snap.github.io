@@ -17,12 +17,14 @@ import java.io.File
 
 /**
  * Math Snap: the screen is a local web page (assets/index.html) with an offline math engine.
- * This activity adds the camera and Google's on-device text scanner (ML Kit). No internet, no API key.
+ * This activity adds the camera and Google's on-device text scanner (ML Kit), both offline,
+ * and the optional account (sign-in, saved history, favorites) in Account.kt.
  */
 class MainActivity : AppCompatActivity() {
 
     private lateinit var web: WebView
     private var cameraUri: Uri? = null
+    private lateinit var account: Account
     private val recognizer by lazy { TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS) }
 
     private val takePicture =
@@ -47,6 +49,8 @@ class MainActivity : AppCompatActivity() {
         web.addJavascriptInterface(Bridge(), "Android")
         setContentView(web)
         cameraUri = savedInstanceState?.getString("cameraUri")?.let { Uri.parse(it) }
+        account = Account(this) { code -> js(code) }
+        account.start()
         web.loadUrl("file:///android_asset/index.html")
     }
 
@@ -61,6 +65,20 @@ class MainActivity : AppCompatActivity() {
 
         @JavascriptInterface
         fun pickPhoto() = runOnUiThread { pickImage.launch("image/*") }
+
+        // ---- account ----
+        @JavascriptInterface fun ready() = runOnUiThread { account.ready() }
+        @JavascriptInterface fun authState(): String = account.state()
+        @JavascriptInterface fun signInEmail(email: String, password: String) = runOnUiThread { account.signInEmail(email, password) }
+        @JavascriptInterface fun signUpEmail(email: String, password: String, name: String) = runOnUiThread { account.signUpEmail(email, password, name) }
+        @JavascriptInterface fun resetPassword(email: String) = runOnUiThread { account.resetPassword(email) }
+        @JavascriptInterface fun signInGoogle() = runOnUiThread { account.signInGoogle() }
+        @JavascriptInterface fun signOut() = runOnUiThread { account.signOut() }
+        @JavascriptInterface fun saveProblem(json: String): String = account.save(json)
+        @JavascriptInterface fun updateProblem(id: String, json: String) = account.update(id, json)
+        @JavascriptInterface fun deleteProblem(id: String) = account.delete(id)
+        @JavascriptInterface fun wifiOnly(): Boolean = account.wifiOnly()
+        @JavascriptInterface fun setWifiOnly(on: Boolean) = runOnUiThread { account.setWifiOnly(on) }
     }
 
     private fun openCamera() {
