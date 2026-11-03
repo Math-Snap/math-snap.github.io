@@ -385,7 +385,9 @@ const UI = {
     solveTitle:"New problem", solveSub:"Take a photo, pick one from the gallery, or type it", tryOne:"Try one:",
     geoTitle:"Geometry", geoSub:"Write the givens and get a proof with claims and reasons", reminder:"Reminder: definitions and theorems", tabSolve:"Solve", tabGeo:"Geometry",
     camera:"Take photo", gallery:"Gallery", problemLbl:"Problem (one per line, fix anything misread)",
-    geoCheck:"Check the givens above and fix anything misread, then tap Solve.",
+    geoCheck:"These are the givens from the photo. Fix anything that's wrong, and add what's missing in words, then tap Solve.",
+    ocrNoGivens:"I didn't find givens in the photo (like an angle with a number or a side with a length). Write them in the box above.",
+    shTrap:"trapezoid", shKite:"kite", shIso:"isosceles triangle", shTri:"triangle",
     givensLbl:"Describe the problem: the givens, in words, numbers or symbols", givensEx:"Examples:", givensGo:"Solve",
     givensTip:"I understand: triangle, right triangle, isosceles, trapezoid, kite, circle, similar · angle A = 40 · AB = 5 · parallel · radius, central angle, hypotenuse, area",
     askLbl:"What do you need to find? (optional)", askPh:"e.g. find BC and angle B, or the area",
@@ -434,7 +436,9 @@ const UI = {
     solveTitle:"תרגיל חדש", solveSub:"צלמו, בחרו מהגלריה או הקלידו", tryOne:"נסו דוגמה:",
     geoTitle:"גאומטריה", geoSub:"כתבו את הנתונים וקבלו הוכחה עם טענה ונימוק", reminder:"תזכורת: הגדרות ומשפטים", tabSolve:"פתרון", tabGeo:"גאומטריה",
     camera:"צילום", gallery:"גלריה", problemLbl:"התרגיל (אחד בכל שורה, תקנו מה שנקרא לא נכון)",
-    geoCheck:"בדקו את הנתונים למעלה ותקנו מה שנקרא לא נכון, ואז לחצו פתור.",
+    geoCheck:"אלה הנתונים מהתמונה. תקנו מה שלא נכון והוסיפו במילים מה שחסר, ואז לחצו פתור.",
+    ocrNoGivens:"לא מצאתי נתונים בתמונה (כמו זווית עם מספר או צלע עם אורך). כתבו אותם בתיבה למעלה.",
+    shTrap:"טרפז", shKite:"דלתון", shIso:"משולש שווה שוקיים", shTri:"משולש",
     givensLbl:"תארו את התרגיל: הנתונים במילים, במספרים או בסימנים", givensEx:"דוגמאות:", givensGo:"פתור",
     givensTip:"אני מבין: משולש, ישר זווית, שווה שוקיים, טרפז, דלתון, מעגל, דומים · זווית A שווה 40 · AB שווה 5 · מקביל · רדיוס, זווית מרכזית, יתר, שטח",
     askLbl:"מה צריך למצוא? (לא חובה)", askPh:"למשל: מצאו את BC ואת זווית B, או את השטח",
@@ -1981,17 +1985,39 @@ function readGivens(){
   geoFromText = true; calcGeo();
 }
 $("geoRead").onclick = readGivens;
+// The photo is turned into givens, not into text: only what was recognized as a given
+// (an angle, a length, two parallel sides, two equal sides) is written in the box, in plain words.
+function givensToText(G, seen){
+  const he = lang === "he", parts = [];
+  const isEq = (a, b) => hasEq(G, a, b);
+  let shape = "";
+  if (G.letters.has("D") || (seen && seen.has("D"))) shape = G.par.length ? T("shTrap") : (isEq("AB","AD") || isEq("CB","CD")) ? T("shKite") : "";
+  else if (isEq("AB","AC")) shape = T("shIso");
+  else if (G.letters.size >= 2) shape = T("shTri");
+  const four = G.letters.has("D") || (seen && seen.has("D"));
+  if (shape) parts.push(shape + " " + (four ? "ABCD" : "ABC"));
+  else if (four) parts.push("ABCD");
+  const ang = (k, v) => (he ? "זווית " + k + " שווה " : "angle " + k + " = ") + R(v) + "°";
+  for (const k of ["A","B","C","D"]) if (G.ang[k] != null) parts.push(ang(k, G.ang[k]));
+  for (const [k, v] of Object.entries(G.ang3 || {})) parts.push(ang(k, v));
+  for (const [x, y] of G.par) parts.push(x + (he ? " מקביל ל-" : " parallel to ") + y);
+  for (const [x, y] of G.eq) parts.push(x + (he ? " שווה ל-" : " = ") + y);
+  for (const [k, v] of Object.entries(G.len)) parts.push(k + (he ? " שווה " : " = ") + R(v));
+  if (G.S != null) parts.push((he ? "שטח " : "area ") + R(G.S));
+  return parts.join(", ");
+}
 function onGeoOcr(text, items){
-  let t = String(text).trim();
-  if (!/[A-D0-9]/.test(t)) { setGeoStatus("noMath", true); clearGeo(); return; }
+  const t = String(text).trim();
   const fromDrawing = Array.isArray(items) ? diagramGivens(items) : [];
-  if (fromDrawing.length) {
-    const written = t.split("\n").filter(l => /=|∥|\|\||\/\//.test(l));
-    t = written.concat(fromDrawing).join("\n");
-  }
-  $("geoText").value = t;
-  setGeoStatus("geoCheck");
+  const written = t.split("\n").filter(l => /=|∥|\|\||\/\/|[∢∠]/.test(l));
+  const G = parseGivens(written.concat(fromDrawing).join("\n"));
+  const seen = new Set((Array.isArray(items) ? items : []).map(it => String(it.t).trim()).filter(x => /^[A-D]$/.test(x)));
+  const n = Object.keys(G.ang).length + Object.keys(G.ang3 || {}).length + Object.keys(G.len).length + G.par.length + G.eq.length + (G.S != null ? 1 : 0);
+  if (!n) { setGeoStatus("ocrNoGivens", true); clearGeo(); return; }
+  const keep = $("geoText").value.trim();
+  $("geoText").value = (keep && !/[A-D]\s*(?:=|שווה)/.test(keep) ? keep + ", " : "") + givensToText(G, seen);
   readGivens();
+  setGeoStatus("geoCheck");
 }
 
 
