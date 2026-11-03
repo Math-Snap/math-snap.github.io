@@ -1127,6 +1127,7 @@
     }
     const runs = [];
     for (let i = 0; i < el.length; i++) if (el[i]) { let j = i; while (j + 1 < el.length && el[j + 1]) j++; runs.push([i, j]); i = j; }
+    const nl = { pts: pts.map((x, i) => ({ x, closed: el[2 * i + 1] })), segs: runs.map(([a, b]) => [a % 2 === 0 ? (a === 0 ? -Infinity : pts[a / 2 - 1]) : pts[(a - 1) / 2], b % 2 === 0 ? (b / 2 === k ? Infinity : pts[b / 2]) : pts[(b - 1) / 2]]) };
     const parts = runs.map(([s, e]) => {
       const lo = s % 2 === 0 ? (s === 0 ? null : { x: pts[s / 2 - 1], c: false }) : { x: pts[(s - 1) / 2], c: true };
       const hi = e % 2 === 0 ? (e / 2 === k ? null : { x: pts[e / 2], c: false }) : { x: pts[(e - 1) / 2], c: true };
@@ -1145,7 +1146,7 @@
     if (parts.includes("ALL")) answer = t("everyValue", v);
     else if (!parts.length) answer = t("noSolution");
     else answer = parts.map(iso).join(t("or"));
-    return { answer, table: ranges.join("   |   ") };
+    return { answer, table: ranges.join("   |   "), nl };
   }
   function inequality(s) {
     const parts = s.split(/(<=|>=|<|>)/).map(x => x.trim());
@@ -1164,14 +1165,15 @@
     if (L && R) {
       const a = ops.subtract(L.p, R.p), c = ops.subtract(R.q, L.q);
       steps.push([combo([[a, v]]) + " " + REL[op] + " " + fmt(c), t("ineqMove")]);
-      if (val(a) === 0) { const ok = cmp(0, op, val(c)); return { answer: ok ? t("everyValue", v) : t("noSolution"), steps }; }
+      if (val(a) === 0) { const ok = cmp(0, op, val(c)); return { answer: ok ? t("everyValue", v) : t("noSolution"), steps, numberLine: { pts: [], segs: ok ? [[-Infinity, Infinity]] : [] } }; }
       const x = ops.divide(c, a);
       let op2 = op;
       if (val(a) < 0) { op2 = FLIP[op]; steps.push([v + " " + REL[op2] + " " + fmt(c) + " ÷ " + paren(a), t("ineqFlip", iso(paren(a)))]); }
       else if (!(isInt(a) && a.n === 1)) steps.push([v + " " + REL[op2] + " " + fmt(c) + " ÷ " + paren(a), t("divide", iso(paren(a)))]);
       const ans = v + " " + REL[op2] + " " + fmtShort(x);
       steps.push([ans, t("ineqAns")]);
-      return { answer: iso(ans), steps };
+      const xv = val(x), cl = op2.includes("=");
+      return { answer: iso(ans), steps, numberLine: { pts: [{ x: xv, closed: cl }], segs: [op2[0] === "<" ? [-Infinity, xv] : [xv, Infinity]] } };
     }
     const f = x => evalAt(cl, v, x) - evalAt(cr, v, x);
     const Q = quadCoef(f);
@@ -1194,7 +1196,7 @@
     const pts = [...new Set(roots.concat(breaks))].sort((a, b) => a - b);
     const res = intervals(f, pts, roots, v, op);
     steps.push([res.table, t("ineqSigns")]);
-    return { answer: res.answer, steps };
+    return { answer: res.answer, steps, numberLine: res.nl, graph: { fns: [{ e: "(" + ls + ")-(" + rs + ")", v }], points: roots.map(r => ({ x: r, y: 0 })), vlines: breaks } };
   }
   function doubleIneq([A, op1, B, op2, C]) {
     const node = M().parse(B), vars = symbols(node);
@@ -1216,7 +1218,7 @@
     const ans = fmtShort(lo) + " " + REL[o1] + " " + v + " " + REL[o2] + " " + fmtShort(hi);
     if (!cmp(val(lo), o1, val(hi)) && !(o1 === "<=" && o2 === "<=" && val(lo) === val(hi))) return { answer: t("noSolution"), steps };
     steps.push([ans, t("ineqAns")]);
-    return { answer: iso(ans), steps };
+    return { answer: iso(ans), steps, numberLine: { pts: [{ x: val(lo), closed: o1 === "<=" }, { x: val(hi), closed: o2 === "<=" }], segs: [[val(lo), val(hi)]] } };
   }
 
   // ---------- two equations, two unknowns ----------
@@ -1286,7 +1288,8 @@
     }
     const chk = E.map(e => fmt(ops.add(m(e.a, X), m(e.b, Y))) + " = " + fmt(e.c) + " ✓").join("   ,   ");
     steps.push([chk, t("sysCheck")]);
-    return { answer: iso(x + " = " + fmtShort(X)) + " ,  " + iso(y + " = " + fmtShort(Y)), steps };
+    return { answer: iso(x + " = " + fmtShort(X)) + " ,  " + iso(y + " = " + fmtShort(Y)), steps,
+      graph: { implicit: lines.map(l => { const [a, b] = l.split("="); return "(" + a + ")-(" + b + ")"; }), vars: [x, y], points: [{ x: val(X), y: val(Y), label: "(" + NS(val(X)) + " , " + NS(val(Y)) + ")" }] } };
   }
 
   // ---------- fractions with letters ----------
@@ -1451,7 +1454,8 @@
     }
     const pairS = pairs.map(([p, q]) => "(" + vars[0] + ", " + vars[1] + ") = (" + NS(p) + " , " + NS(q) + ")");
     steps.push([pairS.join("   ,   ") || "—", t("sysPairs")]);
-    return { answer: pairs.length ? pairs.map(([p, q]) => iso(vars[0] + " = " + NS(p) + " ,  " + vars[1] + " = " + NS(q))).join(t("or")) : t("noSolution"), steps };
+    return { answer: pairs.length ? pairs.map(([p, q]) => iso(vars[0] + " = " + NS(p) + " ,  " + vars[1] + " = " + NS(q))).join(t("or")) : t("noSolution"), steps,
+      graph: { implicit: lines.map(l => { const [a, b] = l.split("="); return "(" + a + ")-(" + b + ")"; }), vars, points: pairs.map(([p, q]) => ({ x: p, y: q, label: "(" + NS(p) + " , " + NS(q) + ")" })) } };
   }
 
   // ---------- exponential and log equations ----------
@@ -1617,9 +1621,10 @@
       for (const s of sols) for (let k = Math.ceil((a - s) / period - 1e-9); s + k * period <= b + 1e-9; k++) inR.push(cleanRoot(s + k * period));
       const list = [...new Set(inR)].sort((x, y) => x - y);
       steps.push([list.length ? list.map(deg).join(" ,  ") : "—", list.length ? t("trigRange", a, b) : t("trigNoRange")]);
-      return { answer: list.length ? iso(v + " = " + list.map(deg).join(", ")) : t("noSolution"), steps };
+      return { answer: list.length ? iso(v + " = " + list.map(deg).join(", ")) : t("noSolution"), steps, graph: { deg: true, x: [a, b], fns: [{ e: lhs.toString(), v }, { e: rhs.toString(), v }], points: list.map(x => ({ x, label: deg(x) })) } };
     }
-    return { answer: sols.map(s => iso(v + " = " + deg(s) + " + " + NUM(period) + "°k")).join(t("or")) + "  " + t("kInt"), steps };
+    const inR = []; for (const s0 of sols) for (let k = Math.ceil(-s0 / period - 1e-9); s0 + k * period < 360 - 1e-9; k++) inR.push(s0 + k * period);
+    return { answer: sols.map(s => iso(v + " = " + deg(s) + " + " + NUM(period) + "°k")).join(t("or")) + "  " + t("kInt"), steps, graph: { deg: true, x: [0, 360], fns: [{ e: lhs.toString(), v }, { e: rhs.toString(), v }], points: inR.map(x => ({ x, label: deg(cleanRoot(x)) })) } };
   }
 
   // ---------- calculus ----------
@@ -1695,7 +1700,8 @@
       steps.push(["f'(" + NUM(at) + ") = " + NS(dv), t("slopeAt")]);
       answer += "  ,  " + iso("f'(" + NUM(at) + ") = " + NS(dv));
     }
-    return { answer, steps, d };
+    const gp = at != null ? [{ x: at, onF: true }] : [];
+    return { answer, steps, d, graph: { fns: [{ e: expr, v }, { e: d.toString(), v, dash: true, name: "f'" }], points: gp, x: at != null ? [at - 4, at + 4] : null } };
   }
   function tangent(expr, v, a) {
     if (a == null) fail(t("needPoint"));
@@ -1709,7 +1715,7 @@
     const b = ops.subtract(Y0, ops.multiply(M_, A_));
     const line = "y = " + combo([[M_, v], [b, ""]]);
     steps.push([line, t("tanFinal")]);
-    return { answer: iso(line), steps };
+    return { answer: iso(line), steps, graph: { fns: [{ e: expr, v }, { e: "(" + m + ")*" + v + "+(" + val(b) + ")", v, dash: true, name: "y" }], points: [{ x: a, y: y0, label: "(" + NS(a) + " , " + NS(y0) + ")" }], x: [a - 4, a + 4] } };
   }
   function domainInfo(node, v, f) {
     const dens = []; let rooty = false;
@@ -1795,7 +1801,10 @@
       steps.push(["y = " + NUM(L), t("hAsym")]);
     }
     const mono_ = regions.length ? regions.map(r => (r.up ? t("incW") : t("decW")) + ": " + iso(!isFinite(r.a) && !isFinite(r.b) ? v + " ∈ ℝ" : !isFinite(r.a) ? v + " < " + NS(r.b) : !isFinite(r.b) ? v + " > " + NS(r.a) : NS(r.a) + " < " + v + " < " + NS(r.b))).join(" ;  ") : "";
-    return { answer: (ext.length ? ext.map(e => e.replace(/\(.*\)/, m => iso(m))).join(" ,  ") : t("noExt")) + (mono_ ? "\n" + mono_ : ""), steps };
+    const gpts = crit.map(c => ({ x: c, y: f(c), label: "(" + NS(c) + " , " + NS(f(c)) + ")" })).concat(zs.map(z => ({ x: z, y: 0 }))).concat(inDom(0) ? [{ x: 0, y: f(0) }] : []);
+    const hA = steps.find(x => x[1] === t("hAsym"));
+    return { answer: (ext.length ? ext.map(e => e.replace(/\(.*\)/, m => iso(m))).join(" ,  ") : t("noExt")) + (mono_ ? "\n" + mono_ : ""), steps,
+      graph: { fns: [{ e: expr, v }], points: gpts, vlines: dom.holes, hlines: hA ? [+String(hA[0]).replace("y = ", "").replace("−", "-")] : [] } };
   }
   // ∫ of one term: returns {F (mathjs), show, why} or null
   function antiTerm(node, sign, v) {
@@ -1845,7 +1854,7 @@
       Fshow = pieces.map((p, i) => (i && !p.show.startsWith("−") ? " + " : i ? " − " : "") + (i && p.show.startsWith("−") ? p.show.slice(1) : p.show)).join("");
       Fstr = pieces.map(p => "(" + p.F + ")").join("+");
       steps.push(["F(" + v + ") = " + Fshow + (defn ? "" : " + C"), terms.length > 1 ? t("intC") : pieces[0].why]);
-      if (!defn) return { answer: iso(Fshow + " + C"), steps };
+      if (!defn) return { answer: iso(Fshow + " + C"), steps, graph: { fns: [{ e: expr, v }] } };
     }
     const f = compileF(expr, v);
     const Ff = ok ? compileF(Fstr, v) : null;
@@ -1854,7 +1863,7 @@
       const I = defI(A, B);
       if (Ff) steps.push(["F(" + NUMP(B) + ") − F(" + NUMP(A) + ") = " + NS(Ff(B)) + " − " + paren(approxRat(Ff(A))) + " = " + NS(I), t("newton")]);
       else steps.push([NS(I), t("numInt")]);
-      return { answer: iso("= " + NS(I)), steps };
+      return { answer: iso("= " + NS(I)), steps, graph: { fns: [{ e: expr, v }], shade: { a: A, b: B }, x: [A - (B - A) * 0.35 - 0.5, B + (B - A) * 0.35 + 0.5] } };
     }
     const zs = scanRoots(f, A, B, (B - A) / 2000).roots.filter(z => z > A + 1e-9 && z < B - 1e-9);
     const cuts = [A, ...zs, B];
@@ -1866,7 +1875,7 @@
     }
     steps.push([partS.join("   ,   "), Ff ? t("newton") : t("numInt")]);
     steps.push(["S = " + NS(total), t("areaSum")]);
-    return { answer: iso("S = " + NS(total)), steps };
+    return { answer: iso("S = " + NS(total)), steps, graph: { fns: [{ e: expr, v }], shade: { a: A, b: B }, points: zs.map(z => ({ x: z, y: 0 })), x: [A - (B - A) * 0.35 - 0.5, B + (B - A) * 0.35 + 0.5] } };
   }
 
   // ---------- sequences ----------
@@ -2005,7 +2014,8 @@
       }
       steps.push(["d = √(" + paren(approxRat(dx)) + "² + " + paren(approxRat(dy)) + "²) = √" + NUM(d2) + " = " + rootStr(d2), t("dist")]);
       steps.push(["M = " + ptS((x1 + x2) / 2, (y1 + y2) / 2), t("mid")]);
-      return { answer: iso(line) + " ,  " + t("distW") + " " + iso(rootStr(d2).replace(/ ≈.*/, "")) + " ,  " + t("midW") + " " + iso(ptS((x1 + x2) / 2, (y1 + y2) / 2)), steps };
+      return { answer: iso(line) + " ,  " + t("distW") + " " + iso(rootStr(d2).replace(/ ≈.*/, "")) + " ,  " + t("midW") + " " + iso(ptS((x1 + x2) / 2, (y1 + y2) / 2)), steps,
+        graph: { implicit: [close(dx, 0) ? "x-(" + x1 + ")" : "y-((" + (dy / dx) + ")*(x-(" + x1 + "))+(" + y1 + "))"], vars: ["x", "y"], points: [{ x: x1, y: y1, label: ptS(x1, y1) }, { x: x2, y: y2, label: ptS(x2, y2) }, { x: (x1 + x2) / 2, y: (y1 + y2) / 2, hollow: true }] } };
     }
     const [[x1, y1], [x2, y2], [x3, y3]] = pts;
     const L = [[x1, y1, x2, y2, "AB"], [x2, y2, x3, y3, "BC"], [x1, y1, x3, y3, "AC"]].map(([a, b, c, d, n]) => ({ n, s: (c - a) ** 2 + (d - b) ** 2 }));
@@ -2014,7 +2024,7 @@
     steps.push(["S = ½|" + NUM(x1) + "·(" + NUM(y2) + " − " + paren(approxRat(y3)) + ") + " + NUM(x2) + "·(" + NUM(y3) + " − " + paren(approxRat(y1)) + ") + " + NUM(x3) + "·(" + NUM(y1) + " − " + paren(approxRat(y2)) + ")| = " + NUM(S), t("triArea")]);
     const sq = L.map(l => l.s).sort((a, b) => a - b);
     if (close(sq[0] + sq[1], sq[2])) steps.push([NUM(sq[0]) + " + " + NUM(sq[1]) + " = " + NUM(sq[2]), t("triRight")]);
-    return { answer: t("areaW") + " " + iso("S = " + NUM(S)), steps };
+    return { answer: t("areaW") + " " + iso("S = " + NUM(S)), steps, graph: { polygon: pts, vars: ["x", "y"], points: pts.map(([x, y], i) => ({ x, y, label: "ABC"[i] })) } };
   }
   function xyFit(ls, rs) {
     const code = M().parse("(" + ls + ")-(" + rs + ")").compile();
@@ -2035,7 +2045,7 @@
       steps.push([line, t("lineSlope")]);
       steps.push(["m = " + NUM(m) + "  ,  (0 , " + NUM(b) + ")", t("slopeW")]);
       if (!z(m)) steps.push(["0 = " + combo([[approxRat(m), "x"], [approxRat(b), ""]]) + "   ⇒   x = " + NUM(-b / m) + "   ⇒   (" + NUM(-b / m) + " , 0)", t("xIntLine")]);
-      return { answer: iso(line) + " ,  " + t("slopeW") + " " + iso("m = " + NUM(m)), steps };
+      return { answer: iso(line) + " ,  " + t("slopeW") + " " + iso("m = " + NUM(m)), steps, graph: { implicit: ["(" + ls + ")-(" + rs + ")"], vars: ["x", "y"], points: [{ x: 0, y: b, label: "(0 , " + NUM(b) + ")" }].concat(close(m, 0) ? [] : [{ x: -b / m, y: 0, label: "(" + NUM(-b / m) + " , 0)" }]) } };
     }
     if (z(C) && !z(A) && close(A, B)) {              // a circle
       const a = -D / (2 * A), b = -E / (2 * A), R2 = a * a + b * b - F0 / A;
@@ -2043,7 +2053,8 @@
       if (R2 <= 0) { steps.push(["R² = " + NUM(R2), t("circleNo")]); return { answer: t("noSolution"), steps }; }
       const R = rootStr(R2);
       steps.push([t("centerW") + " " + ptS(a, b) + "  ,  R = " + R, t("circleRes")]);
-      return { answer: t("centerW") + " " + iso(ptS(a, b)) + " ,  " + t("radiusW") + " " + iso("R = " + R.replace(/ ≈.*/, "")), steps };
+      const Rv = Math.sqrt(R2);
+      return { answer: t("centerW") + " " + iso(ptS(a, b)) + " ,  " + t("radiusW") + " " + iso("R = " + R.replace(/ ≈.*/, "")), steps, graph: { implicit: ["(" + ls + ")-(" + rs + ")"], vars: ["x", "y"], x: [a - Rv * 1.5, a + Rv * 1.5], y: [b - Rv * 1.5, b + Rv * 1.5], points: [{ x: a, y: b, label: ptS(a, b) }] } };
     }
     if (z(B) && z(C) && !z(E) && !z(A)) {            // y = ax² + bx + c
       const a = -A / E, b = -D / E, c = -F0 / E;
@@ -2055,7 +2066,7 @@
       steps.push(["(0 , " + NUM(c) + ")", t("yInt")]);
       const rs_ = quadRoots(Q).map(cleanRoot);
       steps.push([rs_.length ? rs_.map(r => "(" + NS(r) + " , 0)").join("  ,  ") : "D < 0", rs_.length ? t("xInt") : t("noXInt")]);
-      return { answer: t("vertexW") + " " + iso(ptS(xv, yv)), steps };
+      return { answer: t("vertexW") + " " + iso(ptS(xv, yv)), steps, graph: { fns: [{ e: "(" + a + ")*x^2+(" + b + ")*x+(" + c + ")", v: "x" }], points: [{ x: xv, y: yv, label: ptS(xv, yv) }].concat(rs_.map(r => ({ x: r, y: 0 }))) } };
     }
     return null;
   }
@@ -2068,7 +2079,7 @@
       const [a, b] = pts[0], R = parseFloat(radius[1]);
       const eq = sqr("x", a) + " + " + sqr("y", b) + " = " + NUM(R * R);
       const steps = [[eq, t("circleEq")]];
-      return { problem: t("centerW") + " " + ptS(a, b) + " , R = " + NUM(R), answer: iso(eq), steps };
+      return { problem: t("centerW") + " " + ptS(a, b) + " , R = " + NUM(R), answer: iso(eq), steps, graph: { implicit: ["(x-(" + a + "))^2+(y-(" + b + "))^2-" + R * R], vars: ["x", "y"], x: [a - R * 1.5, a + R * 1.5], y: [b - R * 1.5, b + R * 1.5], points: [{ x: a, y: b, label: ptS(a, b) }] } };
     }
     const slopeM = s.match(/(?:שיפוע|slope|\bm)\s*(?:=|:|שווה|is|של)?\s*(-?\d+(?:\.\d+)?(?:\/\d+)?)/i);
     const lineM = s.match(/y\s*=\s*([^,;]+)/);
@@ -2085,11 +2096,11 @@
       else return null;
       steps.push([lineThru(m, x1, y1), t("lineEq")]);
       const line = lineFrom(m, x1, y1); steps.push([line, t("lineSlope")]);
-      return { problem: ptS(x1, y1) + " , m = " + NUM(m), answer: iso(line), steps };
+      return { problem: ptS(x1, y1) + " , m = " + NUM(m), answer: iso(line), steps, graph: { fns: [{ e: "(" + m + ")*(x-(" + x1 + "))+(" + y1 + ")", v: "x" }].concat(lineM && /מקביל|parallel|מאונך|ניצב|perpendicular/i.test(s) ? [{ e: normalize(lineM[1]), v: "x", dash: true }] : []), points: [{ x: x1, y: y1, label: ptS(x1, y1) }] } };
     }
     if (pts.length === 2 || pts.length === 3) {
       const r = points(pts, raw);
-      return { problem: pts.map(p => ptS(p[0], p[1])).join("  "), answer: r.answer, steps: r.steps };
+      return { problem: pts.map(p => ptS(p[0], p[1])).join("  "), answer: r.answer, steps: r.steps, graph: r.graph };
     }
     return null;
   }
@@ -2209,7 +2220,7 @@
     else if (kind === "tan") r = tangent(c.expr, v, c.at);
     else if (kind === "der") r = derivative(c.expr, v, c.at);
     else r = investigate(c.expr, v);
-    return { problem, answer: r.answer, steps: r.steps };
+    return { problem, answer: r.answer, steps: r.steps, graph: r.graph };
   }
   function advanced(raw) {
     const s = String(raw);

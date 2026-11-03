@@ -142,6 +142,25 @@ select{font:16px/1.3 var(--sans)}
 .prob{font:600 15px/1.4 var(--mono);color:var(--muted);overflow-wrap:anywhere}
 .ans{background:var(--surface-2);border-radius:16px;padding:14px 16px}
 .steps .exp{font:600 16px/1.55 var(--sans);overflow-wrap:anywhere}
+.gfig{background:var(--surface-2);border-radius:16px;padding:10px;display:flex;flex-direction:column;gap:6px}
+.gfig small{font:700 12px/1.3 var(--sans);color:var(--muted)}
+.plot,.nline{width:100%;height:auto;display:block;direction:ltr}
+.plot{border-radius:10px}
+.tk{font:500 10px var(--mono);fill:var(--muted)}
+.tk2{font:700 13px var(--mono);fill:var(--ink)}
+.pl2{font:700 11px var(--mono);fill:var(--ink);paint-order:stroke;stroke:var(--surface);stroke-width:3px}
+.resbar{display:flex;justify-content:flex-end}
+.stepchip{border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:999px;padding:7px 14px;font:600 13px/1 var(--sans);cursor:pointer}
+.stepchip[aria-pressed="true"]{background:var(--pen);border-color:var(--pen);color:var(--on-pen)}
+.stepbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.btn.small{min-height:44px;padding:10px 18px;font-size:15px;width:auto}
+.veiled{visibility:hidden}
+.hint.tiny{font-size:13px;margin:0;padding:8px 12px}
+.ans.veiled{visibility:visible}
+.ans.veiled>div{filter:blur(10px);user-select:none;pointer-events:none}
+table.proof tr.tap{cursor:pointer}
+table.proof tr.tap td:nth-child(2){text-decoration:underline dotted var(--muted);text-underline-offset:4px}
+table.proof tr.on td{background:var(--pen-soft)}
 .askbox{background:var(--pen-soft);border-radius:16px;padding:12px 16px;display:flex;flex-direction:column;gap:2px}
 .askbox small{font:700 13px/1.4 var(--sans);color:var(--pen)}
 .askbox div{font:700 20px/1.6 var(--mono);overflow-wrap:anywhere}
@@ -449,7 +468,8 @@ const UI = {
     givensLbl:"Describe the problem: the givens, in words, numbers or symbols", givensEx:"Examples:", givensGo:"Solve",
     givensTip:"I understand: triangle, right triangle, isosceles, trapezoid, kite, circle, similar · angle A = 40 · AB = 5 · parallel · radius, central angle, hypotenuse, area",
     askLbl:"What do you need to find? (optional)", askPh:"e.g. find BC and angle B, or the area",
-    askAns:"Answer to your question", askMiss:t=>"Not in this solution: "+t,
+    askAns:"Answer to your question", graphTitle:"Graph", nlTitle:"On the number line", stepOff:"Step by step", stepOn:"Step by step: on",
+    stepNext:(n,t)=>"Next step ("+n+"/"+t+")", stepAll:"Show everything", tapRow:"Tap a row to see it in the drawing", askMiss:t=>"Not in this solution: "+t,
     givensExList:"trapezoid ABCD, AB parallel to DC, angle A = 110 degrees, angle C = 43\nisosceles triangle, vertex angle 40\nisosceles triangle, leg 13, base 10\nkite ABCD, angle BAC 35, angle CBD 70\nkite, main diagonal 12, other diagonal 8\nright triangle ABC, angle C 90, AB 10, angle A 30 | find BC and AC\ntriangle ABC, AB = 7, AC = 5, angle A = 60 | find BC and the area\ncircle, radius 6, central angle 60 | arc length",
     givensPh:"e.g. trapezoid ABCD, AB parallel to DC, angle A = 110, angle C = 43",
     detected:(tool,list)=>"Found: "+tool+(list?"  ·  "+list:""), noGivens:"I couldn't find givens. Write them like: angle A = 110, AB parallel to DC, leg 13.",
@@ -500,7 +520,8 @@ const UI = {
     givensLbl:"תארו את התרגיל: הנתונים במילים, במספרים או בסימנים", givensEx:"דוגמאות:", givensGo:"פתור",
     givensTip:"אני מבין: משולש, ישר זווית, שווה שוקיים, טרפז, דלתון, מעגל, דומים · זווית A שווה 40 · AB שווה 5 · מקביל · רדיוס, זווית מרכזית, יתר, שטח",
     askLbl:"מה צריך למצוא? (לא חובה)", askPh:"למשל: מצאו את BC ואת זווית B, או את השטח",
-    askAns:"התשובה לשאלה", askMiss:t=>"לא מופיע בפתרון: "+t,
+    askAns:"התשובה לשאלה", graphTitle:"גרף", nlTitle:"על ציר המספרים", stepOff:"צעד אחר צעד", stepOn:"צעד אחר צעד: פועל",
+    stepNext:(n,t)=>"השלב הבא ("+n+"/"+t+")", stepAll:"הצג הכול", tapRow:"לחצו על שורה כדי לראות אותה בשרטוט", askMiss:t=>"לא מופיע בפתרון: "+t,
     givensExList:"טרפז ABCD, AB מקביל ל-DC, זווית A שווה 110 מעלות, זווית C שווה 43\nמשולש שווה שוקיים, זווית הראש 40\nמשולש שווה שוקיים, שוק 13, בסיס 10\nדלתון ABCD, זווית BAC שווה 35, זווית CBD שווה 70\nדלתון, אלכסון ראשי 12, אלכסון משני 8\nהאם ABCD טרפז? זווית A 30, זווית B 50, זווית D 150\nמשולש ישר זווית ABC, זווית C שווה 90, AB שווה 10, זווית A שווה 30 | מצאו את BC ואת AC\nמשולש ABC, AB שווה 7, AC שווה 5, זווית A שווה 60 | מצאו את BC ואת השטח\nמעגל, רדיוס 6, זווית מרכזית 60 | אורך הקשת",
     givensPh:"למשל: טרפז ABCD, AB מקביל ל-DC, זווית A שווה 110 מעלות, זווית C שווה 43",
     detected:(tool,list)=>"זיהיתי: "+tool+(list?"  ·  "+list:""), noGivens:"לא מצאתי נתונים. כתבו למשל: זווית A שווה 110, AB מקביל ל-DC, שוק 13.",
@@ -715,6 +736,7 @@ function proofTable(rows){
 function solveNow(quiet, noSave){
   try { edCaret = $("problem").value.length; renderPreview(); } catch (e) {}
   const out = $("results"); out.innerHTML = "";
+  const rb = el("div", "resbar"); rb.append(stepToggle(() => solveNow(true, true))); out.append(rb);
   let res;
   try { res = Solver.solve($("problem").value, lang); } catch(e) { res = [{problem:"", error:T("crash")}]; }
   if (!res.length) { out.append(el("p","hint",T("empty"))); out.hidden=false; return; }
@@ -725,6 +747,10 @@ function solveNow(quiet, noSave){
     if (r.error) box.append(dirOf(el("div","err",r.error), r.error));
     else {
       const a = el("div","ans"); a.append(el("small",null,T("answer")), mathEl("div",null,r.answer)); box.append(a);
+      const veil = [a];
+      const fig = (svg, cap) => { const f = el("div", "gfig"); f.append(el("small", null, cap)); f.insertAdjacentHTML("beforeend", svg); box.append(f); veil.push(f); };
+      if (r.numberLine) { try { fig(numberLineSVG(r.numberLine), T("nlTitle")); } catch (e) { console.error(e); } }
+      if (r.graph) { try { fig(plotSVG(r.graph), T("graphTitle")); } catch (e) { console.error(e); } }
       if (r.steps && r.steps.length) {
         const ol = el("ol","steps");
         r.steps.forEach(([c, why]) => {
@@ -733,6 +759,7 @@ function solveNow(quiet, noSave){
           ol.append(li);
         });
         box.append(ol);
+        applyStepper(box, ol.children, veil);
       }
     }
     out.append(box);
@@ -921,6 +948,228 @@ function renderPreview(){
 $("problem").addEventListener("input", renderPreview);
 try { if (localStorage.getItem("pad") === "1") setTimeout(() => setPad(true), 0); } catch (e) {}
 setTimeout(renderPreview, 0);
+// ---------- graphs (drawn on the phone, no internet needed) ----------
+const f1 = n => (Math.round(n * 10) / 10).toFixed(1);
+function niceStep(span){ const raw = span / 6, p = Math.pow(10, Math.floor(Math.log10(raw))), m = raw / p; return (m < 1.5 ? 1 : m < 3 ? 2 : m < 7 ? 5 : 10) * p; }
+const numLbl = x => { const r = Math.round(x * 100) / 100; return String(Object.is(r, -0) ? 0 : r).replace("-", "−"); };
+function plotSVG(g){
+  const W = 320, H = 230, L = 30, Rt = 10, Tp = 10, B = 24;
+  const scope = { logb: (x, b) => Math.log(x) / Math.log(b) };
+  if (g.deg) Object.assign(scope, { sin: d => Math.sin(d * Math.PI / 180), cos: d => Math.cos(d * Math.PI / 180), tan: d => Math.tan(d * Math.PI / 180) });
+  const fns = (g.fns || []).map(f => { const c = math.compile(String(f.e)); const v = f.v || "x";
+    return Object.assign({}, f, { f: x => { try { const y = c.evaluate(Object.assign({}, scope, { [v]: x })); return typeof y === "number" && isFinite(y) ? y : NaN; } catch (e) { return NaN; } } }); });
+  const [vx, vy] = g.vars || ["x", "y"];
+  const imps = (g.implicit || []).map(e => { const c = math.compile(String(e)); return (x, y) => { try { const r = c.evaluate(Object.assign({}, scope, { [vx]: x, [vy]: y })); return typeof r === "number" ? r : NaN; } catch (e2) { return NaN; } }; });
+  const pts = (g.points || []).filter(p => isFinite(p.x));
+  pts.forEach(p => { if (p.y == null && fns.length) p.y = fns[0].f(p.x); if (p.onF) { p.y = fns[0].f(p.x); p.label = "(" + numLbl(p.x) + " , " + numLbl(p.y) + ")"; } });
+  // x range
+  let x0, x1;
+  if (g.x && isFinite(g.x[0])) [x0, x1] = g.x;
+  else if (g.deg) [x0, x1] = [0, 360];
+  else {
+    const xs = pts.map(p => p.x).concat(g.shade ? [g.shade.a, g.shade.b] : [], g.vlines || [], (g.polygon || []).map(p => p[0]));
+    if (imps.length && xs.length && xs.every(x => Math.abs(x) < 12)) xs.push(0);
+    if (xs.length) { const a = Math.min(...xs), b = Math.max(...xs), span = Math.max(b - a, 4); x0 = a - span * 0.35 - 0.5; x1 = b + span * 0.35 + 0.5; }
+    else [x0, x1] = [-6, 6];
+  }
+  // y range
+  let y0, y1;
+  if (g.y && isFinite(g.y[0])) [y0, y1] = g.y;
+  else {
+    const ys = pts.map(p => p.y).filter(isFinite).concat((g.polygon || []).map(p => p[1]), g.hlines || []);
+    if (imps.length && ys.length && ys.every(y => Math.abs(y) < 12)) ys.push(0);
+    const vals = [];
+    for (const f of fns) for (let i = 0; i <= 200; i++) { const y = f.f(x0 + (x1 - x0) * i / 200); if (isFinite(y)) vals.push(y); }
+    vals.sort((a, b) => a - b);
+    const q = r => vals[Math.min(vals.length - 1, Math.max(0, Math.round(r * (vals.length - 1))))];
+    const lo = Math.min(...(vals.length ? [q(0.04)] : []), ...ys), hi = Math.max(...(vals.length ? [q(0.96)] : []), ...ys);
+    const pys = pts.map(p => p.y).filter(isFinite);
+    if (fns.length && pys.length >= 2 && !g.shade) { const a = Math.min(...pys), b = Math.max(...pys), span = Math.max(b - a, 2); y0 = a - span * 0.7; y1 = b + span * 0.7; }
+    else if (isFinite(lo) && isFinite(hi)) { const span = Math.max(hi - lo, 2); y0 = lo - span * 0.15; y1 = hi + span * 0.15; if (y0 > 0 && y0 < span * 0.6) y0 = -span * 0.08; if (y1 < 0 && -y1 < span * 0.6) y1 = span * 0.08; }
+    else { const cy = ys.length ? ys.reduce((a, b) => a + b, 0) / ys.length : 0, half = (x1 - x0) / 2 * (H - Tp - B) / (W - L - Rt); y0 = cy - half; y1 = cy + half; }
+  }
+  // lines, circles, triangles: same scale on both axes
+  if (imps.length || g.polygon) {
+    const kx = (W - L - Rt) / (x1 - x0), ky = (H - Tp - B) / (y1 - y0), k = Math.min(kx, ky);
+    const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, hx = (W - L - Rt) / k / 2, hy = (H - Tp - B) / k / 2;
+    [x0, x1, y0, y1] = [cx - hx, cx + hx, cy - hy, cy + hy];
+  }
+  const X = x => L + (x - x0) / (x1 - x0) * (W - L - Rt), Y = y => H - B - (y - y0) / (y1 - y0) * (H - Tp - B);
+  let s = `<svg class="plot" viewBox="0 0 ${W} ${H}" role="img" aria-label="graph"><rect x="${L}" y="${Tp}" width="${W - L - Rt}" height="${H - Tp - B}" style="fill:var(--surface)"/>`;
+  // grid and numbers
+  const sx = g.deg ? 90 : niceStep(x1 - x0), sy = niceStep(y1 - y0);
+  for (let x = Math.ceil(x0 / sx) * sx; x <= x1 + 1e-9; x += sx) s += `<line x1="${f1(X(x))}" y1="${Tp}" x2="${f1(X(x))}" y2="${H - B}" style="stroke:var(--grid);stroke-width:1"/><text x="${f1(X(x))}" y="${H - 8}" text-anchor="middle" class="tk">${numLbl(x)}${g.deg ? "°" : ""}</text>`;
+  for (let y = Math.ceil(y0 / sy) * sy; y <= y1 + 1e-9; y += sy) s += `<line x1="${L}" y1="${f1(Y(y))}" x2="${W - Rt}" y2="${f1(Y(y))}" style="stroke:var(--grid);stroke-width:1"/><text x="${L - 4}" y="${f1(Y(y) + 4)}" text-anchor="end" class="tk">${numLbl(y)}</text>`;
+  if (x0 < 0 && x1 > 0) s += `<line x1="${f1(X(0))}" y1="${Tp}" x2="${f1(X(0))}" y2="${H - B}" style="stroke:var(--muted);stroke-width:1.3"/>`;
+  if (y0 < 0 && y1 > 0) s += `<line x1="${L}" y1="${f1(Y(0))}" x2="${W - Rt}" y2="${f1(Y(0))}" style="stroke:var(--muted);stroke-width:1.3"/>`;
+  s += `<clipPath id="pc"><rect x="${L}" y="${Tp}" width="${W - L - Rt}" height="${H - Tp - B}"/></clipPath><g clip-path="url(#pc)">`;
+  // shaded area under the curve
+  if (g.shade && fns.length) {
+    const { a, b } = g.shade; let d = `M${f1(X(a))},${f1(Y(0))}`;
+    for (let i = 0; i <= 120; i++) { const x = a + (b - a) * i / 120, y = fns[0].f(x); d += ` L${f1(X(x))},${f1(Y(isFinite(y) ? Math.max(y0 - 1e3, Math.min(y1 + 1e3, y)) : 0))}`; }
+    s += `<path d="${d} L${f1(X(b))},${f1(Y(0))} Z" style="fill:var(--pen);fill-opacity:.18;stroke:none"/>`;
+  }
+  if (g.polygon) s += `<polygon points="${g.polygon.map(([x, y]) => f1(X(x)) + "," + f1(Y(y))).join(" ")}" style="fill:var(--pen-soft);stroke:var(--pen);stroke-width:2.5;stroke-linejoin:round"/>`;
+  for (const v of g.vlines || []) s += `<line x1="${f1(X(v))}" y1="${Tp}" x2="${f1(X(v))}" y2="${H - B}" style="stroke:var(--warn);stroke-width:1.5;stroke-dasharray:5 4"/>`;
+  for (const h of g.hlines || []) if (isFinite(h)) s += `<line x1="${L}" y1="${f1(Y(h))}" x2="${W - Rt}" y2="${f1(Y(h))}" style="stroke:var(--warn);stroke-width:1.5;stroke-dasharray:5 4"/>`;
+  const COL = ["var(--pen)", "var(--ok)", "var(--warn)"];
+  // implicit curves (lines, circles, xy = 12): marching squares
+  imps.forEach((F, idx) => {
+    const NX = 110, NY = 80, gx = i => x0 + (x1 - x0) * i / NX, gy = j => y0 + (y1 - y0) * j / NY;
+    const v = []; for (let i = 0; i <= NX; i++) { v.push([]); for (let j = 0; j <= NY; j++) v[i].push(F(gx(i), gy(j))); }
+    let d = "";
+    const cross = (xa, ya, fa, xb, yb, fb) => { const t = fa / (fa - fb); return [xa + (xb - xa) * t, ya + (yb - ya) * t]; };
+    for (let i = 0; i < NX; i++) for (let j = 0; j < NY; j++) {
+      const c = [[gx(i), gy(j), v[i][j]], [gx(i + 1), gy(j), v[i + 1][j]], [gx(i + 1), gy(j + 1), v[i + 1][j + 1]], [gx(i), gy(j + 1), v[i][j + 1]]];
+      if (c.some(q => !isFinite(q[2]))) continue;
+      const hits = [];
+      for (let k = 0; k < 4; k++) { const p = c[k], q2 = c[(k + 1) % 4]; if ((p[2] <= 0) !== (q2[2] <= 0)) hits.push(cross(p[0], p[1], p[2], q2[0], q2[1], q2[2])); }
+      for (let k = 0; k + 1 < hits.length; k += 2) d += `M${f1(X(hits[k][0]))},${f1(Y(hits[k][1]))}L${f1(X(hits[k + 1][0]))},${f1(Y(hits[k + 1][1]))}`;
+    }
+    s += `<path d="${d}" style="fill:none;stroke:${COL[idx % 3]};stroke-width:2.6;stroke-linecap:round"/>`;
+  });
+  // function graphs
+  fns.forEach((F, idx) => {
+    let d = "", prev = null; const N = 420, span = y1 - y0;
+    for (let i = 0; i <= N; i++) {
+      const x = x0 + (x1 - x0) * i / N, y = F.f(x);
+      if (!isFinite(y) || Math.abs(y - (y0 + y1) / 2) > span * 6 || (prev !== null && Math.abs(y - prev) > span * 1.5)) { prev = isFinite(y) ? y : null; if (!isFinite(y)) continue; d += `M${f1(X(x))},${f1(Y(y))}`; continue; }
+      d += (prev === null ? "M" : "L") + f1(X(x)) + "," + f1(Y(y)); prev = y;
+    }
+    s += `<path d="${d}" style="fill:none;stroke:${COL[idx % 3]};stroke-width:2.6;stroke-linejoin:round;${F.dash ? "stroke-dasharray:7 5;" : ""}"/>`;
+  });
+  s += "</g>";
+  // points with labels
+  for (const p of pts) {
+    if (!isFinite(p.y) || p.y < y0 || p.y > y1 || p.x < x0 || p.x > x1) continue;
+    const px = X(p.x), py = Y(p.y);
+    s += `<circle cx="${f1(px)}" cy="${f1(py)}" r="4.5" style="fill:${p.hollow ? "var(--surface)" : "var(--ink)"};stroke:var(--ink);stroke-width:2"/>`;
+    if (p.label) { const right = px < W - 90; s += `<text x="${f1(px + (right ? 7 : -7))}" y="${f1(py - 8 < Tp + 10 ? py + 16 : py - 8)}" text-anchor="${right ? "start" : "end"}" class="pl2">${escH(String(p.label))}</text>`; }
+  }
+  // names of the graphs
+  const named = fns.filter(f => f.name);
+  if (named.length) { let lx = L + 6; fns.forEach((f, idx) => { const nm = f.name || "f"; s += `<line x1="${lx}" y1="${Tp + 12}" x2="${lx + 16}" y2="${Tp + 12}" style="stroke:${COL[idx % 3]};stroke-width:2.6;${f.dash ? "stroke-dasharray:4 3;" : ""}"/><text x="${lx + 20}" y="${Tp + 16}" class="pl2">${escH(nm)}</text>`; lx += 44; }); }
+  return s + "</svg>";
+}
+// ---------- number line for inequalities ----------
+function numberLineSVG(nl){
+  const W = 320, H = 70, L = 18, Rt = 18, y = 30;
+  const xs = (nl.pts || []).map(p => p.x);
+  let x0, x1;
+  if (xs.length) { const a = Math.min(...xs), b = Math.max(...xs), span = Math.max(b - a, 2); x0 = a - span * 0.45 - 1; x1 = b + span * 0.45 + 1; } else [x0, x1] = [-5, 5];
+  const X = x => L + (x - x0) / (x1 - x0) * (W - L - Rt);
+  const inf = v => v == null || !isFinite(v);
+  let s = `<svg class="nline" viewBox="0 0 ${W} ${H}" role="img" aria-label="number line"><defs><marker id="nla" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--muted)"/></marker>`
+    + `<marker id="nlp" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="16" markerHeight="16" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--pen)"/></marker></defs>`
+    + `<line x1="${L - 10}" y1="${y}" x2="${W - Rt + 10}" y2="${y}" style="stroke:var(--muted);stroke-width:1.5" marker-start="url(#nla)" marker-end="url(#nla)"/>`;
+  for (const [a, b] of nl.segs || []) {
+    const xa = inf(a) ? L - 6 : X(a), xb = inf(b) ? W - Rt + 6 : X(b);
+    s += `<line x1="${f1(xa)}" y1="${y}" x2="${f1(xb)}" y2="${y}" style="stroke:var(--pen);stroke-width:7;stroke-linecap:round;opacity:.85"${inf(a) ? ' marker-start="url(#nlp)"' : ""}${inf(b) ? ' marker-end="url(#nlp)"' : ""}/>`;
+  }
+  for (const p of nl.pts || []) s += `<circle cx="${f1(X(p.x))}" cy="${y}" r="7" style="fill:${p.closed ? "var(--pen)" : "var(--surface)"};stroke:var(--pen);stroke-width:2.5"/><text x="${f1(X(p.x))}" y="${y + 28}" text-anchor="middle" class="tk2">${numLbl(p.x)}</text>`;
+  if (!(nl.segs || []).length) s += `<text x="${W / 2}" y="${y + 28}" text-anchor="middle" class="tk2">∅</text>`;
+  return s + "</svg>";
+}
+// ---------- step by step: show the steps one at a time ----------
+const stepMode = () => { try { return localStorage.getItem("stepMode") === "1"; } catch (e) { return false; } };
+function stepToggle(onChange){
+  const b = el("button", "stepchip", T(stepMode() ? "stepOn" : "stepOff")); b.type = "button";
+  b.setAttribute("aria-pressed", String(stepMode()));
+  b.onclick = () => { try { localStorage.setItem("stepMode", stepMode() ? "0" : "1"); } catch (e) {} onChange(); };
+  return b;
+}
+// items: the steps (li or tr). hidden: things that give the answer away (answer, graph, computed numbers)
+function applyStepper(box, items, hidden){
+  if (!stepMode() || items.length < 2) return;
+  items = [...items];
+  let shown = 1;
+  items.forEach((it, i) => { it.hidden = i >= shown; });
+  hidden.forEach(h => h.classList.add("veiled"));
+  const bar = el("div", "stepbar");
+  const next = el("button", "btn small", ""); next.type = "button";
+  const all = el("button", "linkbtn", T("stepAll")); all.type = "button";
+  const upd = () => {
+    next.textContent = T("stepNext", shown + 1, items.length);
+    if (shown >= items.length) { bar.remove(); hidden.forEach(h => h.classList.remove("veiled")); }
+  };
+  next.onclick = () => { if (shown < items.length) { items[shown].hidden = false; shown++; items[shown - 1].scrollIntoView({ behavior: "smooth", block: "nearest" }); } upd(); };
+  all.onclick = () => { items.forEach(it => it.hidden = false); shown = items.length; upd(); };
+  bar.append(next, all); box.append(bar); upd();
+}
+// ---------- geometry: tap a row of the proof to see what it talks about ----------
+function geoPoints(svg){
+  const poly = svg.querySelector("polygon"), P = {};
+  const corners = poly ? poly.getAttribute("points").trim().split(/\s+/).map(p => p.split(",").map(Number)) : [];
+  svg.querySelectorAll("text").forEach(t => {
+    const k = t.textContent.trim();
+    if (!/^[A-F]$/.test(k)) return;
+    const x = +t.getAttribute("x"), y = +t.getAttribute("y") - 5;
+    let best = null, bd = 1e9; for (const c of corners) { const d = Math.hypot(c[0] - x, c[1] - y); if (d < bd) { bd = d; best = c; } }
+    P[k] = best && bd < 34 ? best : [x, y];
+  });
+  if (P.A && P.B && P.C && P.D) {      // O: where the diagonals meet
+    const [a, b, c, d] = [P.A, P.B, P.C, P.D], den = (a[0] - c[0]) * (b[1] - d[1]) - (a[1] - c[1]) * (b[0] - d[0]);
+    if (Math.abs(den) > 1e-6) { const t = ((a[0] - b[0]) * (b[1] - d[1]) - (a[1] - b[1]) * (b[0] - d[0])) / den; P.O = [a[0] + t * (c[0] - a[0]), a[1] + t * (c[1] - a[1])]; }
+  }
+  return { P, order: corners.map(c => Object.keys(P).find(k => P[k] === c)).filter(Boolean) };
+}
+function highlightGeo(svg, text){
+  svg.querySelectorAll(".hl").forEach(x => x.remove());
+  if (text == null) return false;
+  const { P, order } = geoPoints(svg);
+  const t = String(text).replace(/[⁦-⁩⁧⁨]/g, "");
+  const NS_ = "http://www.w3.org/2000/svg", g = document.createElementNS(NS_, "g"); g.setAttribute("class", "hl");
+  let any = false;
+  const wedge = (V, A, B) => {
+    if (!P[V] || !P[A] || !P[B]) return;
+    const v = P[V], u1 = [P[A][0] - v[0], P[A][1] - v[1]], u2 = [P[B][0] - v[0], P[B][1] - v[1]];
+    const n1 = Math.hypot(...u1), n2 = Math.hypot(...u2), r = Math.min(22, n1 * 0.45, n2 * 0.45);
+    const p1 = [v[0] + u1[0] / n1 * r, v[1] + u1[1] / n1 * r], p2 = [v[0] + u2[0] / n2 * r, v[1] + u2[1] / n2 * r];
+    const sweep = u1[0] * u2[1] - u1[1] * u2[0] > 0 ? 1 : 0;
+    const p = document.createElementNS(NS_, "path");
+    p.setAttribute("d", `M${f1(v[0])},${f1(v[1])} L${f1(p1[0])},${f1(p1[1])} A${f1(r)},${f1(r)} 0 0 ${sweep} ${f1(p2[0])},${f1(p2[1])} Z`);
+    p.setAttribute("style", "fill:var(--mark);fill-opacity:.85;stroke:var(--warn);stroke-width:1.5");
+    g.append(p); any = true;
+  };
+  const seg = (A, B) => {
+    if (!P[A] || !P[B]) return;
+    const l = document.createElementNS(NS_, "line");
+    l.setAttribute("x1", f1(P[A][0])); l.setAttribute("y1", f1(P[A][1])); l.setAttribute("x2", f1(P[B][0])); l.setAttribute("y2", f1(P[B][1]));
+    l.setAttribute("style", "stroke:var(--mark);stroke-width:8;stroke-linecap:round;opacity:.9");
+    g.append(l); any = true;
+  };
+  const nb = V => { const i = order.indexOf(V); if (i < 0) return null; return [order[(i + order.length - 1) % order.length], order[(i + 1) % order.length]]; };
+  let rest = t;
+  for (const m of t.matchAll(/∢\s*([A-FO]{1,3})/g)) {
+    const k = m[1];
+    if (k.length === 3) wedge(k[1], k[0], k[2]);
+    else { const n = nb(k); if (n) wedge(k, n[0], n[1]); }
+  }
+  rest = rest.replace(/∢\s*[A-FO]{1,3}/g, " ");
+  for (const m of rest.matchAll(/Δ\s*([A-FO]{3})/g)) { const k = m[1]; seg(k[0], k[1]); seg(k[1], k[2]); seg(k[0], k[2]); }
+  rest = rest.replace(/Δ\s*[A-FO]{3}/g, " ");
+  for (const m of rest.matchAll(/(?<![A-Za-z])([A-FO]{2})(?![A-Za-z])/g)) seg(m[1][0], m[1][1]);
+  if (any) svg.insertBefore(g, svg.querySelector("text"));
+  return any;
+}
+function linkProof(box){
+  const svg = box.querySelector(".fig svg"); if (!svg) return;
+  box.querySelectorAll("table.proof tbody tr").forEach(tr => {
+    const claim = tr.children[1] ? tr.children[1].textContent : "";
+    if (!/∢|Δ|(?<![A-Za-z])[A-FO]{2}(?![A-Za-z])/.test(claim.replace(/[⁦-⁩]/g, ""))) return;
+    tr.classList.add("tap"); tr.tabIndex = 0;
+    const go = () => {
+      const on = tr.classList.contains("on");
+      box.querySelectorAll("tr.on").forEach(x => x.classList.remove("on"));
+      if (on) { highlightGeo(svg, null); return; }
+      if (highlightGeo(svg, claim)) { tr.classList.add("on"); svg.closest(".fig").scrollIntoView({ behavior: "smooth", block: "nearest" }); }
+    };
+    tr.onclick = go; tr.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } };
+  });
+  const tw = box.querySelector(".proofwrap");
+  if (tw && box.querySelector("tr.tap")) tw.before(dirOf(el("p", "hint tiny", T("tapRow")), T("tapRow")));
+}
+
 // answers and steps: draw fractions and roots like in a notebook
 function mathEl(tag, cls, text){
   const e = el(tag, cls), plainT = String(text).replace(/[⁦-⁩]/g, "");
@@ -1985,8 +2234,12 @@ function calcGeo(quiet){
       if (r.svg !== "") { const fig=el("div","fig"); fig.innerHTML = r.svg !== undefined ? r.svg : trapSVG(r.angles, r.par, r.computed); box.append(fig); }
       const a=el("div","ans"); a.append(el("small",null,r.title), dirOf(el("div",null,r.answer), r.answer)); box.append(a);
       box.append(proofTable(r.rows));
-      const tg = askTargets(); if (tg.length) { const ab = askBox(r, tg); if (ab) box.prepend(ab); }
+      const tg = askTargets(); let ab = null; if (tg.length) { ab = askBox(r, tg); if (ab) box.prepend(ab); }
+      const rb = el("div", "resbar"); rb.append(stepToggle(() => calcGeo(true)));
+      if (r.rows.length > 2) out.append(rb);
       out.append(box);
+      linkProof(box);
+      applyStepper(box, box.querySelectorAll("table.proof tbody tr"), [a, ...(ab ? [ab] : []), ...box.querySelectorAll('.fig text[style*="--ok)"]')]);
       afterGeo(quiet, plain(r.answer));
       out.hidden = $("geoPanel").hidden;
       if (!quiet) out.scrollIntoView({behavior:"smooth",block:"start"});
