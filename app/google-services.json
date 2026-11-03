@@ -12,7 +12,20 @@
           "package_name": "com.mathsnap"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "852289270633-c6hh56q4hr1knc7hnmq8msakn92no3gq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mathsnap",
+            "certificate_hash": "2af2df70965e58da0db418d29b1d307b1c4bff94"
+          }
+        },
+        {
+          "client_id": "852289270633-6g5o34au64bqqr7kv2b3m190tdv0ijsr.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAb526ddpk8T8R66COOSfpVuIa_zYrtplI"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "852289270633-6g5o34au64bqqr7kv2b3m190tdv0ijsr.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
