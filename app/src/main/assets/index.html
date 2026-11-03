@@ -65,7 +65,7 @@ select{font-family:var(--sans)}
 .notes table{border-collapse:collapse;margin-top:8px;width:100%}
 .notes td{padding:4px 6px;border-bottom:1px solid var(--line);vertical-align:top}
 .notes td.f{font-family:var(--mono);white-space:nowrap}
-.fig svg{width:100%;max-width:320px;height:auto;display:block;margin:0 auto}
+.fig svg{direction:ltr;width:100%;max-width:320px;height:auto;display:block;margin:0 auto}
 .proofwrap{overflow-x:auto}
 table.proof{width:100%;border-collapse:collapse;font-size:14px;line-height:1.5}
 .proof th{background:var(--pen);color:var(--on-pen);padding:8px;font-weight:700;text-align:start}
@@ -131,7 +131,7 @@ button:focus-visible,textarea:focus,input:focus,select:focus{outline:2px solid v
     <p class="status" id="geoStatus" hidden></p>
     <label class="lbl" for="geoText" data-t="givensLbl"></label>
     <textarea id="geoText" dir="ltr" spellcheck="false" autocapitalize="off" autocomplete="off" style="min-height:64px"></textarea>
-    <p class="ex"><span data-t="givensEx"></span> <span dir="ltr">∢A = 110°, ∢C = 43°, AB ∥ DC · AB = AC, ∢A = 40° · AB = AC = 13, BC = 10 · AB = AD, CB = CD, AC = 12, BD = 8</span></p>
+    <p class="ex"><span data-t="givensEx"></span> <span dir="ltr">∢A = 110°, ∢C = 43°, AB ∥ DC · AB = AC, ∢A = 40° · AB = AC = 13, BC = 10 · AB = AD, CB = CD, AC = 12, BD = 8 · ∢BAC = 35°, ∢CBD = 70°</span></p>
     <button class="btn alt" id="geoRead" type="button" data-t="givensGo"></button>
     <p class="hint" id="geoDetected" hidden></p>
     <hr>
@@ -250,8 +250,8 @@ $("geoGallery").onclick = () => photo("geo", true);
 window.onPhotoStart = () => setStatus("reading");
 window.onPhotoCancelled = () => setStatus("");
 window.onOcrError = key => setStatus("ocr_" + key, true);
-window.onOcr = text => {
-  if (photoFor === "geo") return onGeoOcr(text);
+window.onOcr = (text, items) => {
+  if (photoFor === "geo") return onGeoOcr(text, items);
   const lines = String(text).split("\n").map(l => l.trim()).filter(l => /\d|=/.test(l));
   if (!lines.length) { setStatus("noMath", true); return; }
   $("problem").value = lines.join("\n");
@@ -662,7 +662,7 @@ function kiteAngles(v){
   }
   rows.push([LRI("∢BAC = ∢DAC = ∢A ÷ 2 = "+R(v.A/2)+"°"), g2("The main diagonal bisects the vertex angles","האלכסון הראשי חוצה את זוויות הראש")]);
   rows.push([LRI("∢BCA = ∢DCA = ∢C ÷ 2 = "+R(v.C/2)+"°"), g2("The main diagonal bisects the vertex angles","האלכסון הראשי חוצה את זוויות הראש")]);
-  return { rows, title:g2("Angles","הזוויות"), answer: [LRI("∢A = "+R(v.A)+"°   ∢C = "+R(v.C)+"°"), LRI("∢B = ∢D = "+R(v.B)+"°")].join("\n"), svg: kiteSVG(v, computed) };
+  return { rows, title:g2("Angles","הזוויות"), answer: [LRI("∢A = "+R(v.A)+"°   ∢C = "+R(v.C)+"°"), LRI("∢B = ∢D = "+R(v.B)+"°")].join("\n"), svg: kiteSVG(v, computed, {diag:true}) };
 }
 
 function kiteArea(v){
@@ -693,6 +693,76 @@ SH.isoCheck = {g:"iso", kind:"proof", noUnit:true, l:["Is the triangle isosceles
   f:[ANG4("A"),ANG4("B"),ANG4("C")], ex:{A:50,B:65}, calc:isoCheck};
 SH.kiteAngles = {g:"kite", kind:"proof", noUnit:true, l:["Kite: find the angles","דלתון: מציאת זוויות"],
   f:[ANG4("A"),ANG4("B"),ANG4("C"),ANG4("D")], ex:{A:120,C:60}, calc:kiteAngles};
+
+// ---- kite: angles made by the main and secondary diagonals ----
+function kiteDiagSVG(x, computed){
+  const P={A:[150,22],B:[58,96],C:[150,236],D:[242,96]};
+  const dash = "stroke:var(--pen);stroke-width:1.5;stroke-dasharray:5 4";
+  let s=`<svg viewBox="0 0 300 262" role="img" aria-label="ABCD"><polygon points="${P.A} ${P.B} ${P.C} ${P.D}" style="fill:var(--pen-soft);stroke:var(--pen);stroke-width:2.5;stroke-linejoin:round"/>`;
+  s += tickMarks(P.A,P.B,1) + tickMarks(P.A,P.D,1) + tickMarks(P.C,P.B,2) + tickMarks(P.C,P.D,2);
+  s += `<line x1="150" y1="22" x2="150" y2="236" style="${dash}"/><line x1="58" y1="96" x2="242" y2="96" style="${dash}"/>`;
+  s += `<path d="M150,84 h12 v12" style="fill:none;stroke:var(--ink);stroke-width:1.2"/>` + svgText(140,112,"O",LBL.replace("15px","12px"));
+  s += svgText(150,15,"A",LBL) + svgText(44,101,"B",LBL) + svgText(150,256,"C",LBL) + svgText(256,101,"D",LBL);
+  const st = k => angStyle(computed.includes(k)).replace("13px","12px");
+  const L = (px,py,k,anchor) => `<text x="${px}" y="${py}" text-anchor="${anchor}" style="${st(k)}">${x[k]!=null?R(x[k])+"°":"?"}</text>`;
+  s += L(145,64,"BAC","end") + L(155,64,"BAC","start") + L(145,206,"BCA","end") + L(155,206,"BCA","start");
+  s += L(78,90,"ABD","start") + L(78,113,"CBD","start") + L(222,90,"ABD","end") + L(222,113,"CBD","end");
+  return s + "</svg>";
+}
+function kiteDiag(v){
+  const keys=["A","B","C","BAC","BCA","ABD","CBD"];
+  for (const k of keys) if (v[k]!=null && !(v[k]>0 && v[k]<180)) throw TW().range;
+  for (const k of ["BAC","BCA","ABD","CBD"]) if (v[k]!=null && !(v[k]<90)) throw g2("∢"+k+" is an angle in a right triangle, so it must be less than 90°.","∢"+k+" היא זווית במשולש ישר זווית, ולכן היא חייבת להיות קטנה מ-90°.");
+  const given = keys.filter(k=>v[k]!=null);
+  if (!given.length) throw g2("Enter at least two angles.","הכניסו לפחות שתי זוויות.");
+  const x = {...v};
+  const rows = [[kiteGiven(), GV()],
+    [g2("AC is the main diagonal, BD is the other diagonal, they meet at O", LRI("AC")+" אלכסון ראשי, "+LRI("BD")+" אלכסון משני, נפגשים בנקודה "+LRI("O")), GV()],
+    [LRI(given.map(k=>"∢"+k+" = "+R(v[k])+"°").join(" ,  ")), GV()],
+    [LRI("AC ⊥ BD   (∢AOB = ∢BOC = 90°)"), g2("In a kite, the main diagonal is perpendicular to the other diagonal","בדלתון האלכסון הראשי מאונך לאלכסון המשני")]];
+  const BIS = g2("The main diagonal bisects the vertex angles","האלכסון הראשי חוצה את זוויות הראש");
+  const TRI = t => g2("In the right triangle "+t+", the two acute angles add up to 90°", "במשולש ישר הזווית "+LRI(t)+" סכום הזוויות החדות 90°");
+  const ADD = g2("Adding angles: ∢B = ∢ABD + ∢CBD","חיבור זוויות: "+LRI("∢B = ∢ABD + ∢CBD"));
+  const QUAD = g2("The angles of a quadrilateral add up to 360°, and ∢B = ∢D","סכום הזוויות במרובע 360°, ו-"+LRI("∢B = ∢D"));
+  const BAD = g2("These givens don't fit together. Check them.","הנתונים לא מתאימים זה לזה. בדקו אותם.");
+  let changed;
+  const set = (k, val, claim, why) => {
+    if (x[k]==null) { if (!(val>0 && val<360)) throw BAD; x[k]=val; rows.push([LRI(claim), why]); changed=true; }
+    else if (Math.abs(x[k]-val)>1e-9) throw BAD;
+  };
+  for (let n=0; n<20; n++) {
+    changed=false;
+    if (x.A!=null) set("BAC", x.A/2, "∢BAC = ∢DAC = ∢A ÷ 2 = "+R(x.A)+" ÷ 2 = "+R(x.A/2)+"°", BIS);
+    if (x.BAC!=null) set("A", 2*x.BAC, "∢A = 2 · ∢BAC = 2 · "+R(x.BAC)+" = "+R(2*x.BAC)+"°", BIS);
+    if (x.C!=null) set("BCA", x.C/2, "∢BCA = ∢DCA = ∢C ÷ 2 = "+R(x.C)+" ÷ 2 = "+R(x.C/2)+"°", BIS);
+    if (x.BCA!=null) set("C", 2*x.BCA, "∢C = 2 · ∢BCA = 2 · "+R(x.BCA)+" = "+R(2*x.BCA)+"°", BIS);
+    if (x.BAC!=null) set("ABD", 90-x.BAC, "∢ABD = 90° − ∢BAC = 90 − "+R(x.BAC)+" = "+R(90-x.BAC)+"°", TRI("AOB"));
+    if (x.ABD!=null) set("BAC", 90-x.ABD, "∢BAC = 90° − ∢ABD = 90 − "+R(x.ABD)+" = "+R(90-x.ABD)+"°", TRI("AOB"));
+    if (x.BCA!=null) set("CBD", 90-x.BCA, "∢CBD = 90° − ∢BCA = 90 − "+R(x.BCA)+" = "+R(90-x.BCA)+"°", TRI("BOC"));
+    if (x.CBD!=null) set("BCA", 90-x.CBD, "∢BCA = 90° − ∢CBD = 90 − "+R(x.CBD)+" = "+R(90-x.CBD)+"°", TRI("BOC"));
+    if (x.ABD!=null && x.CBD!=null) set("B", x.ABD+x.CBD, "∢B = ∢ABD + ∢CBD = "+R(x.ABD)+" + "+R(x.CBD)+" = "+R(x.ABD+x.CBD)+"°", ADD);
+    if (x.B!=null && x.ABD!=null) set("CBD", x.B-x.ABD, "∢CBD = ∢B − ∢ABD = "+R(x.B)+" − "+R(x.ABD)+" = "+R(x.B-x.ABD)+"°", ADD);
+    if (x.B!=null && x.CBD!=null) set("ABD", x.B-x.CBD, "∢ABD = ∢B − ∢CBD = "+R(x.B)+" − "+R(x.CBD)+" = "+R(x.B-x.CBD)+"°", ADD);
+    if (x.A!=null && x.C!=null) set("B", (360-x.A-x.C)/2, "∢B = ∢D = (360° − ∢A − ∢C) ÷ 2 = (360 − "+R(x.A)+" − "+R(x.C)+") ÷ 2 = "+R((360-x.A-x.C)/2)+"°", QUAD);
+    if (x.A!=null && x.B!=null) set("C", 360-x.A-2*x.B, "∢C = 360° − ∢A − ∢B − ∢D = 360 − "+R(x.A)+" − "+R(x.B)+" − "+R(x.B)+" = "+R(360-x.A-2*x.B)+"°", QUAD);
+    if (x.C!=null && x.B!=null) set("A", 360-x.C-2*x.B, "∢A = 360° − ∢C − ∢B − ∢D = 360 − "+R(x.C)+" − "+R(x.B)+" − "+R(x.B)+" = "+R(360-x.C-2*x.B)+"°", QUAD);
+    if (!changed) break;
+  }
+  if (keys.some(k=>x[k]==null)) throw g2("Not enough givens. Enter one more angle (for example ∢A, or an angle next to the diagonals).","אין מספיק נתונים. הכניסו עוד זווית אחת (למשל ∢A, או זווית ליד האלכסונים).");
+  rows.push([LRI("∢D = ∢B = "+R(x.B)+"°"), R_KITE_BD()]);
+  rows.push([LRI("∢ADB = ∢ABD = "+R(x.ABD)+"°"), g2("Triangle ABD is isosceles (AB = AD), so its base angles are equal","משולש "+LRI("ABD")+" שווה שוקיים "+LRI("(AB = AD)")+", ולכן זוויות הבסיס שוות")]);
+  rows.push([LRI("∢CDB = ∢CBD = "+R(x.CBD)+"°"), g2("Triangle CBD is isosceles (CB = CD), so its base angles are equal","משולש "+LRI("CBD")+" שווה שוקיים "+LRI("(CB = CD)")+", ולכן זוויות הבסיס שוות")]);
+  const computed = keys.filter(k=>v[k]==null);
+  return { rows, title:g2("All the angles","כל הזוויות"),
+    answer: ["∢A = "+R(x.A)+"°    ∢C = "+R(x.C)+"°", "∢B = ∢D = "+R(x.B)+"°",
+             "∢BAC = ∢DAC = "+R(x.BAC)+"°", "∢BCA = ∢DCA = "+R(x.BCA)+"°",
+             "∢ABD = ∢ADB = "+R(x.ABD)+"°", "∢CBD = ∢CDB = "+R(x.CBD)+"°", "∢AOB = 90°"].map(LRI).join("\n"),
+    svg: kiteDiagSVG(x, computed) };
+}
+SH.kiteDiag = {g:"kite", kind:"proof", noUnit:true, l:["Kite: angles with the diagonals","דלתון: זוויות עם האלכסון הראשי והמשני"],
+  f:[["A","∢A (°)","∢A (°)"],["B","∢B = ∢D (°)","∢B = ∢D (°)"],["C","∢C (°)","∢C (°)"],
+     ["BAC","∢BAC = ∢DAC (°)","∢BAC = ∢DAC (°)"],["BCA","∢BCA = ∢DCA (°)","∢BCA = ∢DCA (°)"],
+     ["ABD","∢ABD = ∢ADB (°)","∢ABD = ∢ADB (°)"],["CBD","∢CBD = ∢CDB (°)","∢CBD = ∢CDB (°)"]], ex:{BAC:35, CBD:70}, calc:kiteDiag};
 SH.kiteArea = {g:"kite", kind:"proof", l:["Kite: area and diagonals","דלתון: שטח ואלכסונים"],
   f:[["d1","Main diagonal AC","אלכסון ראשי AC"],["d2","Other diagonal BD","אלכסון משני BD"],["S","Area S","שטח S"]], ex:{d1:12,d2:8}, calc:kiteArea};
 
@@ -767,10 +837,17 @@ $("calc").onclick = () => calcGeo();
 function parseGivens(raw){
   let t = String(raw)
     .replace(/[֐-׿"'״׳]+/g, " ")          // Hebrew words: the phone scanner can't read them anyway
-    .replace(/[∠≮<]/g, "∢").replace(/\b[4K](?=[A-D]\s*=)/g, "∢")   // the angle sign is often read as < or 4
+    .replace(/[∠≮<]/g, "∢").replace(/\b[4K](?=[A-D]{1,3}\s*=)/g, "∢")   // the angle sign is often read as < or 4
     .replace(/(\|\||II|ll|\/\/|‖)/g, "∥").replace(/[−–—]/g, "-")
     .replace(/[׳']/g, "").replace(/(\d)\s*[oº˚]/g, "$1°");
-  const G = { ang:{}, len:{}, eq:[], par:[], letters:new Set() };
+  const G = { ang:{}, ang3:{}, len:{}, eq:[], par:[], letters:new Set() };
+  const CANON = {BAC:"BAC",CAB:"BAC",DAC:"BAC",CAD:"BAC",BCA:"BCA",ACB:"BCA",DCA:"BCA",ACD:"BCA",ABD:"ABD",DBA:"ABD",ADB:"ABD",BDA:"ABD",CBD:"CBD",DBC:"CBD",CDB:"CBD",BDC:"CBD"};
+  const ANG3 = /∢\s*([A-DO]{3})\s*=\s*(\d+(?:\.\d+)?)\s*(°)?/g;
+  for (const m of t.matchAll(ANG3)) {
+    let v3 = parseFloat(m[2]); if (!m[3] && v3 >= 180 && /0$/.test(m[2])) v3 = v3/10;
+    const c = CANON[m[1]]; if (c) { G.ang3[c] = v3; [...m[1]].forEach(ch => ch !== "O" && G.letters.add(ch)); G.letters.add("D"); }
+  }
+  t = t.replace(ANG3, " , ");
   // angles: ∢A = 110°   or   A = 110°
   const ANG = /(?:∢\s*)?(?<![A-Z])([A-D])\s*=\s*(\d+(?:\.\d+)?)\s*(°)?/g;
   for (const m of t.matchAll(ANG)) {
@@ -800,6 +877,7 @@ const lenOf = (G, seg) => { for (const k in G.len) if (sameSeg(k, seg)) return G
 
 function pickTool(G){
   const four = G.letters.has("D") || G.par.length || lenOf(G,"BD") != null || hasEq(G,"AB","AD");
+  if (Object.keys(G.ang3).length) return "kiteDiag";
   if (four) {
     const kite = hasEq(G,"AB","AD") || hasEq(G,"CB","CD") || lenOf(G,"AC") != null || lenOf(G,"BD") != null || G.S != null;
     if (kite) return (lenOf(G,"AC") != null || lenOf(G,"BD") != null || G.S != null) ? "kiteArea" : "kiteAngles";
@@ -820,8 +898,62 @@ function fillFor(tool, G){
   if (tool === "isoAngles") { vals.A = a.A; vals.B = a.B ?? a.C; }
   else if (tool === "isoHeight") { vals.L = lenOf(G,"AB") ?? lenOf(G,"AC"); vals.b = lenOf(G,"BC"); }
   else if (tool === "kiteArea") { vals.d1 = lenOf(G,"AC"); vals.d2 = lenOf(G,"BD"); vals.S = G.S; }
+  else if (tool === "kiteDiag") { vals.A = a.A; vals.B = a.B ?? a.D; vals.C = a.C; Object.assign(vals, G.ang3); }
   else for (const k of ["A","B","C","D"]) vals[k] = a[k];
   for (const [k] of SH[tool].f) { const i = $("g_"+k); if (i) i.value = vals[k] != null ? vals[k] : ""; }
+}
+
+// ---------- reading numbers written on the drawing itself ----------
+// The scanner gives every word with its position. Vertex letters (A–D, O) are found, and each number
+// is matched to the nearest vertex (an angle) or the nearest side (a length).
+function diagramGivens(items){
+  const inText = it => /=|∥|\|\||\/\//.test(it.line || "") || (it.line || "").trim().split(/\s+/).length > 3;
+  const V = {};
+  for (const it of items) {
+    const m = String(it.t).trim().match(/^([A-DO])$/);
+    if (!m || inText(it)) continue;
+    if (!V[m[1]]) V[m[1]] = it;
+  }
+  const verts = ["A","B","C","D"].filter(k => V[k]);
+  if (verts.length < 3) return [];
+  const pt = k => [V[k].x, V[k].y];
+  const dist = (a, b) => Math.hypot(a[0]-b[0], a[1]-b[1]);
+  const ring = verts;                      // A, B, C, (D) in drawing order
+  const sides = ring.map((k, i) => [k, ring[(i+1) % ring.length]]);
+  const scale = sides.reduce((t, [a,b]) => t + dist(pt(a), pt(b)), 0) / sides.length;
+  const segDist = (p, a, b) => { const [ax,ay]=a,[bx,by]=b, dx=bx-ax, dy=by-ay, L=dx*dx+dy*dy;
+    let u = L ? ((p[0]-ax)*dx + (p[1]-ay)*dy) / L : 0; const inside = u > 0.15 && u < 0.85; u = Math.max(0, Math.min(1, u));
+    return { d: Math.hypot(p[0]-(ax+u*dx), p[1]-(ay+u*dy)), inside }; };
+  const cross = (o, a, b) => (a[0]-o[0])*(b[1]-o[1]) - (a[1]-o[1])*(b[0]-o[0]);
+  const angles = {}, lens = {};
+  for (const it of items) {
+    if (inText(it)) continue;
+    const m = String(it.t).trim().match(/^(\d+(?:\.\d+)?)([°oº˚]?)$/);
+    if (!m) continue;
+    let v = parseFloat(m[1]); let deg = !!m[2];
+    if (!deg && v >= 180 && /0$/.test(m[1]) && v/10 < 180) { v = v/10; deg = true; }
+    const p = [it.x, it.y];
+    let best = null;
+    for (const k of verts) { const d = dist(p, pt(k)); if (!best || d < best.d) best = { k, d }; }
+    let bestSide = null;
+    for (const [a,b] of sides) { const r = segDist(p, pt(a), pt(b)); if (r.inside && (!bestSide || r.d < bestSide.d)) bestSide = { a, b, d: r.d }; }
+    const asAngle = deg ? best.d < 0.7*scale : (best.d < 0.4*scale && (!bestSide || best.d < bestSide.d*1.2));
+    if (asAngle && v < 360) {
+      let name = best.k;
+      if (V.O && ring.length === 4) {          // a diagonal splits this angle: find which part the number sits in
+        const i = ring.indexOf(best.k), n1 = ring[(i+3)%4], n2 = ring[(i+1)%4], w = ring[(i+2)%4];
+        const s0 = cross(pt(best.k), pt("O" in V ? "O" : w), p), s1 = cross(pt(best.k), pt("O"), pt(n1));
+        const near = Math.sign(s0) === Math.sign(s1) ? n1 : n2;
+        name = near + best.k + w;
+      }
+      if (!angles[name] || best.d < angles[name].d) angles[name] = { v, d: best.d };
+    } else if (bestSide && bestSide.d < 0.35*scale) {
+      const nm = bestSide.a + bestSide.b;
+      if (!lens[nm] || bestSide.d < lens[nm].d) lens[nm] = { v, d: bestSide.d };
+    }
+  }
+  return [...Object.entries(angles).map(([k,o]) => "∢"+k+" = "+R(o.v)+"°"),
+          ...Object.entries(lens).map(([k,o]) => k+" = "+R(o.v))];
 }
 let lastDetected = null;
 function clearGeo(){ lastDetected = null; $("geoDetected").hidden = true; $("geoResults").innerHTML = ""; $("geoResults").hidden = true; }
@@ -829,6 +961,7 @@ function showDetected(d){
   const box = $("geoDetected");
   const list = [
     ...Object.entries(d.G.ang).map(([k,v]) => "∢"+k+" = "+R(v)+"°"),
+    ...Object.entries(d.G.ang3 || {}).map(([k,v]) => "∢"+k+" = "+R(v)+"°"),
     ...d.G.eq.map(([x,y]) => x+" = "+y),
     ...Object.entries(d.G.len).map(([k,v]) => k+" = "+R(v)),
     ...d.G.par.map(([x,y]) => x+" ∥ "+y),
@@ -847,9 +980,14 @@ function readGivens(){
   calcGeo();
 }
 $("geoRead").onclick = readGivens;
-function onGeoOcr(text){
-  const t = String(text).trim();
+function onGeoOcr(text, items){
+  let t = String(text).trim();
   if (!/[A-D0-9]/.test(t)) { setGeoStatus("noMath", true); clearGeo(); return; }
+  const fromDrawing = Array.isArray(items) ? diagramGivens(items) : [];
+  if (fromDrawing.length) {
+    const written = t.split("\n").filter(l => /=|∥|\|\||\/\//.test(l));
+    t = written.concat(fromDrawing).join("\n");
+  }
   $("geoText").value = t;
   setGeoStatus("geoCheck");
   readGivens();

@@ -11,6 +11,7 @@ import androidx.core.content.FileProvider
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 
@@ -84,7 +85,25 @@ class MainActivity : AppCompatActivity() {
             return
         }
         recognizer.process(image)
-            .addOnSuccessListener { result -> js("onOcr(" + JSONObject.quote(result.text) + ")") }
+            .addOnSuccessListener { result ->
+                // Every word with its position in the photo, so a drawing's labels can be matched to vertices
+                val items = JSONArray()
+                result.textBlocks.forEachIndexed { bi, block ->
+                    block.lines.forEachIndexed { li, line ->
+                        for (word in line.elements) {
+                            val box = word.boundingBox ?: continue
+                            items.put(JSONObject()
+                                .put("t", word.text)
+                                .put("x", box.exactCenterX().toDouble())
+                                .put("y", box.exactCenterY().toDouble())
+                                .put("h", box.height())
+                                .put("line", line.text)
+                                .put("id", "$bi.$li"))
+                        }
+                    }
+                }
+                js("onOcr(" + JSONObject.quote(result.text) + "," + items.toString() + ")")
+            }
             .addOnFailureListener {
                 js("onOcrError('read')")
             }
