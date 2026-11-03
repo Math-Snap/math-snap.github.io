@@ -59,6 +59,9 @@
       already: "This is already as simple as it gets.",
       rDist: "Distributive law",
       rExtDist: "Extended distributive law: multiply every term in the first bracket by every term in the second",
+      rSquare: "Short multiplication formula: (a ± b)² = a² ± 2ab + b²",
+      sysNL: "Substitute and solve the equation with one unknown",
+      sysPairs: "The solutions (each pair)",
       rMinus: " (a minus before the brackets flips every sign inside)",
       rCombine: "Combine like terms",
       left: "Left side: ", right: "Right side: ",
@@ -125,6 +128,9 @@
       already: "התרגיל כבר מפושט עד הסוף.",
       rDist: "חוק הפילוג",
       rExtDist: "חוק הפילוג המורחב: כופלים כל איבר בסוגריים הראשונים בכל איבר בסוגריים השניים",
+      rSquare: "נוסחת הכפל המקוצר: ⁦(a ± b)² = a² ± 2ab + b²⁩",
+      sysNL: "מציבים ופותרים משוואה עם נעלם אחד",
+      sysPairs: "הפתרונות (כל זוג)",
       rMinus: " (מינוס לפני הסוגריים הופך את כל הסימנים בפנים)",
       rCombine: "כינוס איברים דומים",
       left: "אגף שמאל: ", right: "אגף ימין: ",
@@ -760,8 +766,13 @@
     else if (node.type === "OperatorNode" && node.fn === "unaryMinus") topTerms(node.args[0], -sign, out);
     else out.push({ node, sign });
   }
+  let SQUARE = false;
   function factorList(node, out) {
     node = unparen(node);
+    if (node.type === "OperatorNode" && node.fn === "pow" && isSum(node.args[0])) {
+      const e = constOf(node.args[1]);
+      if (Number.isInteger(e) && e >= 2 && e <= 4) { if (e === 2) SQUARE = true; for (let i = 0; i < e; i++) out.push(unparen(node.args[0])); return; }
+    }
     if (node.type === "OperatorNode" && node.fn === "multiply") { factorList(node.args[0], out); factorList(node.args[1], out); }
     else out.push(node);
   }
@@ -774,7 +785,42 @@
       return i === 0 ? (sg < 0 ? "-" : "") + s : (sg < 0 ? " - " : " + ") + s;
     }).join("");
   }
+  // polynomial in several letters as {"a^2*b": coef}
+  function polyOf(node) {
+    node = unparen(node);
+    const add = (P, Q, k) => { const R = Object.assign({}, P); for (const m in Q) { R[m] = (R[m] || 0) + k * Q[m]; if (Math.abs(R[m]) < 1e-12) delete R[m]; } return R; };
+    const mulMono = (a, b) => { const pw = {}; for (const m of [a, b]) if (m) m.split("*").forEach(f => { const [v, e] = f.split("^"); pw[v] = (pw[v] || 0) + (+e || 1); }); return Object.keys(pw).sort().map(v => pw[v] === 1 ? v : v + "^" + pw[v]).join("*"); };
+    const mul = (P, Q) => { let R = {}; for (const a in P) for (const b in Q) R = add(R, { [mulMono(a, b)]: P[a] * Q[b] }, 1); return R; };
+    switch (node.type) {
+      case "ConstantNode": if (typeof node.value !== "number") throw 0; return node.value ? { "": node.value } : {};
+      case "SymbolNode": if (KNOWN.has(node.name)) throw 0; return { [node.name]: 1 };
+      case "OperatorNode": {
+        const [a, b] = node.args;
+        if (node.fn === "unaryMinus") return add({}, polyOf(a), -1);
+        if (node.fn === "unaryPlus") return polyOf(a);
+        if (node.fn === "add") return add(polyOf(a), polyOf(b), 1);
+        if (node.fn === "subtract") return add(polyOf(a), polyOf(b), -1);
+        if (node.fn === "multiply") return mul(polyOf(a), polyOf(b));
+        if (node.fn === "divide") { const d = polyOf(b), ks = Object.keys(d); if (ks.length !== 1 || ks[0] !== "") throw 0; return add({}, polyOf(a), 1 / d[""]); }
+        if (node.fn === "pow") { const e = constOf(b); if (!(Number.isInteger(e) && e >= 0 && e <= 12)) throw 0; let R = { "": 1 }; const P = polyOf(a); for (let i = 0; i < e; i++) R = mul(R, P); return R; }
+      }
+    }
+    throw 0;
+  }
+  function polyStr(P) {
+    const pw = m => { const o = {}; if (m) m.split("*").forEach(f => { const [v, e] = f.split("^"); o[v] = +e || 1; }); return o; };
+    const deg = m => Object.values(pw(m)).reduce((t, e) => t + e, 0);
+    const letters = [...new Set(Object.keys(P).flatMap(m => Object.keys(pw(m))))].sort();
+    const keys = Object.keys(P).sort((x, y) => { if (deg(y) !== deg(x)) return deg(y) - deg(x); const a = pw(x), b = pw(y); for (const v of letters) if ((a[v] || 0) !== (b[v] || 0)) return (b[v] || 0) - (a[v] || 0); return 0; });
+    if (!keys.length) return "0";
+    return keys.map((m, i) => {
+      const c = approxRat(P[m]), neg_ = val(c) < 0, ac = abs(c), cs = fmt(ac).replace("−", "");
+      const body = m === "" ? cs : (isInt(ac) && ac.n === 1 ? "" : (ac.exact && ac.d !== 1 ? "(" + cs + ")*" : cs + "*")) + m;
+      return (i === 0 ? (neg_ ? "-" : "") : neg_ ? " - " : " + ") + body;
+    }).join("");
+  }
   function simplifyStr(str) {
+    try { const node = M().parse(str); if (symbols(node).length > 1) return polyStr(polyOf(node)); } catch (e) { /* not a polynomial */ }
     try { return M().rationalize(str).toString(); } catch (e) { return M().simplify(str).toString(); }
   }
   // Returns steps to simplify one expression (expand brackets, then combine like terms)
@@ -783,6 +829,7 @@
     const terms = [];
     topTerms(M().parse(str), 1, terms);
     let used = false, extended = false, minusFront = false;
+    SQUARE = false;
     const pieces = [];
     for (const tm of terms) {
       const fs = []; factorList(tm.node, fs);
@@ -794,7 +841,7 @@
         const st = []; topTerms(s, 1, st);
         combos = combos.flatMap(c => st.map(x => ({ sign: c.sign * x.sign, parts: c.parts.concat("(" + x.node.toString() + ")") })));
       }
-      for (const c of combos) pieces.push({ sign: c.sign, s: M().simplify(c.parts.join("*") || "1").toString() });
+      for (const c of combos) pieces.push({ sign: c.sign, s: (() => { const x = c.parts.join("*") || "1"; try { return simplifyStr(x); } catch (e) { return M().simplify(x).toString(); } })() });
     }
     const orig = pretty(str);
     const combined = pretty(simplifyStr(str));
@@ -802,7 +849,7 @@
     let last = orig;
     if (used) {
       const expanded = pretty(joinSigned(pieces));
-      steps.push([orig + " = " + expanded, prefix + (extended ? t("rExtDist") : t("rDist")) + (minusFront ? t("rMinus") : "")]);
+      steps.push([orig + " = " + expanded, prefix + (SQUARE ? t("rSquare") : extended ? t("rExtDist") : t("rDist")) + (minusFront ? t("rMinus") : "")]);
       last = expanded;
     }
     const nTerms = x => { const o = []; topTerms(M().parse(x), 1, o); return o.length; };
@@ -1221,6 +1268,45 @@
     const chk = E.map(e => fmt(ops.add(m(e.a, X), m(e.b, Y))) + " = " + fmt(e.c) + " ✓").join("   ,   ");
     steps.push([chk, t("sysCheck")]);
     return { answer: iso(x + " = " + fmtShort(X)) + " ,  " + iso(y + " = " + fmtShort(Y)), steps };
+  }
+
+  // ---------- two equations where one is not linear: substitution ----------
+  function systemNL(lines) {
+    let vars;
+    try { vars = [...new Set(lines.flatMap(l => l.split("=").flatMap(p => symbols(M().parse(p)))))].sort(); } catch (e) { return null; }
+    if (vars.length !== 2) return null;
+    const E = lines.map(l => linear2(l, vars));
+    const li = E.findIndex(e => e && (val(e.a) !== 0 || val(e.b) !== 0));
+    if (li < 0 || E[1 - li]) return null;
+    const lin = E[li], other = lines[1 - li], steps = [];
+    const unit = k => isInt(k) && Math.abs(k.n) === 1;
+    let iv = 0;
+    if (val(lin.a) === 0 || (!unit(lin.a) && unit(lin.b) && val(lin.b) !== 0)) iv = 1;
+    const isoV = vars[iv], w = vars[1 - iv], kIso = iv ? lin.b : lin.a, kW = iv ? lin.a : lin.b;
+    const c0 = ops.divide(lin.c, kIso), c1 = neg(ops.divide(kW, kIso));
+    const exprS = combo([[c0, ""], [c1, w]]);
+    steps.push(["(" + (li + 1) + ")   " + combo([[lin.a, vars[0]], [lin.b, vars[1]]]) + " = " + fmt(lin.c), t("sysArrange", li + 1)]);
+    steps.push([isoV + " = " + exprS, t("sysIsolate", isoV, li + 1)]);
+    const repl = "(" + polyStr({ "": val(c0), [w]: val(c1) }) + ")";
+    const sub = str => M().parse(str).transform(n => (n.type === "SymbolNode" && n.name === isoV ? M().parse(repl) : n)).toString();
+    const [ol, orr] = other.split("=");
+    const L = sub(ol), Rr = sub(orr);
+    steps.push([pretty(L) + " = " + pretty(Rr), t("sysSub", 2 - li)]);
+    let r; try { r = equation(L, Rr); } catch (e) { return null; }
+    steps.push(...r.steps.filter(x => x[1] !== t("check")).map(([c, why]) => [c, why || t("sysNL")]));
+    const roots = [...String(r.answer).replace(/[⁦-⁩]/g, "").matchAll(new RegExp(w + "\\s*[=≈]\\s*(−?[\\d./]+)", "g"))].map(m => { try { return M().evaluate(m[1].replace("−", "-")); } catch (e) { return null; } }).filter(x => x !== null);
+    if (!roots.length) return { answer: r.answer, steps };
+    const chk = lines.map(l => { const [a, b] = l.split("="); return [M().parse(a).compile(), M().parse(b).compile()]; });
+    const pairs = [];
+    for (const x of roots) {
+      const y = val(c0) + val(c1) * x;
+      steps.push([isoV + " = " + exprS.split(w).join(paren(approxRat(x))) + " = " + NS(y), t("sysBack", isoV)]);
+      const sc = Object.assign({}, SCOPE, { [w]: x, [isoV]: y });
+      if (chk.every(([a, b]) => { try { return close(a.evaluate(sc), b.evaluate(sc)); } catch (e) { return false; } })) pairs.push(vars.map(v => v === w ? x : y));
+    }
+    const pairS = pairs.map(([p, q]) => "(" + vars[0] + ", " + vars[1] + ") = (" + NS(p) + " , " + NS(q) + ")");
+    steps.push([pairS.join("   ,   ") || "—", t("sysPairs")]);
+    return { answer: pairs.length ? pairs.map(([p, q]) => iso(vars[0] + " = " + NS(p) + " ,  " + vars[1] + " = " + NS(q))).join(t("or")) : t("noSolution"), steps };
   }
 
   // ---------- exponential and log equations ----------
@@ -1998,6 +2084,8 @@
 
   // ---------- reading the text ----------
   const WORDS_OK = /^(sqrt|sin|cos|tan|abs|pi|ln|log|logb|exp)$/i;
+  const COMMONW = /^(of|is|to|in|at|by|and|the|for|if|it|on|or|as|an|no|so|do|be|are|how|its|you|we|me|my|he|us|am|go|all|get|set|let|use|now|new|any|has|was|not|but|can|out|one|two|six|ten|per|cm|mm|km|kg|deg|ans|sol|ex|eq|q|hw)$/i;
+  const FNW = /^(sin|cos|tan|abs|pi|log|ln|exp|logb|sqrt|frac)$/;
   function fixLogs(s) {
     s = s.replace(/log\s*([₀-₉]+)/g, (m, d) => "log_" + [...d].map(c => "₀₁₂₃₄₅₆₇₈₉".indexOf(c)).join(""));
     const tag = b => (b === "10" ? "LOGTEN" : "LOGB<" + b + ">");
@@ -2033,8 +2121,9 @@
     s = s.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹⁻]+/g, m => "^(" + m.split("").map(c => "0123456789-"["⁰¹²³⁴⁵⁶⁷⁸⁹⁻".indexOf(c)]).join("") + ")");
     s = s.replace(/(\d+(?:\.\d+)?)\s*%\s*of\b/gi, "($1/100)*").replace(/%/g, "/100");
     s = s.replace(/[֐-׿][֐-׿"'״׳]*\s*:?/g, " ");
-    s = s.replace(/\b[a-z]{2,}\b\s*:?/gi, w => (WORDS_OK.test(w.replace(/[\s:]/g, "")) ? w : " "));
+    s = s.replace(/\b[a-z]{2,}\b\s*:?/gi, w => { const x = w.replace(/[\s:]/g, ""); return WORDS_OK.test(x) || (x.length <= 3 && /^[a-z]+$/.test(x) && !COMMONW.test(x) && !/:/.test(w)) ? w : " "; });
     s = s.replace(/^\s*(\(?\d{1,2}[.)]|\(?[a-hA-H][.)])\s+/, " ");
+    s = s.replace(/^\s*[a-z]\s*:(?=.*[=<>])/i, " ");
     s = s.replace(/^[\s:]+/, "");
     s = s.replace(/:/g, "/");
     s = s.replace(/(\d),(\d{3})(?!\d)/g, "$1$2").replace(/(\d),(\d)/g, "$1.$2");
@@ -2043,6 +2132,7 @@
     if (!s.includes("=")) s = s.replace(/(\d)\s*[xX]\s*(?=\d)/g, "$1*");
     s = s.replace(/X/g, "x");
     s = fixLogs(s);
+    s = s.replace(/(?<![a-z])[a-z]{2,3}(?![a-z])/g, w => (FNW.test(w) ? w : w.split("").join("*")));
     s = s.replace(/(^|[^a-z])([a-z])\s*\(/gi, "$1$2*(");   // x(x-2) means x times (x-2)
     s = s.replace(/(\d+)\s+(\d+)\/(\d+)/g, "($1+$2/$3)");
     return s.replace(/^[\s,;]+|[\s,;]+$/g, "").trim();
@@ -2051,7 +2141,7 @@
     return prettyLogs(String(s).replace(/\s+/g, ""))
       .replace(/\^\((-?\d+)\)/g, "^$1")
       .replace(/(\d)\*([a-z(])/gi, "$1$2")
-      .replace(/(^|[^a-z])([a-z])\*([a-z](?![a-z])|\()/gi, "$1$2$3")
+      .replace(/(^|[^a-z])([a-z]+)\*([a-z](?![a-z])|\()/gi, "$1$2$3").replace(/(^|[^a-z])([a-z]+)\*([a-z](?![a-z])|\()/gi, "$1$2$3").replace(/(^|[^a-z])([a-z]+)\*([a-z](?![a-z])|\()/gi, "$1$2$3")
       .replace(/sqrt\(/g, "√(").replace(/\bpi\b/g, "π")
       .replace(/\^(-?\d+)/g, (m, d) => sup(d))
       .replace(/\*/g, " · ").replace(/\//g, "/").replace(/<=/g, "≤").replace(/>=/g, "≥").replace(/=/g, " = ").replace(/([<>≤≥])/g, " $1 ").replace(/\+/g, " + ")
@@ -2060,8 +2150,9 @@
 
   function tidy(r) {
     if (!r) return r;
-    const fix = x => String(x).replace(/=\s*≈/g, "≈");
+    const fix = x => String(x).replace(/=\s*≈/g, "≈").replace(/evar/g, "e");
     if (r.answer) r.answer = fix(r.answer);
+    if (r.problem) r.problem = fix(r.problem);
     if (r.steps) r.steps = r.steps.map(([c, w]) => [fix(c), w]);
     return r;
   }
@@ -2075,7 +2166,8 @@
     }
     try { const adv = advanced(raw); if (adv) return adv; }
     catch (e) { if (e.friendly) return { problem: pretty(normalize(raw)), error: e.message }; }
-    const s = normalize(raw);
+    let s = normalize(raw);
+    if (/=/.test(s) && /(?<![a-z])e(?![a-z^(])/.test(s) && !/e\s*\^|e\*\(/.test(s) && !/(?<![a-z])(?!e\b)[a-df-z](?![a-z(])/.test(s.replace(/\b(?:sqrt|sin|cos|tan|abs|pi|log10|log2|logb|log|exp)\b/g, ""))) s = s.replace(/(?<![a-z])e(?![a-z])/g, "evar");
     if (!/[0-9]/.test(s) && !/[a-z]/i.test(s)) return null;
     const display = pretty(s);
     try {
@@ -2108,9 +2200,9 @@
         const ns = lines.map(normalize);
         const vs = ns.map(l => new Set(l.split("=").flatMap(p => symbols(M().parse(p)))));
         const all = new Set(vs.flatMap(x => [...x]));
-        if (all.size === 2 && [...all].every(x => /^[a-z]$/.test(x)) && vs.some(x => x.size === 2)) {
-          const r = system(ns);
-          if (r) return [Object.assign({ problem: ns.map(pretty).join("   ,   ") }, r)];
+        if (all.size === 2 && [...all].every(x => /^[a-z]$/.test(x)) && (vs.some(x => x.size === 2) || vs.every(x => x.size >= 1))) {
+          const r = system(ns) || systemNL(ns);
+          if (r) return [tidy(Object.assign({ problem: ns.map(pretty).join("   ,   ") }, r))];
         }
       } catch (e) { /* treat the lines one by one */ }
     }
