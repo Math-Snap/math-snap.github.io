@@ -298,7 +298,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
         <div class="meta">
           <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg>עברית ואנגלית</span>
           <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg>בלי פרסומות</span>
-          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg>גרסה 5.2</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg><span id="verText">הגרסה האחרונה</span></span>
         </div>
       </div>
       <div class="phone-wrap">
@@ -429,7 +429,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
           <h2>מוכנים לנסות?</h2>
           <p>האפליקציה חינמית, בלי פרסומות. מורידים את קובץ ה-APK ומתקינים, בלי חנות.</p>
           <a class="btn light" href="https://github.com/eitan1234f/Math-snap/releases/latest/download/MathSnap.apk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>הורדת MathSnap.apk</a>
-          <small>לאנדרואיד 7 ומעלה · 31 MB</small>
+          <small>לאנדרואיד 7 ומעלה<span id="sizeText"></span></small>
         </div>
         <ol>
           <li>מורידים את MathSnap.apk ופותחים אותו מההורדות.</li>
@@ -465,6 +465,18 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
   const nav = document.getElementById("nav");
   const onScroll = () => nav.classList.toggle("scrolled", window.scrollY > 8);
   window.addEventListener("scroll", onScroll, { passive: true }); onScroll();
+
+  // newest version and size, straight from GitHub (the download links always give the newest APK)
+  fetch("https://api.github.com/repos/eitan1234f/Math-snap/releases/latest")
+    .then(r => r.ok ? r.json() : null)
+    .then(rel => {
+      if (!rel) return;
+      const m = String(rel.name || "").match(/(\d+(?:\.\d+)+)/);
+      if (m) document.getElementById("verText").textContent = "גרסה " + m[1];
+      const apk = (rel.assets || []).find(a => /\.apk$/i.test(a.name));
+      if (apk) document.getElementById("sizeText").textContent = " · " + Math.round(apk.size / 1048576) + " MB";
+    })
+    .catch(() => {});
 
   // replay an animation by toggling the "run" class (the resting state is always the finished picture)
   const replay = el => { el.classList.remove("run"); void el.offsetWidth; el.classList.add("run"); };
