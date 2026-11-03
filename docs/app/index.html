@@ -50,7 +50,8 @@ body{margin:0;background-color:var(--bg);color:var(--ink);font:16px/1.5 var(--sa
 .logo{width:44px;height:44px;border-radius:14px;background:var(--pen);display:grid;place-items:center;flex:none;box-shadow:0 6px 16px rgba(51,70,224,.28)}
 .logo svg{width:28px;height:28px}
 h1{margin:0;font-size:22px;line-height:1.1;font-weight:800;letter-spacing:-.01em}
-.sub{margin:2px 0 0;color:var(--muted);font-size:13px;line-height:1.35}
+.sub{margin:2px 0 0;color:var(--muted);font-size:13px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand>div{min-width:0}
 .lang{display:flex;background:var(--surface);border-radius:999px;padding:3px;box-shadow:var(--shadow);flex:none}
 .lang button{border:0;background:none;color:var(--muted);font:600 13px/1 var(--sans);padding:9px 12px;border-radius:999px}
 .lang button[aria-pressed="true"]{background:var(--pen);color:var(--on-pen)}
@@ -67,10 +68,14 @@ h1{margin:0;font-size:22px;line-height:1.1;font-weight:800;letter-spacing:-.01em
 .btn:active{transform:scale(.98);background:var(--pen-press)}
 .btn svg{width:22px;height:22px;flex:none}
 [dir="rtl"] .btn .go{transform:scaleX(-1)}
-.tile{border:0;border-radius:16px;background:var(--pen-soft);color:var(--pen);padding:14px 10px;font:600 15px/1.2 var(--sans);
-  display:flex;flex-direction:column;align-items:center;gap:8px;transition:transform .12s ease}
+.tile{border:0;border-radius:16px;background:var(--pen-soft);color:var(--pen);padding:8px 12px;min-height:58px;font:600 15px/1.2 var(--sans);
+  display:flex;flex-direction:row;align-items:center;justify-content:center;gap:10px;transition:transform .15s ease,box-shadow .2s ease,background .2s ease}
 .tile:active{transform:scale(.97)}
-.tile .ic{width:44px;height:44px;border-radius:50%;background:var(--surface);display:grid;place-items:center}
+.tile .ic{width:38px;height:38px;border-radius:50%;background:var(--surface);display:grid;place-items:center;flex:none}
+.tip{margin:-6px 2px 0;font-size:12.5px;line-height:1.5;color:var(--muted)}
+#geoChips .chip{max-width:250px;overflow:hidden;text-overflow:ellipsis}
+.steps .math{overflow-x:auto}
+.steps .math.mv .pl,.prob.mv .pl{white-space:normal}
 .tile svg{width:24px;height:24px}
 
 /* inputs */
@@ -79,7 +84,7 @@ h1{margin:0;font-size:22px;line-height:1.1;font-weight:800;letter-spacing:-.01em
 .padbtn{display:inline-flex;align-items:center;gap:6px;border:0;background:var(--pen-soft);color:var(--pen);border-radius:999px;padding:7px 12px;font:600 13px/1 var(--sans);flex:none;cursor:pointer}
 .padbtn svg{width:18px;height:18px}
 .padbtn[aria-expanded="true"]{background:var(--pen);color:var(--on-pen)}
-.preview{text-align:left;background:var(--surface-2);border-radius:14px;padding:10px 14px;font:500 20px/1.4 var(--mono);color:var(--ink);overflow-x:auto;display:flex;flex-direction:column;gap:8px}
+.preview{text-align:left;background:transparent;border:1.5px dashed var(--line);border-radius:14px;padding:10px 14px;font:500 20px/1.4 var(--mono);color:var(--ink);overflow-x:auto;display:flex;flex-direction:column;gap:8px}
 .preview .pl,.meditor .pl,.mv .pl{display:block;white-space:nowrap;min-height:30px;line-height:2.2}
 .meditor{min-height:104px;background:var(--surface-2);border:1.5px solid var(--pen);border-radius:14px;padding:10px 14px;font:500 22px/1.4 var(--mono);color:var(--ink);overflow-x:auto;text-align:left;cursor:text}
 .meditor .pl{min-height:34px}
@@ -333,6 +338,34 @@ body[data-bg="plain"]{background-image:none}
 .bank .t b{color:var(--pen);font-weight:700}
 .bank mark{background:var(--mark);color:inherit;border-radius:3px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+@keyframes pop{0%{opacity:0;transform:scale(.4)}70%{transform:scale(1.15)}100%{opacity:1;transform:scale(1)}}
+@keyframes sweep{from{background-size:0% 100%}to{background-size:100% 100%}}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes nav{0%{transform:scale(1)}40%{transform:scale(1.22) translateY(-2px)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:no-preference){
+  .panel:not([hidden]),#mePanel:not([hidden]){animation:rise .38s cubic-bezier(.2,.8,.2,1) both}
+  .result{animation:rise .45s cubic-bezier(.2,.8,.2,1) both}
+  .steps li{animation:rise .42s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0) * 70ms + 120ms)}
+  table.proof tbody tr{animation:fadein .4s ease both;animation-delay:calc(var(--i,0) * 55ms + 150ms)}
+  .ans>div{background-repeat:no-repeat;background-size:100% 100%;animation:sweep .7s cubic-bezier(.6,0,.2,1) .25s both}
+  .ans>div[dir="rtl"]{background-position:right}
+  .gfig,.fig,.askbox{animation:rise .5s cubic-bezier(.2,.8,.2,1) both .1s}
+  .plot .draw{stroke-dasharray:1;stroke-dashoffset:1;animation:draw 1.2s cubic-bezier(.4,0,.2,1) .35s forwards}
+  .plot .fade{animation:fadein .8s ease both .35s}
+  .plot circle,.plot .pl2{transform-box:fill-box;transform-origin:center;animation:pop .45s ease both 1.2s}
+  .nline .seg{transform-box:fill-box;transform-origin:center;animation:grow .6s cubic-bezier(.2,.8,.2,1) both .3s}
+  .nline circle{transform-box:fill-box;transform-origin:center;animation:pop .4s ease both .75s}
+  .hl>*{transform-box:fill-box;transform-origin:center;animation:pop .35s ease both}
+  .bottomnav button[aria-selected="true"] svg{animation:nav .4s ease}
+  .chip{transition:transform .15s ease,background .2s ease,border-color .2s ease}
+  .chip:active{transform:scale(.95)}
+  .tile:hover,.btn:hover{box-shadow:0 8px 20px rgba(51,70,224,.18)}
+  .stepbar{animation:fadein .3s ease both}
+  .err{animation:rise .35s ease both}
+}
 </style>
 </head>
 <body>
@@ -375,10 +408,10 @@ body[data-bg="plain"]{background-image:none}
     <div class="phead"><h2 data-t="geoTitle"></h2><p data-t="geoSub"></p></div>
     <label class="lbl" for="geoText" data-t="givensLbl"></label>
     <textarea id="geoText" dir="auto" spellcheck="false" autocomplete="off" style="min-height:120px;font-family:var(--sans);font-size:17px"></textarea>
-    <p class="hint" data-t="givensTip" style="margin-top:-4px"></p>
+    <p class="tip" data-t="givensTip"></p>
     <label class="lbl" for="geoAsk" data-t="askLbl"></label>
     <textarea id="geoAsk" dir="auto" spellcheck="false" autocomplete="off" style="min-height:64px;font-family:var(--sans);font-size:17px"></textarea>
-    <div><p class="exlabel" data-t="tryOne"></p><div class="chips wrapchips" id="geoChips"></div></div>
+    <div><p class="exlabel" data-t="tryOne"></p><div class="chips" id="geoChips"></div></div>
     <button class="btn" id="geoRead" type="button"><span data-t="givensGo"></span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
     <p class="status" id="geoStatus" hidden></p>
     <p class="hint" id="geoDetected" hidden></p>
@@ -435,7 +468,7 @@ const FSI = s => "⁨" + s + "⁩", LRI = s => "⁦" + s + "⁩";
 // ---------- words ----------
 const UI = {
   en: {
-    sub:"Snap it, type it, solved step by step",
+    sub:"Snap or type it, see every step",
     tabMe:"Mine",
     bankTitle:"Theorem bank", bankSub:"Every theorem, definition and reason you can write in a proof", bankSearch:"Search a theorem…", bankAll:"All", bankNone:"No theorem matches that search.",
     custom:"Customize", done:"Done", reset:"Reset to default", themeH:"Theme", themeSystem:"Like the phone", themeLight:"Light", themeDark:"Dark",
@@ -461,7 +494,7 @@ const UI = {
     info_reset_sent:"We sent you an email with a link to reset your password.", needEmail:"Enter your email and password.", needEmailOnly:"Enter your email first.",
     solveTitle:"New problem", solveSub:"Take a photo, pick one from the gallery, or type it", tryOne:"Try one:",
     geoTitle:"Geometry", geoSub:"Write the givens and get a proof with claims and reasons", reminder:"Reminder: definitions and theorems", tabSolve:"Solve", tabGeo:"Geometry",
-    camera:"Take photo", gallery:"Gallery", problemLbl:"Problem (one per line, fix anything misread)", padOpen:"Math keys", padClose:"Phone keyboard",
+    camera:"Take photo", gallery:"Gallery", problemLbl:"Problem", problemPh:"One problem per line. Fix anything the camera misread.", padOpen:"Math keys", padClose:"Phone keyboard",
     geoCheck:"These are the givens from the photo. Fix anything that's wrong, and add what's missing in words, then tap Solve.",
     ocrNoGivens:"I didn't find givens in the photo (like an angle with a number or a side with a length). Write them in the box above.",
     shTrap:"trapezoid", shKite:"kite", shIso:"isosceles triangle", shTri:"triangle",
@@ -487,7 +520,7 @@ const UI = {
     angBig:"Those two angles add up to 180° or more, so they can't be in one triangle.",
   },
   he: {
-    sub:"מצלמים, מקלידים, ומקבלים פתרון שלב אחרי שלב",
+    sub:"מצלמים או מקלידים, ומקבלים כל שלב",
     tabMe:"שלי",
     bankTitle:"בנק משפטים", bankSub:"כל המשפטים, ההגדרות והנימוקים שאפשר לכתוב בהוכחה", bankSearch:"חיפוש משפט…", bankAll:"הכול", bankNone:"אין משפט שמתאים לחיפוש.",
     custom:"התאמה אישית", done:"סיום", reset:"חזרה לברירת המחדל", themeH:"ערכת צבעים", themeSystem:"כמו בטלפון", themeLight:"בהיר", themeDark:"כהה",
@@ -513,7 +546,7 @@ const UI = {
     info_reset_sent:"שלחנו לאימייל קישור לאיפוס הסיסמה.", needEmail:"כתבו אימייל וסיסמה.", needEmailOnly:"כתבו קודם את האימייל.",
     solveTitle:"תרגיל חדש", solveSub:"צלמו, בחרו מהגלריה או הקלידו", tryOne:"נסו דוגמה:",
     geoTitle:"גאומטריה", geoSub:"כתבו את הנתונים וקבלו הוכחה עם טענה ונימוק", reminder:"תזכורת: הגדרות ומשפטים", tabSolve:"פתרון", tabGeo:"גאומטריה",
-    camera:"צילום", gallery:"גלריה", problemLbl:"התרגיל (אחד בכל שורה, תקנו מה שנקרא לא נכון)", padOpen:"מקלדת מתמטיקה", padClose:"מקלדת רגילה",
+    camera:"צילום", gallery:"גלריה", problemLbl:"התרגיל", problemPh:"תרגיל אחד בכל שורה. אפשר לתקן מה שהמצלמה קראה לא נכון.", padOpen:"מקלדת מתמטיקה", padClose:"מקלדת רגילה",
     geoCheck:"אלה הנתונים מהתמונה. תקנו מה שלא נכון והוסיפו במילים מה שחסר, ואז לחצו פתור.",
     ocrNoGivens:"לא מצאתי נתונים בתמונה (כמו זווית עם מספר או צלע עם אורך). כתבו אותם בתיבה למעלה.",
     shTrap:"טרפז", shKite:"דלתון", shIso:"משולש שווה שוקיים", shTri:"משולש",
@@ -556,6 +589,7 @@ function setLang(l){
   document.querySelectorAll("[data-t]").forEach(e => e.textContent = T(e.dataset.t));
   document.querySelectorAll("[data-tlabel]").forEach(e => e.setAttribute("aria-label", T(e.dataset.tlabel)));
   $("geoText").placeholder = T("givensPh");
+  $("problem").placeholder = T("problemPh");
   $("geoAsk").placeholder = T("askPh");
   fillShapes(); fillUnits(); fillFormulas(); renderExamples(); renderToolChips();
   if (typeof renderBank === "function" && $("bankList")) renderBank();
@@ -729,7 +763,7 @@ function proofTable(rows){
   const hr=document.createElement("tr"); ["#", W.claim, W.reason].forEach(h=>hr.append(el("th",null,h)));
   const th=document.createElement("thead"); th.append(hr); tb.append(th);
   const body=document.createElement("tbody");
-  rows.forEach(([c,why],i)=>{ const tr=document.createElement("tr");
+  rows.forEach(([c,why],i)=>{ const tr=document.createElement("tr"); tr.style.setProperty("--i", Math.min(i, 12));
     const nc = el("td","n"); nc.dataset.n = String(i+1); tr.append(nc, dirOf(el("td", HEB.test(c) ? "claim he" : "claim", c), c), dirOf(el("td",null,why), why)); body.append(tr); });
   tb.append(body); wrap.append(tb); return wrap;
 }
@@ -754,7 +788,7 @@ function solveNow(quiet, noSave){
       if (r.steps && r.steps.length) {
         const ol = el("ol","steps");
         r.steps.forEach(([c, why]) => {
-          const li = el("li"); li.append(mathEl("div","math",c));
+          const li = el("li"); li.style.setProperty("--i", Math.min(ol.childElementCount, 12)); li.append(mathEl("div","math",c));
           if (why) li.append(dirOf(el("div","why",why), why));
           ol.append(li);
         });
@@ -1007,7 +1041,7 @@ function plotSVG(g){
   if (g.shade && fns.length) {
     const { a, b } = g.shade; let d = `M${f1(X(a))},${f1(Y(0))}`;
     for (let i = 0; i <= 120; i++) { const x = a + (b - a) * i / 120, y = fns[0].f(x); d += ` L${f1(X(x))},${f1(Y(isFinite(y) ? Math.max(y0 - 1e3, Math.min(y1 + 1e3, y)) : 0))}`; }
-    s += `<path d="${d} L${f1(X(b))},${f1(Y(0))} Z" style="fill:var(--pen);fill-opacity:.18;stroke:none"/>`;
+    s += `<path class="fade" d="${d} L${f1(X(b))},${f1(Y(0))} Z" style="fill:var(--pen);fill-opacity:.18;stroke:none"/>`;
   }
   if (g.polygon) s += `<polygon points="${g.polygon.map(([x, y]) => f1(X(x)) + "," + f1(Y(y))).join(" ")}" style="fill:var(--pen-soft);stroke:var(--pen);stroke-width:2.5;stroke-linejoin:round"/>`;
   for (const v of g.vlines || []) s += `<line x1="${f1(X(v))}" y1="${Tp}" x2="${f1(X(v))}" y2="${H - B}" style="stroke:var(--warn);stroke-width:1.5;stroke-dasharray:5 4"/>`;
@@ -1026,7 +1060,7 @@ function plotSVG(g){
       for (let k = 0; k < 4; k++) { const p = c[k], q2 = c[(k + 1) % 4]; if ((p[2] <= 0) !== (q2[2] <= 0)) hits.push(cross(p[0], p[1], p[2], q2[0], q2[1], q2[2])); }
       for (let k = 0; k + 1 < hits.length; k += 2) d += `M${f1(X(hits[k][0]))},${f1(Y(hits[k][1]))}L${f1(X(hits[k + 1][0]))},${f1(Y(hits[k + 1][1]))}`;
     }
-    s += `<path d="${d}" style="fill:none;stroke:${COL[idx % 3]};stroke-width:2.6;stroke-linecap:round"/>`;
+    s += `<path class="fade" d="${d}" style="fill:none;stroke:${COL[idx % 3]};stroke-width:2.6;stroke-linecap:round"/>`;
   });
   // function graphs
   fns.forEach((F, idx) => {
@@ -1036,7 +1070,7 @@ function plotSVG(g){
       if (!isFinite(y) || Math.abs(y - (y0 + y1) / 2) > span * 6 || (prev !== null && Math.abs(y - prev) > span * 1.5)) { prev = isFinite(y) ? y : null; if (!isFinite(y)) continue; d += `M${f1(X(x))},${f1(Y(y))}`; continue; }
       d += (prev === null ? "M" : "L") + f1(X(x)) + "," + f1(Y(y)); prev = y;
     }
-    s += `<path d="${d}" style="fill:none;stroke:${COL[idx % 3]};stroke-width:2.6;stroke-linejoin:round;${F.dash ? "stroke-dasharray:7 5;" : ""}"/>`;
+    s += `<path ${F.dash ? 'class="fade"' : 'class="draw" pathLength="1"'} d="${d}" style="fill:none;stroke:${COL[idx % 3]};stroke-width:2.6;stroke-linejoin:round;${F.dash ? "stroke-dasharray:7 5;" : ""}"/>`;
   });
   s += "</g>";
   // points with labels
@@ -1064,7 +1098,7 @@ function numberLineSVG(nl){
     + `<line x1="${L - 10}" y1="${y}" x2="${W - Rt + 10}" y2="${y}" style="stroke:var(--muted);stroke-width:1.5" marker-start="url(#nla)" marker-end="url(#nla)"/>`;
   for (const [a, b] of nl.segs || []) {
     const xa = inf(a) ? L - 6 : X(a), xb = inf(b) ? W - Rt + 6 : X(b);
-    s += `<line x1="${f1(xa)}" y1="${y}" x2="${f1(xb)}" y2="${y}" style="stroke:var(--pen);stroke-width:7;stroke-linecap:round;opacity:.85"${inf(a) ? ' marker-start="url(#nlp)"' : ""}${inf(b) ? ' marker-end="url(#nlp)"' : ""}/>`;
+    s += `<line class="seg" x1="${f1(xa)}" y1="${y}" x2="${f1(xb)}" y2="${y}" style="stroke:var(--pen);stroke-width:7;stroke-linecap:round;opacity:.85"${inf(a) ? ' marker-start="url(#nlp)"' : ""}${inf(b) ? ' marker-end="url(#nlp)"' : ""}/>`;
   }
   for (const p of nl.pts || []) s += `<circle cx="${f1(X(p.x))}" cy="${y}" r="7" style="fill:${p.closed ? "var(--pen)" : "var(--surface)"};stroke:var(--pen);stroke-width:2.5"/><text x="${f1(X(p.x))}" y="${y + 28}" text-anchor="middle" class="tk2">${numLbl(p.x)}</text>`;
   if (!(nl.segs || []).length) s += `<text x="${W / 2}" y="${y + 28}" text-anchor="middle" class="tk2">∅</text>`;
@@ -1092,8 +1126,8 @@ function applyStepper(box, items, hidden){
     next.textContent = T("stepNext", shown + 1, items.length);
     if (shown >= items.length) { bar.remove(); hidden.forEach(h => h.classList.remove("veiled")); }
   };
-  next.onclick = () => { if (shown < items.length) { items[shown].hidden = false; shown++; items[shown - 1].scrollIntoView({ behavior: "smooth", block: "nearest" }); } upd(); };
-  all.onclick = () => { items.forEach(it => it.hidden = false); shown = items.length; upd(); };
+  next.onclick = () => { if (shown < items.length) { items[shown].style.setProperty("--i", -1); items[shown].hidden = false; shown++; items[shown - 1].scrollIntoView({ behavior: "smooth", block: "nearest" }); } upd(); };
+  all.onclick = () => { items.forEach((it, j) => { if (it.hidden) it.style.setProperty("--i", j - shown - 1); it.hidden = false; }); shown = items.length; upd(); };
   bar.append(next, all); box.append(bar); upd();
 }
 // ---------- geometry: tap a row of the proof to see what it talks about ----------
