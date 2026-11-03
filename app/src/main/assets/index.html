@@ -51,7 +51,9 @@ select{font-family:var(--sans)}
 .ans div{font:700 20px/1.4 var(--mono);overflow-wrap:anywhere}
 .err{background:var(--warn-soft);border:1px solid var(--warn);color:var(--warn);border-radius:10px;padding:12px 14px}
 .steps{margin:0;padding:0;list-style:none;font:15px/1.6 var(--mono);display:flex;flex-direction:column;gap:6px}
-.steps li{overflow-wrap:anywhere;white-space:pre-wrap}
+.steps li{overflow-wrap:anywhere;white-space:pre-wrap;display:flex;flex-direction:column;gap:2px;padding-bottom:6px;border-bottom:1px dashed var(--line)}
+.steps li:last-child{border-bottom:0}
+.steps .why{font:13px/1.4 var(--sans);color:var(--muted)}
 [dir="rtl"] [dir="ltr"]{text-align:right}
 .ex{font-size:13px;color:var(--muted);margin:0}
 .fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -264,7 +266,15 @@ function solveNow(quiet){
     if (r.error) box.append(dirOf(el("div","err",r.error), r.error));
     else {
       const a = el("div","ans"); a.append(el("small",null,T("answer")), dirOf(el("div",null,r.answer), r.answer)); box.append(a);
-      if (r.steps && r.steps.length) box.append(proofTable(r.steps));
+      if (r.steps && r.steps.length) {
+        const ol = el("ol","steps");
+        r.steps.forEach(([c, why]) => {
+          const li = el("li"); li.append(dirOf(el("div","math",c), c));
+          if (why) li.append(dirOf(el("div","why",why), why));
+          ol.append(li);
+        });
+        box.append(ol);
+      }
     }
     out.append(box);
   });
