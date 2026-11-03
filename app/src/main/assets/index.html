@@ -389,6 +389,7 @@ const UI = {
     crash:"Something went wrong. Check the problem and try again.",
     ocr_camera:"Couldn't open the camera. Try Gallery instead.", ocr_open:"Couldn't open that photo. Try another one.",
     ocr_read:"Couldn't read the photo. Try again with better light.",
+    ocr_offline:"The first photo needs internet once, to download the text scanner. After that it works offline.",
     positive:n=>n+" must be a number bigger than 0.",
     triIneq:"These three sides can't make a triangle (two sides must add up to more than the third).",
     hypLong:"The hypotenuse must be the longest side.",
@@ -434,6 +435,7 @@ const UI = {
     crash:"משהו השתבש. בדקו את התרגיל ונסו שוב.",
     ocr_camera:"לא הצלחתי לפתוח את המצלמה. נסו את הגלריה.", ocr_open:"לא הצלחתי לפתוח את התמונה. נסו תמונה אחרת.",
     ocr_read:"לא הצלחתי לקרוא את התמונה. נסו שוב בתאורה טובה יותר.",
+    ocr_offline:"בצילום הראשון צריך אינטרנט פעם אחת, כדי להוריד את סורק הטקסט. אחר כך זה עובד בלי אינטרנט.",
     positive:n=>n+" צריך להיות מספר גדול מ-0.",
     triIneq:"שלוש הצלעות האלה לא יוצרות משולש (סכום כל שתי צלעות צריך להיות גדול מהצלע השלישית).",
     hypLong:"היתר חייב להיות הצלע הארוכה ביותר.",
@@ -1436,7 +1438,7 @@ function renderMe(){
   try { inp.checked = !!Android.wifiOnly(); } catch(e) {}
   inp.onchange = () => { try { Android.setWifiOnly(inp.checked); } catch(e) {} };
   sw.append(inp, el("span", "track")); set.append(txt, sw);
-  prof.append(set);
+  if (!Android.noWifiSetting) prof.append(set);
   box.append(prof);
   // history
   const hp = el("section", "panel");
@@ -1725,7 +1727,7 @@ applyUI();
 setLang(lang);
 solveNow(true);
 if (ACC) { try { const st = JSON.parse(Android.authState()); account = st.signedIn ? st : null; } catch(e) {} try { Android.ready(); } catch(e) {} }
-if (!account && !seenWelcome()) showWelcome();
+if (ACC && !account && !seenWelcome()) showWelcome();
 </script>
 </body>
 </html>

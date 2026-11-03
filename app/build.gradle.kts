@@ -12,8 +12,8 @@ android {
         applicationId = "com.mathsnap"
         minSdk = 24
         targetSdk = 34
-        versionCode = 13
-        versionName = "5.2"
+        versionCode = 14
+        versionName = "5.3"
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }
 

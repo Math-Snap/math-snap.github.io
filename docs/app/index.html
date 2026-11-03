@@ -1,0 +1,1748 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Math Snap</title>
+<meta name="description" content="Math Snap: פותר תרגילים במתמטיקה עם הסבר לכל שלב.">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#F2F4F9">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Math Snap">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+
+<style>
+/* Layout: phone app — app bar, one working card per tab, results below, bottom navigation.
+   Identity: a math notebook. Ink-blue pen, highlighter-yellow answers, faint graph paper. */
+@font-face{font-family:"Rubik";src:url("fonts/Rubik.ttf") format("truetype");font-weight:300 900;font-display:swap}
+@font-face{font-family:"JetBrains Mono";src:url("fonts/JetBrainsMono.ttf") format("truetype");font-weight:100 800;font-display:swap}
+:root{
+  --bg:#F2F4F9; --grid:#E6EAF3; --surface:#FFFFFF; --surface-2:#F6F7FB; --ink:#141B2D; --muted:#647089; --line:#E3E7F0;
+  --pen:#3346E0; --pen-press:#2533B8; --on-pen:#FFFFFF; --pen-soft:#ECEFFE; --mark:#FFE27A;
+  --ok:#11845B; --ok-soft:#E5F5EE; --warn:#B03A1E; --warn-soft:#FDECE7;
+  --shadow:0 1px 2px rgba(20,27,45,.05),0 6px 20px rgba(20,27,45,.07);
+  --sans:"Rubik",Roboto,"Noto Sans Hebrew",system-ui,sans-serif; --mono:"JetBrains Mono","Roboto Mono",ui-monospace,monospace;
+  --r:20px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0D111C; --grid:#141A28; --surface:#161C2B; --surface-2:#1C2335; --ink:#E9EDF7; --muted:#98A2BC; --line:#262E44;
+  --pen:#8E9CFF; --pen-press:#A9B4FF; --on-pen:#0B0F1A; --pen-soft:#1F2850; --mark:#6E5A12;
+  --ok:#5FD39B; --ok-soft:#12302A; --warn:#FF9A7A; --warn-soft:#3A1D16;
+  --shadow:0 0 0 1px var(--line); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0D111C; --grid:#141A28; --surface:#161C2B; --surface-2:#1C2335; --ink:#E9EDF7; --muted:#98A2BC; --line:#262E44;
+  --pen:#8E9CFF; --pen-press:#A9B4FF; --on-pen:#0B0F1A; --pen-soft:#1F2850; --mark:#6E5A12;
+  --ok:#5FD39B; --ok-soft:#12302A; --warn:#FF9A7A; --warn-soft:#3A1D16;
+  --shadow:0 0 0 1px var(--line); color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background-color:var(--bg);color:var(--ink);font:16px/1.5 var(--sans);-webkit-tap-highlight-color:transparent;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:22px 22px;background-attachment:fixed}
+.wrap{max-width:640px;margin:0 auto;padding:12px 16px 112px;display:flex;flex-direction:column;gap:16px}
+
+/* app bar */
+.appbar{display:flex;align-items:center;gap:12px;padding:6px 2px 2px}
+.brand{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
+.logo{width:44px;height:44px;border-radius:14px;background:var(--pen);display:grid;place-items:center;flex:none;box-shadow:0 6px 16px rgba(51,70,224,.28)}
+.logo svg{width:28px;height:28px}
+h1{margin:0;font-size:22px;line-height:1.1;font-weight:800;letter-spacing:-.01em}
+.sub{margin:2px 0 0;color:var(--muted);font-size:13px;line-height:1.35}
+.lang{display:flex;background:var(--surface);border-radius:999px;padding:3px;box-shadow:var(--shadow);flex:none}
+.lang button{border:0;background:none;color:var(--muted);font:600 13px/1 var(--sans);padding:9px 12px;border-radius:999px}
+.lang button[aria-pressed="true"]{background:var(--pen);color:var(--on-pen)}
+
+/* cards */
+.panel{background:var(--surface);border-radius:var(--r);padding:18px;display:flex;flex-direction:column;gap:14px;box-shadow:var(--shadow)}
+.phead h2{margin:0;font-size:20px;font-weight:700;line-height:1.2;text-wrap:balance}
+.phead p{margin:4px 0 0;color:var(--muted);font-size:14px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* buttons */
+.btn{border:0;border-radius:16px;min-height:56px;padding:0 16px;font:600 17px/1 var(--sans);background:var(--pen);color:var(--on-pen);
+  display:flex;align-items:center;justify-content:center;gap:10px;transition:transform .12s ease,background .12s ease}
+.btn:active{transform:scale(.98);background:var(--pen-press)}
+.btn svg{width:22px;height:22px;flex:none}
+[dir="rtl"] .btn .go{transform:scaleX(-1)}
+.tile{border:0;border-radius:16px;background:var(--pen-soft);color:var(--pen);padding:14px 10px;font:600 15px/1.2 var(--sans);
+  display:flex;flex-direction:column;align-items:center;gap:8px;transition:transform .12s ease}
+.tile:active{transform:scale(.97)}
+.tile .ic{width:44px;height:44px;border-radius:50%;background:var(--surface);display:grid;place-items:center}
+.tile svg{width:24px;height:24px}
+
+/* inputs */
+.lbl{font:600 13px/1.3 var(--sans);color:var(--muted)}
+textarea,input,select{width:100%;border:1.5px solid transparent;border-radius:14px;background:var(--surface-2);color:var(--ink);font:18px/1.55 var(--mono);padding:14px;transition:border-color .15s ease,background .15s ease}
+textarea{min-height:104px;resize:vertical}
+textarea::placeholder,input::placeholder{color:var(--muted);opacity:.7}
+textarea:focus,input:focus,select:focus{outline:none;border-color:var(--pen);background:var(--surface)}
+button:focus-visible{outline:2px solid var(--pen);outline-offset:2px}
+select{font:16px/1.3 var(--sans)}
+.vh{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* example chips and tool chips */
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px 0 4px;margin:0 -2px}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:8px 14px;font:500 14px/1.2 var(--sans);white-space:nowrap}
+.chip.math{font-family:var(--mono);font-size:14px}
+.chip[aria-pressed="true"]{background:var(--pen);border-color:var(--pen);color:var(--on-pen)}
+.chips.wrapchips{flex-wrap:wrap;overflow:visible}
+.chips.wrapchips .chip{white-space:normal;text-align:start;max-width:100%}
+.exlabel{font-size:12px;font-weight:600;color:var(--muted);margin:0}
+
+/* status and detected */
+.status{margin:0;font-size:14px;color:var(--muted);background:var(--surface-2);border-radius:12px;padding:10px 12px}
+.status.bad{color:var(--warn);background:var(--warn-soft)}
+.hint{margin:0;font-size:14px;color:var(--pen);background:var(--pen-soft);border-radius:12px;padding:10px 12px;font-weight:500}
+
+/* results */
+.result{display:flex;flex-direction:column;gap:14px}
+.prob{font:600 15px/1.4 var(--mono);color:var(--muted);overflow-wrap:anywhere}
+.ans{background:var(--surface-2);border-radius:16px;padding:14px 16px}
+.ans small{display:block;font:600 12px/1 var(--sans);color:var(--ok);margin-bottom:8px}
+.ans div{display:inline;font:700 22px/1.7 var(--mono);white-space:pre-line;overflow-wrap:anywhere;
+  background-image:linear-gradient(transparent 58%,var(--mark) 58%,var(--mark) 90%,transparent 90%);-webkit-box-decoration-break:clone;box-decoration-break:clone;padding:0 2px}
+.ans div[dir="rtl"]{font-family:var(--sans)}
+.err{background:var(--warn-soft);color:var(--warn);border-radius:14px;padding:12px 14px;font-weight:500}
+.steps{list-style:none;margin:0;padding:0;counter-reset:s;display:flex;flex-direction:column}
+.steps li{position:relative;padding-inline-start:40px;padding-bottom:16px;counter-increment:s;overflow-wrap:anywhere}
+.steps li::before{content:counter(s);position:absolute;inset-inline-start:0;top:0;width:26px;height:26px;border-radius:50%;background:var(--pen-soft);color:var(--pen);font:700 13px/26px var(--sans);text-align:center}
+.steps li::after{content:"";position:absolute;inset-inline-start:12.5px;top:30px;bottom:4px;width:1.5px;background:var(--line)}
+.steps li:last-child{padding-bottom:0}
+.steps li:last-child::after{display:none}
+.steps .math{font:16px/1.6 var(--mono);white-space:pre-wrap}
+.steps .why{font:13px/1.45 var(--sans);color:var(--muted);margin-top:2px}
+[dir="rtl"] [dir="ltr"]{text-align:right}
+hr{border:0;border-top:1px solid var(--line);width:100%;margin:2px 0}
+
+/* notes / formulas */
+.notes{background:var(--pen-soft);border-radius:16px;padding:12px 14px;font-size:14px;line-height:1.6}
+.notes summary{font-weight:600;color:var(--pen);cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px}
+.notes summary::-webkit-details-marker{display:none}
+.notes summary::after{content:"";width:8px;height:8px;border-inline-end:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin-inline-start:auto;transition:transform .2s ease}
+.notes[open] summary::after{transform:rotate(-135deg)}
+.notes summary svg{width:18px;height:18px;flex:none}
+.notes .body{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.notes b{color:var(--pen)}
+.notes table{border-collapse:collapse;width:100%}
+.notes td{padding:6px 4px;border-bottom:1px solid rgba(51,70,224,.15);vertical-align:top}
+.notes tr:last-child td{border-bottom:0}
+.notes td.f{font-family:var(--mono);white-space:nowrap}
+
+/* geometry fields, figure, proof table */
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fields label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted);font-weight:500}
+.fields input{text-align:center;font-size:19px;font-weight:600}
+.fig{background:var(--surface-2);border-radius:16px;padding:10px}
+.fig svg{direction:ltr;width:100%;max-width:330px;height:auto;display:block;margin:0 auto}
+.proofwrap{overflow-x:auto;border-radius:16px;border:1px solid var(--line)}
+table.proof{width:100%;border-collapse:collapse;font-size:14px;line-height:1.5}
+.proof th{background:var(--pen-soft);color:var(--pen);padding:10px 8px;font-weight:700;text-align:start}
+.proof td{padding:10px 8px;border-top:1px solid var(--line);vertical-align:top;overflow-wrap:anywhere}
+.proof td.claim{font-family:var(--mono);font-weight:500}
+.proof td.claim.he{font-family:var(--sans)}
+.proof td.n{width:2em;text-align:center}
+.proof td.n::before{content:attr(data-n);display:inline-block;min-width:22px;height:22px;border-radius:50%;background:var(--surface-2);color:var(--muted);font:600 12px/22px var(--sans)}
+.proof td:last-child{color:var(--muted)}
+.section-title{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px;color:var(--ink);margin:0}
+.section-title svg{width:18px;height:18px;color:var(--pen)}
+
+/* bottom navigation */
+.bottomnav{position:fixed;inset:auto 0 0 0;z-index:10;background:var(--surface);box-shadow:0 -1px 0 var(--line),0 -8px 24px rgba(20,27,45,.06);
+  display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:8px max(12px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
+.bottomnav button{border:0;background:none;color:var(--muted);font:600 13px/1 var(--sans);display:flex;flex-direction:column;align-items:center;gap:6px;padding:6px 0}
+.bottomnav .pill{width:64px;height:32px;border-radius:999px;display:grid;place-items:center;transition:background .2s ease}
+.bottomnav svg{width:22px;height:22px}
+.bottomnav button[aria-selected="true"]{color:var(--pen)}
+.bottomnav button[aria-selected="true"] .pill{background:var(--pen-soft)}
+/* account */
+.perks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.perks li{display:flex;align-items:center;gap:12px;font-size:15px}
+.perks .ic{width:36px;height:36px;border-radius:12px;background:var(--pen-soft);color:var(--pen);display:grid;place-items:center;flex:none}
+.perks svg{width:20px;height:20px}
+.btn.google{background:var(--surface);color:var(--ink);border:1.5px solid var(--line)}
+.btn.google svg{width:20px;height:20px}
+.btn.quiet{background:var(--pen-soft);color:var(--pen)}
+.btn:disabled{opacity:.55}
+.divider{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
+.authform{display:flex;flex-direction:column;gap:10px}
+.authform input{font-family:var(--sans);font-size:17px;text-align:start}
+.linkbtn{border:0;background:none;color:var(--pen);font:600 14px/1.3 var(--sans);padding:6px 0;text-align:start}
+.linkrow{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.profile{display:flex;align-items:center;gap:12px}
+.avatar{width:48px;height:48px;border-radius:50%;background:var(--pen);color:var(--on-pen);display:grid;place-items:center;font:700 20px/1 var(--sans);flex:none}
+.profile .who{flex:1;min-width:0}
+.profile .who b{display:block;font-size:17px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.profile .who span{display:block;color:var(--muted);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.syncpill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:5px 10px;border-radius:999px;background:var(--ok-soft);color:var(--ok)}
+.syncpill.wait{background:var(--surface-2);color:var(--muted)}
+.syncpill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.setrow{display:flex;align-items:center;gap:12px;background:var(--surface-2);border-radius:16px;padding:12px 14px}
+.setrow .txt{flex:1;min-width:0}
+.setrow b{display:block;font-size:15px;font-weight:600}
+.setrow span{display:block;color:var(--muted);font-size:13px;line-height:1.4}
+.switch{position:relative;width:52px;height:32px;flex:none;direction:ltr}
+.switch input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer;z-index:1;width:100%;height:100%;padding:0}
+.switch .track{position:absolute;inset:0;border-radius:999px;background:var(--line);transition:background .2s ease}
+.switch .track::after{content:"";position:absolute;top:4px;left:4px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s ease}
+.switch input:checked + .track{background:var(--pen)}
+.switch input:checked + .track::after{transform:translateX(20px)}
+.switch input:focus-visible + .track{outline:2px solid var(--pen);outline-offset:2px}
+.hlist{display:flex;flex-direction:column;gap:10px}
+.hitem{border:1px solid var(--line);border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.hhead{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;font-weight:500}
+.hhead svg{width:16px;height:16px;color:var(--pen)}
+.hhead .sp{flex:1}
+.star{border:0;background:none;padding:4px;color:var(--muted);display:grid;place-items:center}
+.star svg{width:22px;height:22px}
+.hhead .star svg{color:inherit}
+.star[aria-pressed="true"]{color:#E5A100}
+.star[aria-pressed="true"] svg{fill:currentColor}
+.hin{font:500 15px/1.5 var(--mono);overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-line}
+.hin.he{font-family:var(--sans)}
+.hans{font:700 15px/1.6 var(--mono);overflow-wrap:anywhere}
+.hans span{background-image:linear-gradient(transparent 58%,var(--mark) 58%,var(--mark) 90%,transparent 90%);-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.hnote{background:var(--surface-2);border-radius:12px;padding:8px 10px;font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
+.hact{display:flex;gap:6px;flex-wrap:wrap}
+.hact button{border:0;background:var(--surface-2);color:var(--ink);border-radius:999px;padding:7px 12px;font:600 13px/1 var(--sans)}
+.hact button.danger{color:var(--warn)}
+.hact button.primary{background:var(--pen-soft);color:var(--pen)}
+.hedit{display:flex;flex-direction:column;gap:8px}
+.hedit textarea{min-height:70px;font-family:var(--sans);font-size:15px}
+.empty{color:var(--muted);text-align:center;padding:18px 8px;font-size:14px}
+.savebar{display:flex;align-items:center;gap:10px;background:var(--ok-soft);color:var(--ok);border-radius:14px;padding:8px 8px 8px 12px;font-size:14px;font-weight:600}
+[dir="rtl"] .savebar{padding:8px 12px 8px 8px}
+.savebar .sp{flex:1}
+.savebar .star{color:var(--ok)}
+.savebar.out{background:var(--surface-2);color:var(--muted);font-weight:500}
+/* background choices */
+body[data-bg="dots"]{background-image:radial-gradient(var(--grid) 1.4px,transparent 1.7px);background-size:18px 18px}
+body[data-bg="lines"]{background-image:linear-gradient(transparent 27px,var(--grid) 27px,var(--grid) 28px);background-size:100% 28px}
+body[data-bg="plain"]{background-image:none}
+.iconbtn{width:42px;height:42px;border-radius:50%;border:0;background:var(--surface);color:var(--ink);box-shadow:var(--shadow);display:grid;place-items:center;flex:none}
+.iconbtn svg{width:22px;height:22px}
+/* full-screen layers */
+.overlay{position:fixed;inset:0;z-index:30;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch}
+.overlay .inner{max-width:640px;margin:0 auto;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:16px}
+.sheethead{display:flex;align-items:center;gap:12px;padding-top:6px}
+.sheethead h2{flex:1;margin:0;font-size:22px;font-weight:800}
+.opt{display:flex;flex-direction:column;gap:10px}
+.opt h3{margin:0;font-size:14px;font-weight:600;color:var(--muted)}
+.swatches{display:flex;flex-wrap:wrap;gap:12px}
+.sw{width:42px;height:42px;border-radius:50%;border:3px solid var(--surface);box-shadow:0 0 0 1.5px var(--line);padding:0;cursor:pointer}
+.sw[aria-pressed="true"]{box-shadow:0 0 0 2.5px var(--ink)}
+.bgtile{display:flex;flex-direction:column;align-items:center;gap:6px;border:0;background:none;color:var(--ink);font:500 13px/1 var(--sans);padding:0}
+.bgtile i{width:64px;height:48px;border-radius:12px;background-color:var(--bg);box-shadow:0 0 0 1.5px var(--line);display:block}
+.bgtile[aria-pressed="true"] i{box-shadow:0 0 0 2.5px var(--pen)}
+.bgtile i.grid{background-image:linear-gradient(var(--muted) 1px,transparent 1px),linear-gradient(90deg,var(--muted) 1px,transparent 1px);background-size:10px 10px;opacity:.9}
+.bgtile i.dots{background-image:radial-gradient(var(--muted) 1.2px,transparent 1.5px);background-size:9px 9px}
+.bgtile i.lines{background-image:linear-gradient(transparent 11px,var(--muted) 11px,var(--muted) 12px);background-size:100% 12px}
+.preview{display:flex;flex-direction:column;gap:12px}
+.preview .row2{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+/* welcome */
+.welcome .inner{min-height:100%;justify-content:center;text-align:center;gap:20px}
+.hero{position:relative;height:200px;display:grid;place-items:center}
+.hero .logo{width:96px;height:96px;border-radius:30px}
+.hero .logo svg{width:60px;height:60px}
+.hero .float{position:absolute;background:var(--surface);box-shadow:var(--shadow);border-radius:14px;padding:8px 12px;font:600 15px/1 var(--mono);direction:ltr}
+.hero .f1{top:14px;left:8%;transform:rotate(-6deg)}
+.hero .f2{top:30px;right:6%;transform:rotate(5deg)}
+.hero .f3{bottom:18px;left:14%;transform:rotate(4deg)}
+.hero .f4{bottom:8px;right:12%;transform:rotate(-4deg)}
+.hero .f4 span{background-image:linear-gradient(transparent 55%,var(--mark) 55%,var(--mark) 92%,transparent 92%)}
+.welcome h2{margin:0;font-size:28px;font-weight:800;line-height:1.15;text-wrap:balance}
+.welcome p.lead{margin:0;color:var(--muted);font-size:16px;text-wrap:balance}
+.welcome .acts{display:flex;flex-direction:column;gap:10px;text-align:start}
+.welcome .skip{border:0;background:none;color:var(--muted);font:600 15px/1 var(--sans);padding:12px}
+.welcome .lang{align-self:center}
+@media (prefers-reduced-motion:no-preference){.hero .float{animation:bob 5s ease-in-out infinite}.hero .f2{animation-delay:-1.2s}.hero .f3{animation-delay:-2.4s}.hero .f4{animation-delay:-3.6s}}
+@keyframes bob{50%{translate:0 -6px}}
+/* theorem bank */
+.bank{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.bank li{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:14px;background:var(--surface-2)}
+.bank .num{flex:none;min-width:28px;height:28px;border-radius:50%;background:var(--pen-soft);color:var(--pen);font:700 13px/28px var(--sans);text-align:center}
+.bank .t{flex:1;min-width:0;font-size:15px;line-height:1.5}
+.bank .t small{display:block;color:var(--muted);font-size:12px;font-weight:600;margin-bottom:2px}
+.bank .t b{color:var(--pen);font-weight:700}
+.bank mark{background:var(--mark);color:inherit;border-radius:3px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="appbar">
+    <div class="brand">
+      <span class="logo" aria-hidden="true"><svg viewBox="0 0 28 28" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V6a2 2 0 0 1 2-2h3M19 4h3a2 2 0 0 1 2 2v3M24 19v3a2 2 0 0 1-2 2h-3M9 24H6a2 2 0 0 1-2-2v-3"/><path d="M10 12h8M10 16h8" /><circle cx="20.5" cy="20.5" r="0.1" stroke="#FFE27A" stroke-width="3.2"/></svg></span>
+      <div><h1>Math Snap</h1><p class="sub" data-t="sub"></p></div>
+    </div>
+    <button class="iconbtn" id="openCustom" type="button" aria-label="Customize" data-tlabel="custom"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="1.5"/><circle cx="17.5" cy="10.5" r="1.5"/><circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12.5" r="1.5"/><path d="M12 2a10 10 0 0 0 0 20c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.3 0-1.1.9-2 2-2h2.4A5.6 5.6 0 0 0 22 9.8C22 5.5 17.5 2 12 2z"/></svg></button>
+  </header>
+
+  <!-- SOLVE -->
+  <section id="solvePanel" class="panel">
+    <div class="phead"><h2 data-t="solveTitle"></h2><p data-t="solveSub"></p></div>
+    <div class="row">
+      <button class="tile" id="camera" type="button"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span><span data-t="camera"></span></button>
+      <button class="tile" id="gallery" type="button"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 17-5-5-9 8"/></svg></span><span data-t="gallery"></span></button>
+    </div>
+    <p class="status" id="ocrStatus" hidden></p>
+    <label class="lbl" for="problem" data-t="problemLbl"></label>
+    <textarea id="problem" dir="ltr" spellcheck="false" autocapitalize="off" autocomplete="off">3/4 + 2/3
+2x + 5 = 17</textarea>
+    <div><p class="exlabel" data-t="tryOne"></p><div class="chips" id="solveChips"></div></div>
+    <details class="notes" id="formulas"><summary><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M8 7h6"/></svg><span data-t="formulas"></span></summary><div class="body" id="formulaBody"></div></details>
+    <button class="btn" id="solve" type="button"><span data-t="solve"></span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+  </section>
+
+  <section id="results" class="panel" aria-live="polite"></section>
+
+  <!-- GEOMETRY -->
+  <section id="geoPanel" class="panel" hidden>
+    <div class="phead"><h2 data-t="geoTitle"></h2><p data-t="geoSub"></p></div>
+    <label class="lbl" for="geoText" data-t="givensLbl"></label>
+    <textarea id="geoText" dir="auto" spellcheck="false" autocomplete="off" style="min-height:120px;font-family:var(--sans);font-size:17px"></textarea>
+    <div><p class="exlabel" data-t="tryOne"></p><div class="chips wrapchips" id="geoChips"></div></div>
+    <button class="btn" id="geoRead" type="button"><span data-t="givensGo"></span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    <p class="status" id="geoStatus" hidden></p>
+    <p class="hint" id="geoDetected" hidden></p>
+    <div class="row">
+      <button class="tile" id="geoCamera" type="button"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span><span data-t="camera"></span></button>
+      <button class="tile" id="geoGallery" type="button"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 17-5-5-9 8"/></svg></span><span data-t="gallery"></span></button>
+    </div>
+  </section>
+
+  <section id="toolPanel" class="panel" hidden>
+    <p class="section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18L12 4z"/></svg><span data-t="shape"></span></p>
+    <div class="chips" id="groupChips"></div>
+    <div class="chips wrapchips" id="toolChips"></div>
+    <label class="vh" for="shape">shape</label><select id="shape" class="vh"></select>
+    <details class="notes" id="geoNotesWrap" hidden><summary><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M8 7h6"/></svg><span data-t="reminder"></span></summary><div class="body" id="geoNotes"></div></details>
+    <div class="fields" id="geoFields"></div>
+    <div id="unitRow" style="display:flex;flex-direction:column;gap:8px">
+      <label class="lbl" for="unit" data-t="units"></label>
+      <select id="unit"></select>
+    </div>
+    <button class="btn" id="calc" type="button"><span data-t="calc"></span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+  </section>
+  <section id="geoResults" class="panel" hidden aria-live="polite"></section>
+  <section id="bankPanel" class="panel" hidden>
+    <div class="phead"><h2 data-t="bankTitle"></h2><p data-t="bankSub"></p></div>
+    <input id="bankSearch" type="search" dir="auto" autocomplete="off" style="font-family:var(--sans);font-size:16px">
+    <div class="chips" id="bankCats"></div>
+    <ol class="bank" id="bankList"></ol>
+  </section>
+
+  <!-- MINE: account, history, favorites -->
+  <div id="mePanel" hidden style="display:flex;flex-direction:column;gap:16px"></div>
+</div>
+
+<div class="overlay" id="customize" hidden role="dialog" aria-modal="true" aria-labelledby="customTitle"><div class="inner" id="customInner"></div></div>
+<div class="overlay welcome" id="welcome" hidden role="dialog" aria-modal="true" aria-labelledby="welcomeTitle"><div class="inner" id="welcomeInner"></div></div>
+
+<nav class="bottomnav" role="tablist">
+  <button role="tab" id="tabSolve" aria-selected="true" type="button"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 7h8M8 12h2M14 12h2M8 16h2M14 16h2"/></svg></span><span data-t="tabSolve"></span></button>
+  <button role="tab" id="tabGeo" aria-selected="false" type="button"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18L12 4z"/><path d="M12 20v-5"/></svg></span><span data-t="tabGeo"></span></button>
+  <button role="tab" id="tabMe" aria-selected="false" type="button"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span><span data-t="tabMe"></span></button>
+</nav>
+
+<script src="firebase-config.js"></script>
+<script src="web-bridge.js"></script>
+<script src="math.js"></script>
+<script src="solver.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const hasBridge = typeof window.Android !== "undefined";
+const HEB = /[֐-׿]/;
+const FSI = s => "⁨" + s + "⁩", LRI = s => "⁦" + s + "⁩";
+
+// ---------- words ----------
+const UI = {
+  en: {
+    sub:"Snap it, type it, solved step by step",
+    tabMe:"Mine",
+    bankTitle:"Theorem bank", bankSub:"Every theorem, definition and reason you can write in a proof", bankSearch:"Search a theorem…", bankAll:"All", bankNone:"No theorem matches that search.",
+    custom:"Customize", done:"Done", reset:"Reset to default", themeH:"Theme", themeSystem:"Like the phone", themeLight:"Light", themeDark:"Dark",
+    accentH:"Main color", markH:"Highlighter", bgH:"Background", bgGrid:"Grid", bgDots:"Dots", bgLines:"Lines", bgPlain:"Plain",
+    sizeH:"Text size", fontH:"Font", fontRubik:"Rubik", fontSystem:"Phone font", langH:"Language", previewH:"Preview", previewBtn:"Solve",
+    welcomeTitle:"Welcome to Math Snap", welcomeLead:"Snap a problem, get every step. Sign in to keep your problems on every phone.",
+    wSignIn:"Sign in", wSignUp:"Create an account", wSkip:"Continue without an account",
+    meTitle:"My account", meSub:"Sign in to save your problems and sync them between phones",
+    perkHistory:"Every problem you solve is saved", perkSync:"The same history on every phone", perkFav:"Star important problems and add notes",
+    google:"Continue with Google", orEmail:"or with email", name:"Name (optional)", email:"Email", password:"Password",
+    signIn:"Sign in", signUp:"Create account", toUp:"No account yet? Create one", toIn:"Already have an account? Sign in", forgot:"Forgot password?",
+    appOnlyAcc:"Signing in works in the Math Snap app.", signOut:"Sign out",
+    synced:"Synced", pendingN:n=>"Waiting to sync ("+n+")", offlineSync:"Offline, will sync later", pausedSync:"Sync paused until Wi-Fi",
+    wifiTitle:"Sync on Wi-Fi only", wifiSub:"Saves mobile data. Your problems wait on the phone and sync when you're on Wi-Fi.",
+    myProblems:"My problems", all:"All", favs:"Favorites", emptyAll:"No saved problems yet. Every problem you solve will be saved here.",
+    emptyFav:"Tap the star on a problem to add it to your favorites.", open:"Open", note:"Note", addNote:"Add note", del:"Delete", sure:"Delete?", yes:"Yes", no:"No",
+    save:"Save", cancel:"Cancel", notePh:"For example: remember to flip the sign!", today:"Today", yesterday:"Yesterday", waiting:"waiting to sync",
+    savedBar:"Saved to your history", addFav:"Add to favorites", favOn:"In favorites", signInToSave:"Sign in to save your problems",
+    kindSolve:"Problem", kindGeo:"Geometry",
+    err_bad_email:"That email address isn't valid.", err_bad_password:"The email or password is wrong.", err_no_user:"There's no account with this email. You can create one.",
+    err_email_in_use:"There's already an account with this email. Try signing in.", err_weak_password:"The password is too short. Use at least 6 characters.",
+    err_network:"No internet connection. Try again when you're online.", err_google:"Google sign-in didn't work. Try again.", err_other:"Something went wrong. Try again.",
+    info_reset_sent:"We sent you an email with a link to reset your password.", needEmail:"Enter your email and password.", needEmailOnly:"Enter your email first.",
+    solveTitle:"New problem", solveSub:"Take a photo, pick one from the gallery, or type it", tryOne:"Try one:",
+    geoTitle:"Geometry", geoSub:"Write the givens and get a proof with claims and reasons", reminder:"Reminder: definitions and theorems", tabSolve:"Solve", tabGeo:"Geometry",
+    camera:"Take photo", gallery:"Gallery", problemLbl:"Problem (one per line, fix anything misread)",
+    geoCheck:"Check the givens above and fix anything misread, then tap Solve.",
+    givensLbl:"Write the givens in words or symbols", givensEx:"Examples:", givensGo:"Solve",
+    givensExList:"trapezoid ABCD, AB parallel to DC, angle A = 110 degrees, angle C = 43\nisosceles triangle, vertex angle 40\nisosceles triangle, leg 13, base 10\nkite ABCD, angle BAC 35, angle CBD 70\nkite, main diagonal 12, other diagonal 8",
+    givensPh:"e.g. trapezoid ABCD, AB parallel to DC, angle A = 110, angle C = 43",
+    detected:(tool,list)=>"Found: "+tool+(list?"  ·  "+list:""), noGivens:"I couldn't find givens. Write them like: angle A = 110, AB parallel to DC, leg 13.",
+    examples:"Examples:", solve:"Solve it", formulas:"Formulas: power laws & extended distributive law", answer:"Answer", shape:"Shape", units:"Units", calc:"Calculate", noUnits:"no units",
+    reading:"Reading the photo…", noMath:"I couldn't find any math in that photo. Try again closer, with good light, or type it.",
+    checkText:"Check the text below and fix anything that was misread. Then tap Solve it.",
+    appOnly:"The camera only works in the app.", empty:"Type a problem or take a photo first.",
+    crash:"Something went wrong. Check the problem and try again.",
+    ocr_camera:"Couldn't open the camera. Try Gallery instead.", ocr_open:"Couldn't open that photo. Try another one.",
+    ocr_read:"Couldn't read the photo. Try again with better light.",
+    ocr_offline:"The first photo needs internet once, to download the text scanner. After that it works offline.",
+    positive:n=>n+" must be a number bigger than 0.",
+    triIneq:"These three sides can't make a triangle (two sides must add up to more than the third).",
+    hypLong:"The hypotenuse must be the longest side.",
+    angBig:"Those two angles add up to 180° or more, so they can't be in one triangle.",
+  },
+  he: {
+    sub:"מצלמים, מקלידים, ומקבלים פתרון שלב אחרי שלב",
+    tabMe:"שלי",
+    bankTitle:"בנק משפטים", bankSub:"כל המשפטים, ההגדרות והנימוקים שאפשר לכתוב בהוכחה", bankSearch:"חיפוש משפט…", bankAll:"הכול", bankNone:"אין משפט שמתאים לחיפוש.",
+    custom:"התאמה אישית", done:"סיום", reset:"חזרה לברירת המחדל", themeH:"ערכת צבעים", themeSystem:"כמו בטלפון", themeLight:"בהיר", themeDark:"כהה",
+    accentH:"צבע ראשי", markH:"צבע מרקר", bgH:"רקע", bgGrid:"משבצות", bgDots:"נקודות", bgLines:"שורות", bgPlain:"חלק",
+    sizeH:"גודל טקסט", fontH:"גופן", fontRubik:"Rubik", fontSystem:"הגופן של הטלפון", langH:"שפה", previewH:"תצוגה מקדימה", previewBtn:"פתור",
+    welcomeTitle:"ברוכים הבאים ל-Math Snap", welcomeLead:"מצלמים תרגיל ומקבלים את כל השלבים. התחברו כדי לשמור את התרגילים בכל טלפון.",
+    wSignIn:"התחברות", wSignUp:"הרשמה", wSkip:"המשך בלי חשבון",
+    meTitle:"החשבון שלי", meSub:"התחברו כדי לשמור את התרגילים ולסנכרן אותם בין טלפונים",
+    perkHistory:"כל תרגיל שפותרים נשמר", perkSync:"אותה היסטוריה בכל טלפון", perkFav:"כוכב לתרגילים חשובים, והערות",
+    google:"המשך עם Google", orEmail:"או עם אימייל", name:"שם (לא חובה)", email:"אימייל", password:"סיסמה",
+    signIn:"התחברות", signUp:"יצירת חשבון", toUp:"אין לך חשבון? ליצירת חשבון", toIn:"כבר יש לך חשבון? להתחברות", forgot:"שכחתי סיסמה",
+    appOnlyAcc:"ההתחברות עובדת באפליקציה Math Snap.", signOut:"התנתקות",
+    synced:"מסונכרן", pendingN:n=>"ממתין לסנכרון ("+n+")", offlineSync:"אין חיבור, יסונכרן אחר כך", pausedSync:"הסנכרון מחכה ל-Wi-Fi",
+    wifiTitle:"סנכרון רק ב-Wi-Fi", wifiSub:"חוסך גלישה. התרגילים נשמרים בטלפון ומסתנכרנים כשיש Wi-Fi.",
+    myProblems:"התרגילים שלי", all:"הכול", favs:"מועדפים", emptyAll:"עוד אין תרגילים שמורים. כל תרגיל שתפתרו יישמר כאן אוטומטית.",
+    emptyFav:"לחצו על הכוכב ליד תרגיל כדי להוסיף אותו למועדפים.", open:"פתח", note:"הערה", addNote:"הוסף הערה", del:"מחק", sure:"למחוק?", yes:"כן", no:"לא",
+    save:"שמור", cancel:"ביטול", notePh:"למשל: לזכור להפוך את הסימן!", today:"היום", yesterday:"אתמול", waiting:"ממתין לסנכרון",
+    savedBar:"נשמר בהיסטוריה", addFav:"הוסף למועדפים", favOn:"במועדפים", signInToSave:"התחברו כדי לשמור את התרגילים",
+    kindSolve:"תרגיל", kindGeo:"גאומטריה",
+    err_bad_email:"כתובת האימייל לא תקינה.", err_bad_password:"האימייל או הסיסמה לא נכונים.", err_no_user:"אין חשבון עם האימייל הזה. אפשר ליצור חשבון חדש.",
+    err_email_in_use:"כבר יש חשבון עם האימייל הזה. נסו להתחבר.", err_weak_password:"הסיסמה קצרה מדי. צריך לפחות 6 תווים.",
+    err_network:"אין חיבור לאינטרנט. נסו שוב כשיש חיבור.", err_google:"ההתחברות עם Google לא הצליחה. נסו שוב.", err_other:"משהו השתבש. נסו שוב.",
+    info_reset_sent:"שלחנו לאימייל קישור לאיפוס הסיסמה.", needEmail:"כתבו אימייל וסיסמה.", needEmailOnly:"כתבו קודם את האימייל.",
+    solveTitle:"תרגיל חדש", solveSub:"צלמו, בחרו מהגלריה או הקלידו", tryOne:"נסו דוגמה:",
+    geoTitle:"גאומטריה", geoSub:"כתבו את הנתונים וקבלו הוכחה עם טענה ונימוק", reminder:"תזכורת: הגדרות ומשפטים", tabSolve:"פתרון", tabGeo:"גאומטריה",
+    camera:"צילום", gallery:"גלריה", problemLbl:"התרגיל (אחד בכל שורה, תקנו מה שנקרא לא נכון)",
+    geoCheck:"בדקו את הנתונים למעלה ותקנו מה שנקרא לא נכון, ואז לחצו פתור.",
+    givensLbl:"כתבו את הנתונים במילים או בסימנים", givensEx:"דוגמאות:", givensGo:"פתור",
+    givensExList:"טרפז ABCD, AB מקביל ל-DC, זווית A שווה 110 מעלות, זווית C שווה 43\nמשולש שווה שוקיים, זווית הראש 40\nמשולש שווה שוקיים, שוק 13, בסיס 10\nדלתון ABCD, זווית BAC שווה 35, זווית CBD שווה 70\nדלתון, אלכסון ראשי 12, אלכסון משני 8\nהאם ABCD טרפז? זווית A 30, זווית B 50, זווית D 150",
+    givensPh:"למשל: טרפז ABCD, AB מקביל ל-DC, זווית A שווה 110 מעלות, זווית C שווה 43",
+    detected:(tool,list)=>"זיהיתי: "+tool+(list?"  ·  "+list:""), noGivens:"לא מצאתי נתונים. כתבו למשל: זווית A שווה 110, AB מקביל ל-DC, שוק 13.",
+    examples:"דוגמאות:", solve:"פתור", formulas:"נוסחאות: חוקי חזקות וחוק הפילוג המורחב", answer:"תשובה", shape:"צורה", units:"יחידות", calc:"חשב", noUnits:"ללא יחידות",
+    reading:"קורא את התמונה…", noMath:"לא מצאתי תרגיל בתמונה. נסו שוב מקרוב ובתאורה טובה, או הקלידו אותו.",
+    checkText:"בדקו את הטקסט ותקנו מה שנקרא לא נכון. אחר כך לחצו פתור.",
+    appOnly:"המצלמה עובדת רק באפליקציה.", empty:"הקלידו תרגיל או צלמו קודם.",
+    crash:"משהו השתבש. בדקו את התרגיל ונסו שוב.",
+    ocr_camera:"לא הצלחתי לפתוח את המצלמה. נסו את הגלריה.", ocr_open:"לא הצלחתי לפתוח את התמונה. נסו תמונה אחרת.",
+    ocr_read:"לא הצלחתי לקרוא את התמונה. נסו שוב בתאורה טובה יותר.",
+    ocr_offline:"בצילום הראשון צריך אינטרנט פעם אחת, כדי להוריד את סורק הטקסט. אחר כך זה עובד בלי אינטרנט.",
+    positive:n=>n+" צריך להיות מספר גדול מ-0.",
+    triIneq:"שלוש הצלעות האלה לא יוצרות משולש (סכום כל שתי צלעות צריך להיות גדול מהצלע השלישית).",
+    hypLong:"היתר חייב להיות הצלע הארוכה ביותר.",
+    angBig:"סכום שתי הזוויות הוא 180° או יותר, לכן הן לא יכולות להיות באותו משולש.",
+  },
+};
+const UNITS = { cm:["cm","ס״מ"], m:["m","מ׳"], mm:["mm","מ״מ"], km:["km","ק״מ"], in:["in","אינץ׳"], ft:["ft","רגל"], "":["","" ] };
+
+let lang = "en";
+try { lang = localStorage.getItem("lang") || ((navigator.language||"").match(/^(he|iw)/) ? "he" : "en"); } catch(e) {}
+const T = (k, ...a) => { const v = UI[lang][k] ?? UI.en[k]; return typeof v === "function" ? v(...a) : v; };
+const pick = (en, he) => lang === "he" ? he : en;
+
+function setLang(l){
+  lang = l;
+  try { localStorage.setItem("lang", l); } catch(e) {}
+  document.documentElement.lang = l;
+  document.documentElement.dir = l === "he" ? "rtl" : "ltr";
+
+  document.querySelectorAll("[data-t]").forEach(e => e.textContent = T(e.dataset.t));
+  document.querySelectorAll("[data-tlabel]").forEach(e => e.setAttribute("aria-label", T(e.dataset.tlabel)));
+  $("geoText").placeholder = T("givensPh");
+  fillShapes(); fillUnits(); fillFormulas(); renderExamples(); renderToolChips();
+  if (typeof renderBank === "function" && $("bankList")) renderBank();
+  if (typeof renderMe === "function" && !$("mePanel").hidden) renderMe();
+  if (!$("customize").hidden) renderCustomize();
+  if (typeof refreshSaveBars === "function") refreshSaveBars();
+  if (statusKey) { const f=photoFor; photoFor="solve"; setStatus(statusKey, statusBad); photoFor=f; }
+  if (geoKey) setGeoStatus(geoKey, geoBad);
+  if (!$("geoDetected").hidden && lastDetected) showDetected(lastDetected);
+  if ($("results").childElementCount) solveNow(true);
+  if ($("geoResults").childElementCount) calcGeo(true);
+}
+
+
+// ---------- tabs ----------
+function tab(which){
+  const geo = which === "geo", me = which === "me", sol = which === "solve";
+  $("tabSolve").setAttribute("aria-selected", String(sol));
+  $("tabGeo").setAttribute("aria-selected", String(geo));
+  $("tabMe").setAttribute("aria-selected", String(me));
+  $("solvePanel").hidden = !sol; $("results").hidden = !sol || !$("results").childElementCount;
+  $("geoPanel").hidden = !geo; $("toolPanel").hidden = !geo; $("bankPanel").hidden = !geo; $("geoResults").hidden = !geo || !$("geoResults").childElementCount;
+  $("mePanel").hidden = !me; if (me) renderMe();
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+$("tabSolve").onclick = () => tab("solve");
+$("tabGeo").onclick = () => tab("geo");
+$("tabMe").onclick = () => tab("me");
+
+// ---------- photo ----------
+let statusKey = "", statusBad = false, photoFor = "solve", geoKey = "", geoBad = false;
+function setStatus(key, bad){
+  if (photoFor === "geo") return setGeoStatus(key, bad);
+  statusKey = key; statusBad = !!bad;
+  const s = $("ocrStatus"); s.hidden = !key; s.textContent = key ? T(key) : ""; s.classList.toggle("bad", !!bad);
+}
+function setGeoStatus(key, bad){
+  geoKey = key; geoBad = !!bad;
+  const s = $("geoStatus"); s.hidden = !key; s.textContent = key ? T(key) : ""; s.classList.toggle("bad", !!bad);
+}
+const photo = (target, gallery) => { photoFor = target; if (!hasBridge) return setStatus("appOnly", true); gallery ? Android.pickPhoto() : Android.takePhoto(); };
+$("camera").onclick = () => photo("solve", false);
+$("gallery").onclick = () => photo("solve", true);
+$("geoCamera").onclick = () => photo("geo", false);
+$("geoGallery").onclick = () => photo("geo", true);
+window.onPhotoStart = () => setStatus("reading");
+window.onPhotoCancelled = () => setStatus("");
+window.onOcrError = key => setStatus("ocr_" + key, true);
+window.onOcr = (text, items) => {
+  if (photoFor === "geo") return onGeoOcr(text, items);
+  const lines = String(text).split("\n").map(l => l.trim()).filter(l => /\d|=/.test(l));
+  if (!lines.length) { setStatus("noMath", true); return; }
+  $("problem").value = lines.join("\n");
+  setStatus("checkText");
+  solveNow();
+};
+
+// ---------- solve ----------
+function el(tag, cls, text){ const e=document.createElement(tag); if(cls) e.className=cls; if(text!=null) e.textContent=text; return e; }
+function dirOf(e, s){ e.dir = HEB.test(s) ? "rtl" : "ltr"; return e; }
+
+const FORMULAS = {
+  en:[["Product of powers, same base","aˣ · aʸ = aˣ⁺ʸ"],["Quotient of powers, same base","aˣ : aʸ = aˣ⁻ʸ  (a ≠ 0)"],["Power of a power","(aˣ)ʸ = aˣ·ʸ"],
+      ["Exponent 0","a⁰ = 1  (a ≠ 0)"],["Negative exponent","a⁻ⁿ = 1/aⁿ"],["Extended distributive law","(a + c)(b + d) = ab + ad + cb + cd"],
+      ["Watch out","A minus or a multiplier before the brackets multiplies every term inside"],["Prime factorization","Type a whole number, e.g. 360"]],
+  he:[["מכפלת חזקות בעלות אותו בסיס","aˣ · aʸ = aˣ⁺ʸ"],["מנה של חזקות בעלות אותו בסיס","aˣ : aʸ = aˣ⁻ʸ  (a ≠ 0)"],["חזקה של חזקה","(aˣ)ʸ = aˣ·ʸ"],
+      ["חזקה בעלת מעריך 0","a⁰ = 1  (a ≠ 0)"],["חזקה בעלת מעריך שלילי","a⁻ⁿ = 1/aⁿ"],["חוק הפילוג המורחב","(a + c)(b + d) = ab + ad + cb + cd"],
+      ["שימו לב","כופל או מינוס לפני הסוגריים כופל כל איבר בפנים"],["פירוק לגורמים ראשוניים","מקלידים מספר שלם, למשל 360"]],
+};
+function fillFormulas(){
+  const box=$("formulaBody"); box.innerHTML="";
+  const tb=document.createElement("table");
+  FORMULAS[lang].forEach(([name,f])=>{ const tr=document.createElement("tr"); const fc=el("td","f",f); fc.dir = HEB.test(f) ? "rtl" : "ltr"; if (HEB.test(f)) fc.style.whiteSpace="normal"; tr.append(el("td",null,name), fc); tb.append(tr); });
+  box.append(tb);
+}
+
+// ---------- chips: examples and tool picker ----------
+const SOLVE_EX = ["3/4 + 2/3", "2x + 5 = 17", "(x + 2)(x − 3)", "2³ · 2⁵", "(x²)³ : x⁴", "360", "x² − 5x + 6 = 0", "(x+2)(x+3) = x² + 10", "20% of 80"];
+const GROUPS = [["trap",["Trapezoid","טרפז"]],["iso",["Isosceles","שווה שוקיים"]],["kite",["Kite","דלתון"]],[undefined,["Shapes","צורות"]]];
+function chip(text, cls, onClick, pressed){
+  const b = el("button", "chip" + (cls ? " " + cls : ""), text); b.type = "button";
+  if (pressed != null) b.setAttribute("aria-pressed", String(pressed));
+  b.onclick = onClick; return b;
+}
+function renderExamples(){
+  const sc = $("solveChips"); sc.innerHTML = "";
+  SOLVE_EX.forEach(x => { const c = chip(x, "math", () => { $("problem").value = x; solveNow(false, true); }); c.dir = "ltr"; sc.append(c); });
+  const gc = $("geoChips"); gc.innerHTML = "";
+  T("givensExList").split("\n").forEach(x => gc.append(chip(x, "", () => { $("geoText").value = x; skipSave = true; readGivens(); }, null)));
+}
+function renderToolChips(){
+  const cur = $("shape").value, curG = SH[cur] ? SH[cur].g : undefined;
+  const gBox = $("groupChips"), tBox = $("toolChips"); gBox.innerHTML = ""; tBox.innerHTML = "";
+  for (const [g, label] of GROUPS) {
+    gBox.append(chip(pick(...label), "", () => {
+      const first = Object.keys(SH).find(k => SH[k].g === g);
+      $("shape").value = first; buildFields(false); $("geoResults").innerHTML = ""; $("geoResults").hidden = true;
+    }, g === curG));
+  }
+  for (const [k, sh] of Object.entries(SH)) if (sh.g === curG) {
+    let name = pick(...sh.l); const gl = GROUPS.find(x => x[0] === curG);
+    if (gl) name = name.replace(new RegExp("^" + pick(...gl[1]) + "\\s*:\\s*"), "");
+    tBox.append(chip(name, "", () => { $("shape").value = k; buildFields(false); $("geoResults").innerHTML = ""; $("geoResults").hidden = true; }, k === cur));
+  }
+}
+function proofTable(rows){
+  const W=TW(), wrap=el("div","proofwrap"), tb=document.createElement("table"); tb.className="proof";
+  const hr=document.createElement("tr"); ["#", W.claim, W.reason].forEach(h=>hr.append(el("th",null,h)));
+  const th=document.createElement("thead"); th.append(hr); tb.append(th);
+  const body=document.createElement("tbody");
+  rows.forEach(([c,why],i)=>{ const tr=document.createElement("tr");
+    const nc = el("td","n"); nc.dataset.n = String(i+1); tr.append(nc, dirOf(el("td", HEB.test(c) ? "claim he" : "claim", c), c), dirOf(el("td",null,why), why)); body.append(tr); });
+  tb.append(body); wrap.append(tb); return wrap;
+}
+function solveNow(quiet, noSave){
+  const out = $("results"); out.innerHTML = "";
+  let res;
+  try { res = Solver.solve($("problem").value, lang); } catch(e) { res = [{problem:"", error:T("crash")}]; }
+  if (!res.length) { out.append(el("p","hint",T("empty"))); out.hidden=false; return; }
+  res.forEach((r, i) => {
+    const box = el("div","result");
+    if (i) out.append(el("hr"));
+    box.append(dirOf(el("div","prob",(res.length>1 ? "("+String.fromCharCode(97+i)+")  " : "") + r.problem), ""));
+    if (r.error) box.append(dirOf(el("div","err",r.error), r.error));
+    else {
+      const a = el("div","ans"); a.append(el("small",null,T("answer")), dirOf(el("div",null,r.answer), r.answer)); box.append(a);
+      if (r.steps && r.steps.length) {
+        const ol = el("ol","steps");
+        r.steps.forEach(([c, why]) => {
+          const li = el("li"); li.append(dirOf(el("div","math",c), c));
+          if (why) li.append(dirOf(el("div","why",why), why));
+          ol.append(li);
+        });
+        box.append(ol);
+      }
+    }
+    out.append(box);
+  });
+  if (!quiet) {
+    const ok = res.filter(r => !r.error);
+    let id = null;
+    if (ok.length && !noSave) id = saveProblem({kind:"solve", input:$("problem").value.trim(), answer: ok.map(r => plain(r.answer)).join("   ;   ")});
+    if (ok.length) out.prepend(saveBar(id));
+  }
+  out.hidden = $("solvePanel").hidden;
+  if (!quiet) out.scrollIntoView({behavior:"smooth", block:"start"});
+}
+$("solve").onclick = () => solveNow();
+
+// ---------- geometry ----------
+const R = v => { let r = Math.round(v*10000)/10000; return String(Object.is(r,-0)?0:r); };
+// each result: [name, formula, substituted, value, power(1|2|3|"°"), πcoefficient]
+const SH = {
+  rect:{l:["Rectangle","מלבן"], f:[["a","Length","אורך"],["b","Width","רוחב"]], calc:v=>[
+    [pick("Area","שטח"),pick("length × width","אורך × רוחב"),`${v.a} × ${v.b}`,v.a*v.b,2],
+    [pick("Perimeter","היקף"),pick("2 × (length + width)","2 × (אורך + רוחב)"),`2 × (${v.a} + ${v.b})`,2*(v.a+v.b),1],
+    [pick("Diagonal","אלכסון"),pick("√(length² + width²)","√(אורך² + רוחב²)"),`√(${v.a}² + ${v.b}²)`,Math.hypot(v.a,v.b),1]]},
+  square:{l:["Square","ריבוע"], f:[["a","Side","צלע"]], calc:v=>[
+    [pick("Area","שטח"),pick("side²","צלע²"),`${v.a}²`,v.a*v.a,2],
+    [pick("Perimeter","היקף"),pick("4 × side","4 × צלע"),`4 × ${v.a}`,4*v.a,1],
+    [pick("Diagonal","אלכסון"),pick("side × √2","צלע × √2"),`${v.a} × √2`,v.a*Math.SQRT2,1]]},
+  tri:{l:["Triangle (base & height)","משולש (צלע וגובה)"], f:[["b","Base","צלע"],["h","Height","גובה לצלע"]], calc:v=>[
+    [pick("Area","שטח"),pick("base × height ÷ 2","צלע × גובה ÷ 2"),`${v.b} × ${v.h} ÷ 2`,v.b*v.h/2,2]]},
+  tri3:{l:["Triangle (3 sides)","משולש (3 צלעות)"], f:[["a","Side a","צלע a"],["b","Side b","צלע b"],["c","Side c","צלע c"]], calc:v=>{
+    if (v.a+v.b<=v.c||v.a+v.c<=v.b||v.b+v.c<=v.a) throw T("triIneq");
+    const s=(v.a+v.b+v.c)/2; return [
+    [pick("Perimeter","היקף"),"a + b + c",`${v.a} + ${v.b} + ${v.c}`,v.a+v.b+v.c,1],
+    [pick("Half perimeter s","חצי היקף s"),"(a + b + c) ÷ 2",`${R(v.a+v.b+v.c)} ÷ 2`,s,1],
+    [pick("Area (Heron)","שטח (נוסחת הרון)"),"√(s(s−a)(s−b)(s−c))",`√(${R(s)} × ${R(s-v.a)} × ${R(s-v.b)} × ${R(s-v.c)})`,Math.sqrt(s*(s-v.a)*(s-v.b)*(s-v.c)),2]];}},
+  right:{l:["Right triangle (2 legs)","משולש ישר-זווית (2 ניצבים)"], f:[["a","Leg a","ניצב a"],["b","Leg b","ניצב b"]], calc:v=>{const c=Math.hypot(v.a,v.b); return [
+    [pick("Hypotenuse (Pythagoras)","יתר (פיתגורס)"),"√(a² + b²)",`√(${v.a}² + ${v.b}²) = √${R(v.a*v.a+v.b*v.b)}`,c,1],
+    [pick("Area","שטח"),"a × b ÷ 2",`${v.a} × ${v.b} ÷ 2`,v.a*v.b/2,2],
+    [pick("Perimeter","היקף"),"a + b + c",`${v.a} + ${v.b} + ${R(c)}`,v.a+v.b+c,1]];}},
+  rightLeg:{l:["Right triangle (find a leg)","משולש ישר-זווית (מציאת ניצב)"], f:[["c","Hypotenuse","יתר"],["a","Known leg","ניצב ידוע"]], ex:{c:5,a:3}, calc:v=>{
+    if (v.a>=v.c) throw T("hypLong");
+    return [[pick("Missing leg (Pythagoras)","הניצב החסר (פיתגורס)"),"√(c² − a²)",`√(${v.c}² − ${v.a}²) = √${R(v.c*v.c-v.a*v.a)}`,Math.sqrt(v.c*v.c-v.a*v.a),1]];}},
+  angles:{l:["Triangle (find 3rd angle)","משולש (מציאת הזווית השלישית)"], f:[["A","Angle A (°)","זווית A (°)"],["B","Angle B (°)","זווית B (°)"]], noUnit:true, calc:v=>{
+    const C=180-v.A-v.B; if (C<=0) throw T("angBig");
+    return [[pick("Angle C","זווית C"),"180° − A − B",`180 − ${v.A} − ${v.B}`,C,"°"]];}},
+  circle:{l:["Circle","מעגל"], f:[["r","Radius","רדיוס"]], calc:v=>[
+    [pick("Diameter","קוטר"),"2 × r",`2 × ${v.r}`,2*v.r,1],
+    [pick("Area","שטח"),"π × r²",`π × ${v.r}²`,Math.PI*v.r*v.r,2,v.r*v.r],
+    [pick("Circumference","היקף"),"2 × π × r",`2 × π × ${v.r}`,2*Math.PI*v.r,1,2*v.r]]},
+  trap:{l:["Trapezoid (area)","טרפז (שטח)"], f:[["a","Top side","בסיס עליון"],["b","Bottom side","בסיס תחתון"],["h","Height","גובה"]], calc:v=>[
+    [pick("Area","שטח"),"(a + b) × h ÷ 2",`(${v.a} + ${v.b}) × ${v.h} ÷ 2`,(v.a+v.b)*v.h/2,2]]},
+  para:{l:["Parallelogram","מקבילית"], f:[["b","Base","צלע"],["h","Height","גובה לצלע"]], calc:v=>[
+    [pick("Area","שטח"),pick("base × height","צלע × גובה"),`${v.b} × ${v.h}`,v.b*v.h,2]]},
+  cube:{l:["Cube","קובייה"], f:[["a","Side","מקצוע"]], calc:v=>[
+    [pick("Volume","נפח"),pick("side³","מקצוע³"),`${v.a}³`,v.a**3,3],
+    [pick("Surface area","שטח פנים"),pick("6 × side²","6 × מקצוע²"),`6 × ${v.a}²`,6*v.a*v.a,2]]},
+  box:{l:["Box (cuboid)","תיבה"], f:[["l","Length","אורך"],["w","Width","רוחב"],["h","Height","גובה"]], calc:v=>[
+    [pick("Volume","נפח"),pick("length × width × height","אורך × רוחב × גובה"),`${v.l} × ${v.w} × ${v.h}`,v.l*v.w*v.h,3],
+    [pick("Surface area","שטח פנים"),"2 × (lw + lh + wh)",`2 × (${v.l}×${v.w} + ${v.l}×${v.h} + ${v.w}×${v.h})`,2*(v.l*v.w+v.l*v.h+v.w*v.h),2]]},
+  cyl:{l:["Cylinder","גליל"], f:[["r","Radius","רדיוס"],["h","Height","גובה"]], calc:v=>[
+    [pick("Volume","נפח"),"π × r² × h",`π × ${v.r}² × ${v.h}`,Math.PI*v.r*v.r*v.h,3,v.r*v.r*v.h],
+    [pick("Surface area","שטח פנים"),"2πr² + 2πrh",`2 × π × ${v.r}² + 2 × π × ${v.r} × ${v.h}`,2*Math.PI*v.r*(v.r+v.h),2,2*v.r*(v.r+v.h)]]},
+  cone:{l:["Cone","חרוט"], f:[["r","Radius","רדיוס"],["h","Height","גובה"]], calc:v=>[
+    [pick("Volume","נפח"),"π × r² × h ÷ 3",`π × ${v.r}² × ${v.h} ÷ 3`,Math.PI*v.r*v.r*v.h/3,3,v.r*v.r*v.h/3]]},
+  sphere:{l:["Sphere","כדור"], f:[["r","Radius","רדיוס"]], calc:v=>[
+    [pick("Volume","נפח"),"4/3 × π × r³",`4/3 × π × ${v.r}³`,4/3*Math.PI*v.r**3,3,4/3*v.r**3],
+    [pick("Surface area","שטח פנים"),"4 × π × r²",`4 × π × ${v.r}²`,4*Math.PI*v.r*v.r,2,4*v.r*v.r]]},
+};
+const EX = {a:5,b:3,c:4,h:4,r:3,l:5,w:3,A:60,B:45};
+
+// ---------- trapezoid: angles & proofs (class material, pages 338–339) ----------
+const TRW = {
+  en:{ given:"Given", trap:"ABCD is a trapezoid (AB ∥ DC)",
+    legThm:"In a trapezoid, the angles next to the same leg add up to 180°",
+    quad:"The angles of a quadrilateral add up to 360°",
+    coint:"Co-interior angles, substituting the sizes",
+    par:"If co-interior angles add up to 180°, the lines are parallel",
+    notPar:"If co-interior angles don't add up to 180°, the lines are not parallel",
+    defTrap:"A quadrilateral with exactly one pair of parallel opposite sides is a trapezoid",
+    twoPairs:"It has two pairs of parallel sides, so it is a parallelogram, not a trapezoid",
+    noPairs:"It has no pair of parallel sides",
+    isTrap:"ABCD is a trapezoid", isPara:"ABCD is not a trapezoid (it's a parallelogram)", notTrap:"ABCD is not a trapezoid",
+    claim:"Statement", reason:"Reason", missing:"Missing angles", result:"Result", allGiven:"All four angles are given.",
+    needLeg:"Enter at least one angle next to each leg: A or D, and also B or C.",
+    need3:"Enter at least 3 of the 4 angles.", range:"Each angle must be between 0° and 180°.", nan:"Angles must be numbers.",
+    sumBad:s=>"The angles add up to "+s+"°, but the angles of a quadrilateral must add up to 360°.",
+    legBad:(p,q,x)=>"∢"+p+" + ∢"+q+" = "+x+"°, but in a trapezoid with AB ∥ DC it must be 180°.",
+    notes:["<b>Definition:</b> A quadrilateral with exactly one pair of parallel sides is a <b>trapezoid</b>. The parallel sides (AB, DC) are the <b>bases</b>. The sides that aren't parallel (AD, BC) are the <b>legs</b>.",
+      "<b>Theorem:</b> In a trapezoid, the angles next to the same leg add up to 180°:  ∢A + ∢D = 180°,  ∢B + ∢C = 180°.",
+      "<b>To prove a trapezoid</b>, prove both: one pair of sides is parallel, and the other pair is not parallel (using angles)."] },
+  he:{ given:"נתון", trap:"⁦ABCD⁩ טרפז ⁦(AB ∥ DC)⁩",
+    legThm:"בטרפז, סכום הזוויות שליד אותה שוק 180°",
+    quad:"סכום הזוויות במרובע 360°",
+    coint:"זוויות חד-צדדיות, הצבת גדלים",
+    par:"אם סכום הזוויות החד-צדדיות 180°, אז הישרים מקבילים",
+    notPar:"אם סכום הזוויות החד-צדדיות שונה מ-180°, אז הישרים לא מקבילים",
+    defTrap:"מרובע שבו זוג אחד בלבד של צלעות נגדיות מקבילות נקרא טרפז",
+    twoPairs:"יש בו שני זוגות של צלעות מקבילות, לכן הוא מקבילית ולא טרפז",
+    noPairs:"אין בו אף זוג של צלעות מקבילות",
+    isTrap:"⁦ABCD⁩ טרפז", isPara:"⁦ABCD⁩ לא טרפז (זו מקבילית)", notTrap:"⁦ABCD⁩ לא טרפז",
+    claim:"טענה", reason:"נימוק", missing:"הזוויות החסרות", result:"מסקנה", allGiven:"כל ארבע הזוויות נתונות.",
+    needLeg:"הכניסו לפחות זווית אחת ליד כל שוק: A או D, וגם B או C.",
+    need3:"הכניסו לפחות 3 מתוך 4 הזוויות.", range:"כל זווית צריכה להיות בין 0° ל-180°.", nan:"הזוויות צריכות להיות מספרים.",
+    sumBad:s=>"סכום הזוויות יוצא "+s+"°, אבל במרובע סכום הזוויות חייב להיות 360°.",
+    legBad:(p,q,x)=>"⁦∢"+p+" + ∢"+q+" = "+x+"°⁩, אבל בטרפז שבו ⁦AB ∥ DC⁩ הסכום חייב להיות 180°.",
+    notes:["<b>הגדרה:</b> מרובע בעל זוג אחד <b>בלבד</b> של צלעות מקבילות נקרא <b>טרפז</b>. הצלעות המקבילות (AB, DC) נקראות <b>בסיסי הטרפז</b>. הצלעות שאינן מקבילות (AD, BC) נקראות <b>שוקי הטרפז</b>.",
+      "<b>משפט:</b> בטרפז, סכום הזוויות שליד אותה שוק 180°: <span dir=\"ltr\">∢A + ∢D = 180°,  ∢B + ∢C = 180°</span>",
+      "<b>כדי לזהות טרפז</b> צריך להוכיח את שניהם: זוג אחד של צלעות מקביל, וזוג שני לא מקביל (לפי זוויות)."] },
+};
+const TW = () => TRW[lang];
+const K4 = ["A","B","C","D"];
+function checkAngles(v){ const W=TW(); for (const k of K4) if (v[k]!=null && !(v[k]>0 && v[k]<180)) throw W.range; }
+
+function trapMissing(v){
+  const W=TW(); checkAngles(v);
+  const given = K4.filter(k=>v[k]!=null);
+  if (!given.length) throw W.needLeg;
+  const rows = [[W.trap, W.given], [LRI(given.map(k=>"∢"+k+" = "+R(v[k])+"°").join(" ,  ")), W.given]];
+  for (const [p,q] of [["A","D"],["B","C"]]) {
+    if (v[p]==null && v[q]==null) throw W.needLeg;
+    if (v[p]!=null && v[q]!=null) { const x=v[p]+v[q]; if (Math.abs(x-180)>1e-9) throw W.legBad(p,q,R(x)); continue; }
+    const [kn, ms] = v[p]!=null ? [p,q] : [q,p];
+    v[ms] = 180 - v[kn];
+    rows.push([LRI("∢"+ms+" = 180° − ∢"+kn+" = 180 − "+R(v[kn])+" = "+R(v[ms])+"°"), W.legThm]);
+  }
+  const missing = K4.filter(k=>!given.includes(k));
+  if (missing.length) rows.push([LRI("∢A + ∢B + ∢C + ∢D = "+K4.map(k=>R(v[k])).join(" + ")+" = 360° ✓"), W.quad]);
+  return { rows, title:W.missing, answer: missing.length ? missing.map(k=>LRI("∢"+k+" = "+R(v[k])+"°")).join("    ") : W.allGiven,
+           angles:v, computed:missing, par:[true,false] };
+}
+
+function trapCheck(v){
+  const W=TW(); checkAngles(v);
+  const given = K4.filter(k=>v[k]!=null);
+  if (given.length < 3) throw W.need3;
+  const rows = [[LRI(given.map(k=>"∢"+k+" = "+R(v[k])+"°").join(" ,  ")), W.given]];
+  const sum = given.reduce((t,k)=>t+v[k],0);
+  let computed = [];
+  if (given.length === 3) {
+    if (sum >= 360) throw W.sumBad(R(sum));
+    const m = K4.find(k=>v[k]==null); v[m] = 360 - sum; computed=[m];
+    if (v[m] >= 180) throw W.range;
+    rows.push([LRI("∢"+m+" = 360° − "+given.map(k=>"∢"+k).join(" − ")+" = 360 − "+given.map(k=>R(v[k])).join(" − ")+" = "+R(v[m])+"°"), W.quad]);
+  } else if (Math.abs(sum-360) > 1e-9) throw W.sumBad(R(sum));
+  const s1 = v.A+v.D, p1 = Math.abs(s1-180) < 1e-9;
+  rows.push([LRI("∢A + ∢D = "+R(v.A)+" + "+R(v.D)+" = "+R(s1)+"°"+(p1?"":" ≠ 180°")), W.coint]);
+  rows.push([LRI(p1 ? "AB ∥ DC" : "AB ∦ DC"), p1 ? W.par : W.notPar]);
+  const s2 = v.A+v.B, p2 = Math.abs(s2-180) < 1e-9;
+  rows.push([LRI("∢A + ∢B = "+R(v.A)+" + "+R(v.B)+" = "+R(s2)+"°"+(p2?"":" ≠ 180°")), W.coint]);
+  rows.push([LRI(p2 ? "AD ∥ BC" : "AD ∦ BC"), p2 ? W.par : W.notPar]);
+  const verdict = p1 !== p2 ? [W.isTrap, W.defTrap] : (p1 ? [W.isPara, W.twoPairs] : [W.notTrap, W.noPairs]);
+  rows.push(verdict);
+  return { rows, title:W.result, answer:verdict[0], angles:v, computed, par:[p1,p2] };
+}
+
+function trapSVG(ang, par, computed){
+  const [p1,p2] = par;
+  const P = p1 && p2 ? {A:[50,26],B:[190,26],C:[240,124],D:[100,124]}
+          : (p1 || p2) ? {A:[75,26],B:[185,26],C:[245,124],D:[20,124]}
+          : {A:[70,26],B:[200,44],C:[245,124],D:[20,124]};
+  const pts = K4.map(k=>P[k].join(",")).join(" ");
+  const off = {A:[-6,-8],B:[6,-8],C:[8,14],D:[-8,14]};
+  const inner = k => { const cx=(P.A[0]+P.B[0]+P.C[0]+P.D[0])/4, cy=(P.A[1]+P.B[1]+P.C[1]+P.D[1])/4;
+    return [P[k][0]+(cx-P[k][0])*0.22, P[k][1]+(cy-P[k][1])*0.28+5]; };
+  const chev = (a,b,n) => { const mx=(P[a][0]+P[b][0])/2, my=(P[a][1]+P[b][1])/2, ang=Math.atan2(P[b][1]-P[a][1],P[b][0]-P[a][0])*180/Math.PI;
+    let d=""; for (let i=0;i<n;i++){ const x=mx-3+i*7; d+=`M${x-4},${my-5} L${x+2},${my} L${x-4},${my+5} `; }
+    return `<path d="${d}" transform="rotate(${ang} ${mx} ${my})" style="fill:none;stroke:var(--pen);stroke-width:2"/>`; };
+  let svg = `<svg viewBox="0 0 270 150" role="img" aria-label="ABCD"><polygon points="${pts}" style="fill:var(--pen-soft);stroke:var(--pen);stroke-width:2.5;stroke-linejoin:round"/>`;
+  if (p1) svg += chev("A","B",1) + chev("D","C",1);
+  if (p2) svg += chev("A","D",2) + chev("B","C",2);
+  for (const k of K4) {
+    const [x,y]=P[k], [dx,dy]=off[k], [ix,iy]=inner(k);
+    svg += `<text x="${x+dx}" y="${y+dy}" text-anchor="middle" style="fill:var(--ink);font:700 15px var(--sans)">${k}</text>`;
+    const known = ang[k]!=null, isNew = computed.includes(k);
+    svg += `<text x="${ix}" y="${iy}" text-anchor="middle" style="fill:${isNew?"var(--ok)":"var(--muted)"};font:${isNew?700:500} 13px var(--mono)">${known?R(ang[k])+"°":"?"}</text>`;
+  }
+  return svg + "</svg>";
+}
+
+SH.trapAngles = {g:"trap", kind:"proof", noUnit:true, l:["Trapezoid: find missing angles (AB ∥ DC)","טרפז: מציאת זוויות חסרות (AB ∥ DC)"],
+  f:[["A","∢A (°)","∢A (°)"],["B","∢B (°)","∢B (°)"],["C","∢C (°)","∢C (°)"],["D","∢D (°)","∢D (°)"]], ex:{A:110,C:43}, calc:trapMissing};
+SH.trapCheck = {g:"trap", kind:"proof", noUnit:true, l:["Is ABCD a trapezoid? (by angles)","האם ABCD טרפז? (לפי זוויות)"],
+  f:[["A","∢A (°)","∢A (°)"],["B","∢B (°)","∢B (°)"],["C","∢C (°)","∢C (°)"],["D","∢D (°)","∢D (°)"]], ex:{A:30,B:50,D:150}, calc:trapCheck};
+
+// ---------- isosceles triangle & kite (test prep sheet) ----------
+const g2 = pick;
+const GV = () => g2("Given","נתון");
+const eqOrApprox = x => (Math.abs(x-Math.round(x))<1e-9 ? " = " : " ≈ ") + R(x);
+const usuf = p => { const uk=$("unit").value; return uk ? " " + pick(...UNITS[uk]) + (p===2?"²":"") : ""; };
+function angRange(v, keys){ for (const k of keys) if (v[k]!=null && !(v[k]>0 && v[k]<180)) throw TW().range; }
+function lenPos(v, keys){ for (const k of keys) if (v[k]!=null && !(v[k]>0)) throw g2("Lengths must be bigger than 0.","אורכים צריכים להיות גדולים מ-0."); }
+const isoGiven = () => g2("ΔABC is isosceles (AB = AC)", LRI("ΔABC")+" שווה שוקיים "+LRI("(AB = AC)"));
+const kiteGiven = () => g2("ABCD is a kite (AB = AD, CB = CD)", LRI("ABCD")+" דלתון "+LRI("(AB = AD ,  CB = CD)"));
+const givenRow = (v, keys) => [LRI(keys.filter(k=>v[k]!=null).map(k=>"∢"+k+" = "+R(v[k])+"°").join(" ,  ")), GV()];
+
+const NOTES = {
+  iso:{ en:["<b>Definition:</b> A triangle with two equal sides is <b>isosceles</b>. The equal sides are the legs, the third side is the base, and the angle between the legs is the vertex angle.",
+            "<b>Properties:</b> The base angles are equal. The median to the base is also the height and bisects the vertex angle. The height to the base is also the median and the bisector. The bisector of the vertex angle is also the height and the median to the base.",
+            "<b>Converse theorems:</b> If a triangle has two equal sides, or two equal angles, it is isosceles. It is also isosceles if its height matches its angle bisector, its median matches its angle bisector, or its height matches its median."],
+        he:["<b>הגדרה:</b> משולש בעל שתי צלעות שוות נקרא <b>משולש שווה שוקיים</b>. הצלעות השוות הן השוקיים, הצלע השלישית היא הבסיס, והזווית שבין השוקיים היא זווית הראש.",
+            "<b>תכונות:</b> זוויות הבסיס שוות. התיכון לבסיס הוא גם גובה וגם חוצה זווית הראש. הגובה לבסיס הוא גם תיכון וגם חוצה זווית הראש. חוצה זווית הראש הוא גם גובה לבסיס וגם תיכון.",
+            "<b>משפטים הפוכים:</b> אם במשולש יש שתי צלעות שוות, או שתי זוויות שוות, אז הוא שווה שוקיים. הוא שווה שוקיים גם אם גובה מתלכד עם חוצה זווית, תיכון מתלכד עם חוצה זווית, או גובה מתלכד עם תיכון."] },
+  kite:{ en:["<b>Definitions:</b> (1) A quadrilateral made of two isosceles triangles with a shared base. (2) A quadrilateral with two separate pairs of equal adjacent sides. The <b>main diagonal</b> (AC) joins the vertices between the equal sides.",
+             "<b>Properties:</b> The angles opposite the main diagonal are equal (∢B = ∢D). The main diagonal bisects the vertex angles. The main diagonal is perpendicular to the other diagonal and bisects it.",
+             "<b>Kite area</b> = half the product of the diagonals:  <span dir=\"ltr\">S = AC · BD ÷ 2</span>"],
+         he:["<b>הגדרות:</b> (1) מרובע המורכב משני משולשים שווי שוקיים בעלי בסיס משותף. (2) מרובע בעל שני זוגות זרים של צלעות סמוכות שוות. <b>האלכסון הראשי</b> (AC) מחבר את הקודקודים שבין הצלעות השוות.",
+             "<b>תכונות:</b> בדלתון הזוויות מול האלכסון הראשי שוות זו לזו <span dir=\"ltr\">(∢B = ∢D)</span>. האלכסון הראשי חוצה את זוויות הראש. האלכסון הראשי מאונך לאלכסון המשני וחוצה אותו.",
+             "<b>שטח דלתון</b> = מחצית מכפלת האלכסונים:  <span dir=\"ltr\">S = AC · BD ÷ 2</span>"] },
+};
+
+function svgText(x,y,txt,style){ return `<text x="${x}" y="${y}" text-anchor="middle" style="${style}">${txt}</text>`; }
+function tickMarks(P,Q,n){ const mx=(P[0]+Q[0])/2, my=(P[1]+Q[1])/2, dx=Q[0]-P[0], dy=Q[1]-P[1], L=Math.hypot(dx,dy), ux=dx/L, uy=dy/L, nx=-uy, ny=ux;
+  let d=""; for (let i=0;i<n;i++){ const o=(i-(n-1)/2)*5, cx=mx+ux*o, cy=my+uy*o; d+=`M${cx-nx*6},${cy-ny*6} L${cx+nx*6},${cy+ny*6} `; }
+  return `<path d="${d}" style="stroke:var(--ink);stroke-width:2"/>`; }
+const LBL = "fill:var(--ink);font:700 15px var(--sans)";
+const angStyle = isNew => `fill:${isNew?"var(--ok)":"var(--muted)"};font:${isNew?700:500} 13px var(--mono)`;
+function angLabel(P, centroid, k, ang, computed){
+  const x=P[0]+(centroid[0]-P[0])*0.3, y=P[1]+(centroid[1]-P[1])*0.3+5;
+  return svgText(x,y, ang[k]!=null ? R(ang[k])+"°" : "?", angStyle(computed.includes(k)));
+}
+
+function isoSVG(ang, computed, opt){
+  opt = opt || {};
+  const P={A:[140,20],B:[40,138],C:[240,138]}, D=[140,138], cen=[140,99];
+  let s=`<svg viewBox="0 0 280 165" role="img" aria-label="ABC"><polygon points="${P.A} ${P.B} ${P.C}" style="fill:var(--pen-soft);stroke:var(--pen);stroke-width:2.5;stroke-linejoin:round"/>`;
+  for (const [a,b,n] of (opt.ticks || [["A","B",1],["A","C",1]])) s += tickMarks(P[a],P[b],n);
+  if (opt.height) {
+    s += `<line x1="140" y1="20" x2="140" y2="138" style="stroke:var(--pen);stroke-width:1.5;stroke-dasharray:5 4"/><path d="M140,128 h10 v10" style="fill:none;stroke:var(--ink);stroke-width:1.2"/>`;
+    s += svgText(140,156,"D",LBL) + tickMarks(P.B,D,2) + tickMarks(D,P.C,2);
+    if (opt.lens) s += svgText(78,72,opt.lens.leg,angStyle(false)) + svgText(140,157-0,"",LBL) + svgText(90,154,opt.lens.half,angStyle(false)) + `<text x="148" y="96" text-anchor="start" style="${angStyle(true)}">${opt.lens.h}</text>`;
+  }
+  s += svgText(140,14,"A",LBL) + svgText(28,150,"B",LBL) + svgText(252,150,"C",LBL);
+  if (ang) for (const k of ["A","B","C"]) s += angLabel(P[k], cen, k, ang, computed);
+  return s + "</svg>";
+}
+function kiteSVG(ang, computed, opt){
+  opt = opt || {};
+  const P={A:[140,16],B:[64,62],C:[140,150],D:[216,62]}, O=[140,62], cen=[140,72];
+  let s=`<svg viewBox="0 0 280 170" role="img" aria-label="ABCD"><polygon points="${P.A} ${P.B} ${P.C} ${P.D}" style="fill:var(--pen-soft);stroke:var(--pen);stroke-width:2.5;stroke-linejoin:round"/>`;
+  s += tickMarks(P.A,P.B,1) + tickMarks(P.A,P.D,1) + tickMarks(P.C,P.B,2) + tickMarks(P.C,P.D,2);
+  if (opt.diag) {
+    s += `<line x1="140" y1="16" x2="140" y2="150" style="stroke:var(--pen);stroke-width:1.5;stroke-dasharray:5 4"/><line x1="64" y1="62" x2="216" y2="62" style="stroke:var(--pen);stroke-width:1.5;stroke-dasharray:5 4"/>`;
+    s += `<path d="M140,52 h10 v10" style="fill:none;stroke:var(--ink);stroke-width:1.2"/>` + svgText(130,78,"O",LBL.replace("15px","12px"));
+  }
+  s += svgText(140,11,"A",LBL) + svgText(50,66,"B",LBL) + svgText(140,166,"C",LBL) + svgText(230,66,"D",LBL);
+  if (ang) for (const k of ["A","B","C","D"]) s += angLabel(P[k], cen, k, ang, computed);
+  return s + "</svg>";
+}
+
+const R_SUM180 = () => g2("The angles of a triangle add up to 180°","סכום הזוויות במשולש 180°");
+const R_BASE = () => g2("In an isosceles triangle, the base angles are equal","במשולש שווה שוקיים זוויות הבסיס שוות");
+
+function isoAngles(v){
+  angRange(v,["A","B"]);
+  if (v.A==null && v.B==null) throw g2("Enter the vertex angle ∢A or a base angle ∢B.","הכניסו את זווית הראש ∢A או זווית בסיס ∢B.");
+  const rows=[[isoGiven(), GV()], givenRow(v,["A","B"])];
+  let A=v.A, B=v.B, computed;
+  if (A!=null && B!=null) {
+    if (Math.abs(A+2*B-180)>1e-9) throw g2("These angles don't fit: in an isosceles triangle ∢A + 2·∢B must be 180°.","הזוויות לא מתאימות: במשולש שווה שוקיים ∢A + 2·∢B חייב להיות 180°.");
+    rows.push([LRI("∢C = ∢B = "+R(B)+"°"), R_BASE()]); computed=["C"];
+  } else if (A!=null) {
+    rows.push([LRI("∢B = ∢C"), R_BASE()]);
+    rows.push([LRI("∢B + ∢C = 180° − ∢A = 180 − "+R(A)+" = "+R(180-A)+"°"), R_SUM180()]);
+    B=(180-A)/2; rows.push([LRI("∢B = ∢C = "+R(180-A)+"° ÷ 2 = "+R(B)+"°"), g2("Two equal angles: divide by 2","שתי זוויות שוות: מחלקים ב-2")]);
+    computed=["B","C"];
+  } else {
+    if (B>=90) throw g2("A base angle must be less than 90°.","זווית בסיס חייבת להיות קטנה מ-90°.");
+    rows.push([LRI("∢C = ∢B = "+R(B)+"°"), R_BASE()]);
+    A=180-2*B; rows.push([LRI("∢A = 180° − ∢B − ∢C = 180 − "+R(B)+" − "+R(B)+" = "+R(A)+"°"), R_SUM180()]);
+    computed=["A","C"];
+  }
+  const ang={A,B,C:B};
+  return { rows, title:g2("Angles","הזוויות"), answer: LRI("∢A = "+R(A)+"°   ∢B = ∢C = "+R(B)+"°"), svg: isoSVG(ang, computed) };
+}
+
+function isoHeight(v){
+  lenPos(v,["L","b"]);
+  if (v.L==null || v.b==null) throw g2("Enter the leg AB and the base BC.","הכניסו את השוק AB ואת הבסיס BC.");
+  const L=v.L, b=v.b;
+  if (b >= 2*L) throw g2("The base must be shorter than the two legs together (BC < 2·AB).","הבסיס חייב להיות קצר מסכום שתי השוקיים (BC < 2·AB).");
+  const BD=b/2, h2=L*L-BD*BD, AD=Math.sqrt(h2), S=b*AD/2, P=2*L+b, u=usuf;
+  const rows=[
+    [isoGiven(), GV()],
+    [LRI("AB = AC = "+R(L)+" ,  BC = "+R(b)+u(1)), GV()],
+    [g2("AD is the median to the base BC", LRI("AD")+" תיכון לבסיס "+LRI("BC")), g2("Construction (draw the median to the base)","בנייה (נעביר את התיכון לבסיס)")],
+    [LRI("BD = DC = BC ÷ 2 = "+R(b)+" ÷ 2 = "+R(BD)), g2("A median cuts the side into two equal parts","תיכון חוצה את הצלע לשני חלקים שווים")],
+    [LRI("AD ⊥ BC   (∢ADB = 90°)"), g2("In an isosceles triangle, the median to the base is also the height","במשולש שווה שוקיים התיכון לבסיס הוא גם גובה")],
+    [LRI("∢BAD = ∢CAD"), g2("In an isosceles triangle, the median to the base also bisects the vertex angle","במשולש שווה שוקיים התיכון לבסיס הוא גם חוצה זווית הראש")],
+    [LRI("AD² + BD² = AB²"), g2("Pythagoras in the right triangle ABD","משפט פיתגורס במשולש ישר הזווית "+LRI("ABD"))],
+    [LRI("AD = √(AB² − BD²) = √("+R(L)+"² − "+R(BD)+"²) = √"+R(h2)+eqOrApprox(AD)), g2("Substituting the sizes","הצבת גדלים")],
+    [LRI("S = BC · AD ÷ 2 = "+R(b)+" · "+R(AD)+" ÷ 2"+eqOrApprox(S)+u(2)), g2("Triangle area = side × height to that side ÷ 2","שטח משולש = צלע × הגובה לצלע ÷ 2")],
+    [LRI("P = AB + AC + BC = "+R(L)+" + "+R(L)+" + "+R(b)+" = "+R(P)+u(1)), g2("Perimeter = sum of the sides","היקף = סכום הצלעות")],
+  ];
+  return { rows, title:g2("Height, area and perimeter","גובה, שטח והיקף"),
+    answer: [LRI("AD"+eqOrApprox(AD)+u(1)), LRI("S"+eqOrApprox(S)+u(2)), LRI("P = "+R(P)+u(1))].join("\n"),
+    svg: isoSVG(null, [], {height:true, lens:{leg:R(L), half:R(BD), h:"AD"+eqOrApprox(AD).replace(" = ","=").replace(" ≈ ","≈")}}) };
+}
+
+function isoCheck(v){
+  angRange(v,["A","B","C"]);
+  const K=["A","B","C"], given=K.filter(k=>v[k]!=null);
+  if (given.length<2) throw g2("Enter at least 2 of the 3 angles.","הכניסו לפחות 2 מתוך 3 הזוויות.");
+  const rows=[givenRow(v,K)], computed=[];
+  const sum=given.reduce((t,k)=>t+v[k],0);
+  if (given.length===2) {
+    if (sum>=180) throw g2("Two angles of a triangle must add up to less than 180°.","סכום שתי זוויות במשולש חייב להיות קטן מ-180°.");
+    const m=K.find(k=>v[k]==null); v[m]=180-sum; computed.push(m);
+    rows.push([LRI("∢"+m+" = 180° − "+given.map(k=>"∢"+k).join(" − ")+" = 180 − "+given.map(k=>R(v[k])).join(" − ")+" = "+R(v[m])+"°"), R_SUM180()]);
+  } else if (Math.abs(sum-180)>1e-9) throw g2("The angles add up to "+R(sum)+"°, but a triangle's angles add up to 180°.","סכום הזוויות יוצא "+R(sum)+"°, אבל במשולש הסכום הוא 180°.");
+  const same=(a,b)=>Math.abs(v[a]-v[b])<1e-9;
+  const OPP={A:"BC",B:"AC",C:"AB"};
+  const pairs=[["B","C"],["A","C"],["A","B"]].filter(([a,b])=>same(a,b));
+  let ticks=[], verdict;
+  if (pairs.length===3) {
+    rows.push([LRI("∢A = ∢B = ∢C = 60°"), g2("Substituting the sizes","הצבת גדלים")]);
+    rows.push([LRI("AB = BC = AC"), g2("Opposite equal angles lie equal sides","מול זוויות שוות מונחות צלעות שוות")]);
+    verdict=[g2("ΔABC is equilateral (so it is also isosceles)", LRI("ΔABC")+" שווה צלעות (ולכן גם שווה שוקיים)"), g2("A triangle with all sides equal is equilateral","משולש שכל צלעותיו שוות נקרא שווה צלעות")];
+    ticks=[["A","B",1],["B","C",1],["A","C",1]];
+  } else if (pairs.length===1) {
+    const [a,b]=pairs[0];
+    rows.push([LRI("∢"+a+" = ∢"+b+" = "+R(v[a])+"°"), g2("Substituting the sizes","הצבת גדלים")]);
+    const s1=OPP[a], s2=OPP[b];
+    rows.push([LRI(s2+" = "+s1), g2("If a triangle has two equal angles, it is isosceles: opposite equal angles lie equal sides","אם במשולש יש שתי זוויות שוות אז הוא שווה שוקיים: מול זוויות שוות מונחות צלעות שוות")]);
+    verdict=[g2("ΔABC is isosceles", LRI("ΔABC")+" שווה שוקיים"), g2("A triangle with two equal sides is isosceles","משולש בעל שתי צלעות שוות נקרא שווה שוקיים")];
+    ticks=[[s1[0],s1[1],1],[s2[0],s2[1],1]];
+  } else {
+    verdict=[g2("ΔABC is not isosceles", LRI("ΔABC")+" לא שווה שוקיים"), g2("No two angles are equal, so no two sides are equal","אין בו שתי זוויות שוות, ולכן אין בו שתי צלעות שוות")];
+  }
+  rows.push(verdict);
+  return { rows, title:g2("Result","מסקנה"), answer:verdict[0], svg: isoSVG(v, computed, {ticks}) };
+}
+
+const R_KITE_BD = () => g2("In a kite, the angles opposite the main diagonal are equal","בדלתון הזוויות מול האלכסון הראשי שוות זו לזו");
+const R_QUAD = () => TW().quad;
+function kiteAngles(v){
+  const K=["A","B","C","D"]; angRange(v,K);
+  const given=K.filter(k=>v[k]!=null);
+  if (given.length<2) throw g2("Enter at least 2 angles: ∢A and ∢C, or ∢B (or ∢D) with ∢A or ∢C.","הכניסו לפחות 2 זוויות: ∢A ו-∢C, או ∢B (או ∢D) יחד עם ∢A או ∢C.");
+  const rows=[[kiteGiven(), GV()], givenRow(v,K)], computed=[];
+  if (v.B!=null && v.D!=null && Math.abs(v.B-v.D)>1e-9) throw g2("In a kite ∢B must equal ∢D.","בדלתון ∢B חייבת להיות שווה ל-∢D.");
+  if (v.B!=null || v.D!=null) {
+    const [kn,ms]= v.B!=null ? ["B","D"] : ["D","B"];
+    if (v[ms]==null) { v[ms]=v[kn]; computed.push(ms); }
+    rows.push([LRI("∢"+ms+" = ∢"+kn+" = "+R(v[kn])+"°"), R_KITE_BD()]);
+    const miss=["A","C"].filter(k=>v[k]==null);
+    if (miss.length===2) throw g2("Also enter ∢A or ∢C.","הכניסו גם את ∢A או את ∢C.");
+    if (miss.length===1) {
+      const m=miss[0], o=m==="A"?"C":"A"; v[m]=360-v[o]-2*v.B;
+      if (!(v[m]>0)) throw TW().sumBad(R(v[o]+2*v.B));
+      computed.push(m);
+      rows.push([LRI("∢"+m+" = 360° − ∢"+o+" − ∢B − ∢D = 360 − "+R(v[o])+" − "+R(v.B)+" − "+R(v.D)+" = "+R(v[m])+"°"), R_QUAD()]);
+    } else if (Math.abs(v.A+v.C+2*v.B-360)>1e-9) throw TW().sumBad(R(v.A+v.C+2*v.B));
+  } else {
+    if (v.A==null || v.C==null) throw g2("Enter ∢A and ∢C, or one of ∢B / ∢D.","הכניסו את ∢A ואת ∢C, או את ∢B / ∢D.");
+    rows.push([LRI("∢B = ∢D"), R_KITE_BD()]);
+    const s=360-v.A-v.C; if (!(s>0)) throw TW().sumBad(R(v.A+v.C));
+    rows.push([LRI("∢B + ∢D = 360° − ∢A − ∢C = 360 − "+R(v.A)+" − "+R(v.C)+" = "+R(s)+"°"), R_QUAD()]);
+    v.B=v.D=s/2; computed.push("B","D");
+    rows.push([LRI("∢B = ∢D = "+R(s)+"° ÷ 2 = "+R(v.B)+"°"), g2("Two equal angles: divide by 2","שתי זוויות שוות: מחלקים ב-2")]);
+  }
+  rows.push([LRI("∢BAC = ∢DAC = ∢A ÷ 2 = "+R(v.A/2)+"°"), g2("The main diagonal bisects the vertex angles","האלכסון הראשי חוצה את זוויות הראש")]);
+  rows.push([LRI("∢BCA = ∢DCA = ∢C ÷ 2 = "+R(v.C/2)+"°"), g2("The main diagonal bisects the vertex angles","האלכסון הראשי חוצה את זוויות הראש")]);
+  return { rows, title:g2("Angles","הזוויות"), answer: [LRI("∢A = "+R(v.A)+"°   ∢C = "+R(v.C)+"°"), LRI("∢B = ∢D = "+R(v.B)+"°")].join("\n"), svg: kiteSVG(v, computed, {diag:true}) };
+}
+
+function kiteArea(v){
+  lenPos(v,["d1","d2","S"]);
+  const n=["d1","d2","S"].filter(k=>v[k]!=null).length;
+  if (n<2) throw g2("Enter 2 of these 3: AC, BD, area.","הכניסו 2 מתוך 3: AC, BD, שטח.");
+  const u=usuf, rows=[[kiteGiven(), GV()], [g2("AC is the main diagonal, BD is the other diagonal", LRI("AC")+" האלכסון הראשי, "+LRI("BD")+" האלכסון המשני"), GV()]];
+  rows.push([LRI(["d1","d2","S"].filter(k=>v[k]!=null).map(k=>({d1:"AC",d2:"BD",S:"S"})[k]+" = "+R(v[k])).join(" ,  ")), GV()]);
+  rows.push([LRI("AC ⊥ BD"), g2("In a kite, the main diagonal is perpendicular to the other diagonal","בדלתון האלכסון הראשי מאונך לאלכסון המשני")]);
+  const RA = g2("Kite area = half the product of the diagonals","שטח דלתון = מחצית מכפלת האלכסונים");
+  let {d1,d2,S}=v;
+  if (d1!=null && d2!=null) {
+    const s=d1*d2/2;
+    if (S!=null && Math.abs(S-s)>1e-9) throw g2("These numbers don't fit: AC · BD ÷ 2 = "+R(s)+".","המספרים לא מתאימים: AC · BD ÷ 2 = "+R(s)+".");
+    S=s; rows.push([LRI("S = AC · BD ÷ 2 = "+R(d1)+" · "+R(d2)+" ÷ 2 = "+R(S)+u(2)), RA]);
+  } else if (d1!=null) { d2=2*S/d1; rows.push([LRI("AC · BD ÷ 2 = S  ⇒  BD = 2 · S ÷ AC = 2 · "+R(S)+" ÷ "+R(d1)+" = "+R(d2)+u(1)), RA]); }
+  else { d1=2*S/d2; rows.push([LRI("AC · BD ÷ 2 = S  ⇒  AC = 2 · S ÷ BD = 2 · "+R(S)+" ÷ "+R(d2)+" = "+R(d1)+u(1)), RA]); }
+  rows.push([LRI("BO = OD = BD ÷ 2 = "+R(d2)+" ÷ 2 = "+R(d2/2)+u(1)), g2("The main diagonal bisects the other diagonal","האלכסון הראשי חוצה את האלכסון המשני")]);
+  return { rows, title:g2("Kite","דלתון"), answer: [LRI("S = "+R(S)+u(2)), LRI("AC = "+R(d1)+u(1)), LRI("BD = "+R(d2)+u(1))].join("\n"), svg: kiteSVG(null, [], {diag:true}) };
+}
+
+const ANG4 = k => [k, "∢"+k+" (°)", "∢"+k+" (°)"];
+SH.isoAngles = {g:"iso", kind:"proof", noUnit:true, l:["Isosceles triangle: find the angles","משולש שווה שוקיים: מציאת זוויות"],
+  f:[["A","Vertex angle ∢A (°)","זווית הראש ∢A (°)"],["B","Base angle ∢B (°)","זווית בסיס ∢B (°)"]], ex:{A:40}, calc:isoAngles};
+SH.isoHeight = {g:"iso", kind:"proof", l:["Isosceles triangle: height, area, perimeter","משולש שווה שוקיים: גובה, שטח והיקף"],
+  f:[["L","Leg AB = AC","שוק AB = AC"],["b","Base BC","בסיס BC"]], ex:{L:13,b:10}, calc:isoHeight};
+SH.isoCheck = {g:"iso", kind:"proof", noUnit:true, l:["Is the triangle isosceles? (by angles)","האם המשולש שווה שוקיים? (לפי זוויות)"],
+  f:[ANG4("A"),ANG4("B"),ANG4("C")], ex:{A:50,B:65}, calc:isoCheck};
+SH.kiteAngles = {g:"kite", kind:"proof", noUnit:true, l:["Kite: find the angles","דלתון: מציאת זוויות"],
+  f:[ANG4("A"),ANG4("B"),ANG4("C"),ANG4("D")], ex:{A:120,C:60}, calc:kiteAngles};
+
+// ---- kite: angles made by the main and secondary diagonals ----
+function kiteDiagSVG(x, computed){
+  const P={A:[150,22],B:[58,96],C:[150,236],D:[242,96]};
+  const dash = "stroke:var(--pen);stroke-width:1.5;stroke-dasharray:5 4";
+  let s=`<svg viewBox="0 0 300 262" role="img" aria-label="ABCD"><polygon points="${P.A} ${P.B} ${P.C} ${P.D}" style="fill:var(--pen-soft);stroke:var(--pen);stroke-width:2.5;stroke-linejoin:round"/>`;
+  s += tickMarks(P.A,P.B,1) + tickMarks(P.A,P.D,1) + tickMarks(P.C,P.B,2) + tickMarks(P.C,P.D,2);
+  s += `<line x1="150" y1="22" x2="150" y2="236" style="${dash}"/><line x1="58" y1="96" x2="242" y2="96" style="${dash}"/>`;
+  s += `<path d="M150,84 h12 v12" style="fill:none;stroke:var(--ink);stroke-width:1.2"/>` + svgText(140,112,"O",LBL.replace("15px","12px"));
+  s += svgText(150,15,"A",LBL) + svgText(44,101,"B",LBL) + svgText(150,256,"C",LBL) + svgText(256,101,"D",LBL);
+  const st = k => angStyle(computed.includes(k)).replace("13px","12px");
+  const L = (px,py,k,anchor) => `<text x="${px}" y="${py}" text-anchor="${anchor}" style="${st(k)}">${x[k]!=null?R(x[k])+"°":"?"}</text>`;
+  s += L(145,64,"BAC","end") + L(155,64,"BAC","start") + L(145,206,"BCA","end") + L(155,206,"BCA","start");
+  s += L(78,90,"ABD","start") + L(78,113,"CBD","start") + L(222,90,"ABD","end") + L(222,113,"CBD","end");
+  return s + "</svg>";
+}
+function kiteDiag(v){
+  const keys=["A","B","C","BAC","BCA","ABD","CBD"];
+  for (const k of keys) if (v[k]!=null && !(v[k]>0 && v[k]<180)) throw TW().range;
+  for (const k of ["BAC","BCA","ABD","CBD"]) if (v[k]!=null && !(v[k]<90)) throw g2("∢"+k+" is an angle in a right triangle, so it must be less than 90°.","∢"+k+" היא זווית במשולש ישר זווית, ולכן היא חייבת להיות קטנה מ-90°.");
+  const given = keys.filter(k=>v[k]!=null);
+  if (!given.length) throw g2("Enter at least two angles.","הכניסו לפחות שתי זוויות.");
+  const x = {...v};
+  const rows = [[kiteGiven(), GV()],
+    [g2("AC is the main diagonal, BD is the other diagonal, they meet at O", LRI("AC")+" אלכסון ראשי, "+LRI("BD")+" אלכסון משני, נפגשים בנקודה "+LRI("O")), GV()],
+    [LRI(given.map(k=>"∢"+k+" = "+R(v[k])+"°").join(" ,  ")), GV()],
+    [LRI("AC ⊥ BD   (∢AOB = ∢BOC = 90°)"), g2("In a kite, the main diagonal is perpendicular to the other diagonal","בדלתון האלכסון הראשי מאונך לאלכסון המשני")]];
+  const BIS = g2("The main diagonal bisects the vertex angles","האלכסון הראשי חוצה את זוויות הראש");
+  const TRI = t => g2("In the right triangle "+t+", the two acute angles add up to 90°", "במשולש ישר הזווית "+LRI(t)+" סכום הזוויות החדות 90°");
+  const ADD = g2("Adding angles: ∢B = ∢ABD + ∢CBD","חיבור זוויות: "+LRI("∢B = ∢ABD + ∢CBD"));
+  const QUAD = g2("The angles of a quadrilateral add up to 360°, and ∢B = ∢D","סכום הזוויות במרובע 360°, ו-"+LRI("∢B = ∢D"));
+  const BAD = g2("These givens don't fit together. Check them.","הנתונים לא מתאימים זה לזה. בדקו אותם.");
+  let changed;
+  const set = (k, val, claim, why) => {
+    if (x[k]==null) { if (!(val>0 && val<360)) throw BAD; x[k]=val; rows.push([LRI(claim), why]); changed=true; }
+    else if (Math.abs(x[k]-val)>1e-9) throw BAD;
+  };
+  for (let n=0; n<20; n++) {
+    changed=false;
+    if (x.A!=null) set("BAC", x.A/2, "∢BAC = ∢DAC = ∢A ÷ 2 = "+R(x.A)+" ÷ 2 = "+R(x.A/2)+"°", BIS);
+    if (x.BAC!=null) set("A", 2*x.BAC, "∢A = 2 · ∢BAC = 2 · "+R(x.BAC)+" = "+R(2*x.BAC)+"°", BIS);
+    if (x.C!=null) set("BCA", x.C/2, "∢BCA = ∢DCA = ∢C ÷ 2 = "+R(x.C)+" ÷ 2 = "+R(x.C/2)+"°", BIS);
+    if (x.BCA!=null) set("C", 2*x.BCA, "∢C = 2 · ∢BCA = 2 · "+R(x.BCA)+" = "+R(2*x.BCA)+"°", BIS);
+    if (x.BAC!=null) set("ABD", 90-x.BAC, "∢ABD = 90° − ∢BAC = 90 − "+R(x.BAC)+" = "+R(90-x.BAC)+"°", TRI("AOB"));
+    if (x.ABD!=null) set("BAC", 90-x.ABD, "∢BAC = 90° − ∢ABD = 90 − "+R(x.ABD)+" = "+R(90-x.ABD)+"°", TRI("AOB"));
+    if (x.BCA!=null) set("CBD", 90-x.BCA, "∢CBD = 90° − ∢BCA = 90 − "+R(x.BCA)+" = "+R(90-x.BCA)+"°", TRI("BOC"));
+    if (x.CBD!=null) set("BCA", 90-x.CBD, "∢BCA = 90° − ∢CBD = 90 − "+R(x.CBD)+" = "+R(90-x.CBD)+"°", TRI("BOC"));
+    if (x.ABD!=null && x.CBD!=null) set("B", x.ABD+x.CBD, "∢B = ∢ABD + ∢CBD = "+R(x.ABD)+" + "+R(x.CBD)+" = "+R(x.ABD+x.CBD)+"°", ADD);
+    if (x.B!=null && x.ABD!=null) set("CBD", x.B-x.ABD, "∢CBD = ∢B − ∢ABD = "+R(x.B)+" − "+R(x.ABD)+" = "+R(x.B-x.ABD)+"°", ADD);
+    if (x.B!=null && x.CBD!=null) set("ABD", x.B-x.CBD, "∢ABD = ∢B − ∢CBD = "+R(x.B)+" − "+R(x.CBD)+" = "+R(x.B-x.CBD)+"°", ADD);
+    if (x.A!=null && x.C!=null) set("B", (360-x.A-x.C)/2, "∢B = ∢D = (360° − ∢A − ∢C) ÷ 2 = (360 − "+R(x.A)+" − "+R(x.C)+") ÷ 2 = "+R((360-x.A-x.C)/2)+"°", QUAD);
+    if (x.A!=null && x.B!=null) set("C", 360-x.A-2*x.B, "∢C = 360° − ∢A − ∢B − ∢D = 360 − "+R(x.A)+" − "+R(x.B)+" − "+R(x.B)+" = "+R(360-x.A-2*x.B)+"°", QUAD);
+    if (x.C!=null && x.B!=null) set("A", 360-x.C-2*x.B, "∢A = 360° − ∢C − ∢B − ∢D = 360 − "+R(x.C)+" − "+R(x.B)+" − "+R(x.B)+" = "+R(360-x.C-2*x.B)+"°", QUAD);
+    if (!changed) break;
+  }
+  if (keys.some(k=>x[k]==null)) throw g2("Not enough givens. Enter one more angle (for example ∢A, or an angle next to the diagonals).","אין מספיק נתונים. הכניסו עוד זווית אחת (למשל ∢A, או זווית ליד האלכסונים).");
+  rows.push([LRI("∢D = ∢B = "+R(x.B)+"°"), R_KITE_BD()]);
+  rows.push([LRI("∢ADB = ∢ABD = "+R(x.ABD)+"°"), g2("Triangle ABD is isosceles (AB = AD), so its base angles are equal","משולש "+LRI("ABD")+" שווה שוקיים "+LRI("(AB = AD)")+", ולכן זוויות הבסיס שוות")]);
+  rows.push([LRI("∢CDB = ∢CBD = "+R(x.CBD)+"°"), g2("Triangle CBD is isosceles (CB = CD), so its base angles are equal","משולש "+LRI("CBD")+" שווה שוקיים "+LRI("(CB = CD)")+", ולכן זוויות הבסיס שוות")]);
+  const computed = keys.filter(k=>v[k]==null);
+  return { rows, title:g2("All the angles","כל הזוויות"),
+    answer: ["∢A = "+R(x.A)+"°    ∢C = "+R(x.C)+"°", "∢B = ∢D = "+R(x.B)+"°",
+             "∢BAC = ∢DAC = "+R(x.BAC)+"°", "∢BCA = ∢DCA = "+R(x.BCA)+"°",
+             "∢ABD = ∢ADB = "+R(x.ABD)+"°", "∢CBD = ∢CDB = "+R(x.CBD)+"°", "∢AOB = 90°"].map(LRI).join("\n"),
+    svg: kiteDiagSVG(x, computed) };
+}
+SH.kiteDiag = {g:"kite", kind:"proof", noUnit:true, l:["Kite: angles with the diagonals","דלתון: זוויות עם האלכסון הראשי והמשני"],
+  f:[["A","∢A (°)","∢A (°)"],["B","∢B = ∢D (°)","∢B = ∢D (°)"],["C","∢C (°)","∢C (°)"],
+     ["BAC","∢BAC = ∢DAC (°)","∢BAC = ∢DAC (°)"],["BCA","∢BCA = ∢DCA (°)","∢BCA = ∢DCA (°)"],
+     ["ABD","∢ABD = ∢ADB (°)","∢ABD = ∢ADB (°)"],["CBD","∢CBD = ∢CDB (°)","∢CBD = ∢CDB (°)"]], ex:{BAC:35, CBD:70}, calc:kiteDiag};
+SH.kiteArea = {g:"kite", kind:"proof", l:["Kite: area and diagonals","דלתון: שטח ואלכסונים"],
+  f:[["d1","Main diagonal AC","אלכסון ראשי AC"],["d2","Other diagonal BD","אלכסון משני BD"],["S","Area S","שטח S"]], ex:{d1:12,d2:8}, calc:kiteArea};
+
+
+function fillShapes(){
+  const sel = $("shape"), cur = sel.value || "trapAngles"; sel.innerHTML = "";
+  for (const [g,label] of [["trap",["Trapezoid: angles & proofs","טרפז: זוויות והוכחות"]],["iso",["Isosceles triangle","משולש שווה שוקיים"]],["kite",["Kite","דלתון"]],[undefined,["Shapes","צורות"]]]) {
+    const og=document.createElement("optgroup"); og.label=pick(...label);
+    for (const [k,s] of Object.entries(SH)) if (s.g===g) { const o=document.createElement("option"); o.value=k; o.textContent=pick(...s.l); og.append(o); }
+    sel.append(og);
+  }
+  sel.value = cur;
+  buildFields(true);
+}
+function fillUnits(){
+  const sel = $("unit"), cur = sel.childElementCount ? sel.value : "cm"; sel.innerHTML = "";
+  for (const [k,[en,he]] of Object.entries(UNITS)) { const o=document.createElement("option"); o.value=k; o.textContent = k ? pick(en,he) : T("noUnits"); sel.append(o); }
+  sel.value = cur;
+}
+function buildFields(keep){
+  const s=SH[$("shape").value], box=$("geoFields"), old={};
+  if (keep) box.querySelectorAll("input").forEach(i => old[i.id] = i.value);
+  box.innerHTML="";
+  s.f.forEach(([k,en,he])=>{ const l=el("label",null,pick(en,he)); const i=document.createElement("input");
+    i.type="number"; i.inputMode="decimal"; i.id="g_"+k; i.min="0"; i.step="any"; i.dir="ltr";
+    if (s.kind==="proof") i.placeholder="?";
+    i.value = old["g_"+k] ?? (s.ex ? (s.ex[k] ?? "") : EX[k]); l.append(i); box.append(l); });
+  const notes=$("geoNotes"); notes.innerHTML="";
+  const list = s.g==="trap" ? TW().notes : (s.g && NOTES[s.g] ? NOTES[s.g][lang] : null);
+  if (list) list.forEach(h=>{ const p=document.createElement("div"); p.innerHTML=h; notes.append(p); });
+  $("geoNotesWrap").hidden = !list;
+  renderToolChips();
+  $("unitRow").hidden = !!s.noUnit;
+}
+$("shape").onchange = () => { buildFields(false); $("geoResults").innerHTML=""; $("geoResults").hidden=true; };
+function calcGeo(quiet){
+  const s=SH[$("shape").value], v={}, out=$("geoResults"); out.innerHTML="";
+  try {
+    if (s.kind==="proof") {
+      const v={};
+      for (const [k] of s.f) { const raw=$("g_"+k).value.trim(); v[k] = raw==="" ? null : parseFloat(raw); if (raw!=="" && isNaN(v[k])) throw TW().nan; }
+      const r = s.calc(v), W=TW();
+      const box=el("div","result");
+      const fig=el("div","fig"); fig.innerHTML = r.svg !== undefined ? r.svg : trapSVG(r.angles, r.par, r.computed); box.append(fig);
+      const a=el("div","ans"); a.append(el("small",null,r.title), dirOf(el("div",null,r.answer), r.answer)); box.append(a);
+      box.append(proofTable(r.rows)); out.append(box);
+      afterGeo(quiet, plain(r.answer));
+      out.hidden = $("geoPanel").hidden;
+      if (!quiet) out.scrollIntoView({behavior:"smooth",block:"start"});
+      return;
+    }
+    for (const [k,en,he] of s.f) { const x=parseFloat($("g_"+k).value); if (!(x>0)) throw T("positive", pick(en,he)); v[k]=x; }
+    const uk=$("unit").value, unit = uk ? pick(...UNITS[uk]) : "";
+    for (const [name,formula,sub,value,pow,piK] of s.calc(v)) {
+      const u = pow==="°" ? "°" : (!unit||s.noUnit) ? "" : " "+unit+(pow===2?"²":pow===3?"³":"");
+      const box=el("div","result");
+      const a=el("div","ans"); const shown = LRI(R(value)) + u;
+      a.append(el("small",null,name), dirOf(el("div",null,shown), u)); box.append(a);
+      const ol=el("ol","steps");
+      const l1 = name+" = "+FSI(formula);
+      ol.append(dirOf(el("li",null,l1), l1));
+      ol.append(dirOf(el("li",null,"= "+sub), ""));
+      const l3 = "= "+LRI((piK!=null ? R(piK)+"π ≈ " : "")+R(value))+u;
+      ol.append(dirOf(el("li",null,l3), u));
+      box.append(ol); out.append(box);
+    }
+    afterGeo(quiet, [...out.querySelectorAll(".ans")].map(a => a.querySelector("small").textContent + ": " + plain(a.querySelector("div").textContent)).join("   ;   "));
+  } catch(e) { skipSave = false; out.append(dirOf(el("div","err",String(e)), String(e))); }
+  out.hidden = $("geoPanel").hidden;
+  if (!quiet) out.scrollIntoView({behavior:"smooth",block:"start"});
+}
+$("calc").onclick = () => calcGeo();
+
+// ---------- reading givens from a photo or typed text ----------
+
+// ---------- understanding givens written in words ----------
+function givensFromWords(raw){
+  let t = " " + String(raw).replace(/\n/g, " , ") + " ";
+  const shape = /דלתון|\bkite/i.test(t) ? "kite" : /טרפז|trapez/i.test(t) ? "trap" : /שווה[\s-]*שוקיים|isosceles/i.test(t) ? "iso" : null;
+  const ask = /האם|\bis\s+(it|abcd|abc)\b/i.test(t);
+  const NUM = "(\\d+(?:\\.\\d+)?)";
+  const IS = "\\s*(?:=|:|שוו(?:ה|ים|ות)?\\s*(?:ל-?\\s*)?|הוא|היא|is|equals?)?\\s*";
+  t = t.replace(/שוו(?:ה|י)[\s-]*(?:שוקיים|צלעות)|isosceles|equilateral/gi, " ");
+  // iso / kite words with a number
+  t = t.replace(new RegExp("(?:ו|ה|וה)?זווית\\s+ה?ראש" + IS + NUM, "g"), " ∢A = $1 ").replace(new RegExp("vertex\\s+angle" + IS + NUM, "gi"), " ∢A = $1 ");
+  t = t.replace(new RegExp("(?:ו|ה|וה)?זווי(?:ת|ות)\\s+ה?בסיס" + IS + NUM, "g"), " ∢B = $1 ").replace(new RegExp("base\\s+angles?" + IS + NUM, "gi"), " ∢B = $1 ");
+  t = t.replace(new RegExp("(?:ו|ה|וה)?אלכסון\\s+ה?ראשי(?:\\s+[A-Da-d]{2})?" + IS + NUM, "g"), " AC = $1 ").replace(new RegExp("main\\s+diagonal(?:\\s+[A-Da-d]{2})?" + IS + NUM, "gi"), " AC = $1 ");
+  t = t.replace(new RegExp("(?:ו|ה|וה)?אלכסון\\s+ה?משני(?:\\s+[A-Da-d]{2})?" + IS + NUM, "g"), " BD = $1 ").replace(new RegExp("(?:other|secondary)\\s+diagonal(?:\\s+[A-Da-d]{2})?" + IS + NUM, "gi"), " BD = $1 ");
+  if (shape === "iso" || !shape) {
+    t = t.replace(new RegExp("(?:ו|ה|וה)?שוק(?:יים|ים)?" + IS + NUM, "g"), " AB = AC = $1 ").replace(new RegExp("\\blegs?" + IS + NUM, "gi"), " AB = AC = $1 ");
+    t = t.replace(new RegExp("(?:ו|ה|וה)?בסיס" + IS + NUM, "g"), " BC = $1 ").replace(new RegExp("\\bbase" + IS + NUM, "gi"), " BC = $1 ");
+  }
+  t = t.replace(new RegExp("(?:ו|ה|וה)?שטח(?:ו|ה|ם)?(?:\\s+ה?[\\u0590-\\u05FF]+)?" + IS + NUM, "g"), " S = $1 ").replace(new RegExp("\\barea(?:\\s+of\\s+\\w+)?" + IS + NUM, "gi"), " S = $1 ");
+  // general words
+  t = t.replace(/(?:ו)?(?:לא\s+|אינו\s+|אינה\s+)מקביל\S*\s*(?:ל-?\s*)?/g, " ∦ ");
+  t = t.replace(/(?:ו)?מקביל(?:ה|ים|ות)?\s*(?:ל-?\s*)?/g, " ∥ ").replace(/\bparallel(?:\s+to)?\b/gi, " ∥ ");
+  t = t.replace(/(?:ו|ה|וה)?זווי(?:ת|ות)\s*/g, " ∢").replace(/\bangles?\s*/gi, " ∢");
+  t = t.replace(/מעלות|מעלה|\bdegrees?\b/gi, "°");
+  t = t.replace(/שוו(?:ה|ים|ות)?\s*(?:ל-?\s*)?/g, " = ").replace(/\s(?:הוא|היא|הם|הן)\s/g, " = ").replace(/\b(?:is|equals?)\b/gi, " = ");
+  t = t.replace(/\b(?:the|to|of|and|triangle|trapezoid|kite|quadrilateral|find|is)\b/gi, " ");
+  t = t.replace(/(?<![a-zA-Z])[a-do]{1,3}(?![a-zA-Z])/g, m => m.toUpperCase());
+  t = t.replace(/[֐-׿"'״׳]+/g, " ");
+  // "∢A 110" or "AB 13" without "=": add it
+  t = t.replace(/(∢\s*[A-DO]{1,3}|(?<![A-Z])[A-D]{2}(?![A-Z])|(?<![A-Z])S(?![A-Z]))\s+(?=\d)/g, "$1 = ");
+  return { t, shape, ask };
+}
+function parseGivens(raw){
+  const W = givensFromWords(raw);
+  let t = W.t
+    .replace(/[֐-׿"'״׳]+/g, " ")          // Hebrew words: the phone scanner can't read them anyway
+    .replace(/[∠≮<]/g, "∢").replace(/\b[4K](?=[A-D]{1,3}\s*=)/g, "∢")   // the angle sign is often read as < or 4
+    .replace(/(\|\||II|ll|\/\/|‖)/g, "∥").replace(/[−–—]/g, "-")
+    .replace(/[׳']/g, "").replace(/(\d)\s*[oº˚]/g, "$1°");
+  const G = { ang:{}, ang3:{}, len:{}, eq:[], par:[], letters:new Set(), shape:W.shape, ask:W.ask };
+  const CANON = {BAC:"BAC",CAB:"BAC",DAC:"BAC",CAD:"BAC",BCA:"BCA",ACB:"BCA",DCA:"BCA",ACD:"BCA",ABD:"ABD",DBA:"ABD",ADB:"ABD",BDA:"ABD",CBD:"CBD",DBC:"CBD",CDB:"CBD",BDC:"CBD"};
+  const ANG3 = /∢\s*([A-DO]{3})\s*=\s*(\d+(?:\.\d+)?)\s*(°)?/g;
+  for (const m of t.matchAll(ANG3)) {
+    let v3 = parseFloat(m[2]); if (!m[3] && v3 >= 180 && /0$/.test(m[2])) v3 = v3/10;
+    const c = CANON[m[1]]; if (c) { G.ang3[c] = v3; [...m[1]].forEach(ch => ch !== "O" && G.letters.add(ch)); G.letters.add("D"); }
+  }
+  t = t.replace(ANG3, " , ");
+  // angles: ∢A = 110°   or   A = 110°
+  const ANG = /(?:∢\s*)?(?<![A-Z])([A-D])\s*=\s*(\d+(?:\.\d+)?)\s*(°)?/g;
+  for (const m of t.matchAll(ANG)) {
+    let v = parseFloat(m[2]);
+    if (!m[3] && v >= 180 && /0$/.test(m[2]) && v/10 < 180) v = v/10;   // "1100" = 110° with the degree sign read as 0
+    G.ang[m[1]] = v; G.letters.add(m[1]);
+  }
+  // chains like AB = AC = 13 or AB = AD
+  const TOK = "(?:(?<![A-Z])[A-D]{2}(?![A-Z])|\\d+(?:\\.\\d+)?)";
+  const CHAIN = new RegExp(TOK + "(?:\\s*=\\s*" + TOK + ")+", "g");
+  for (const m of t.replace(ANG, " , ").matchAll(CHAIN)) {
+    const parts = m[0].split("=").map(x => x.trim());
+    const segs = parts.filter(x => /^[A-D]{2}$/.test(x));
+    const nums = parts.filter(x => /^\d+(?:\.\d+)?$/.test(x)).map(Number);
+    if (!segs.length) continue;
+    for (let k = 1; k < segs.length; k++) G.eq.push([segs[0], segs[k]]);
+    if (nums.length) for (const sgm of segs) G.len[sgm] = nums[nums.length-1];
+    segs.forEach(x => [...x].forEach(c => G.letters.add(c)));
+  }
+  const area = t.match(/\bS\s*=\s*(\d+(?:\.\d+)?)/); if (area) G.S = parseFloat(area[1]);
+  for (const m of t.matchAll(/([A-D]{2})\s*∥\s*([A-D]{2})/g)) { G.par.push([m[1], m[2]]); [...m[1]+m[2]].forEach(c => G.letters.add(c)); }
+  return G;
+}
+const sameSeg = (a, b) => a === b || a === b.split("").reverse().join("");
+const hasEq = (G, a, b) => G.eq.some(([x, y]) => (sameSeg(x, a) && sameSeg(y, b)) || (sameSeg(x, b) && sameSeg(y, a)));
+const lenOf = (G, seg) => { for (const k in G.len) if (sameSeg(k, seg)) return G.len[k]; return null; };
+
+function pickTool(G){
+  const hasLen = (...k) => k.some(x => lenOf(G,x) != null);
+  if (G.shape === "kite") return Object.keys(G.ang3).length ? "kiteDiag" : (hasLen("AC","BD") || G.S != null) ? "kiteArea" : "kiteAngles";
+  if (G.shape === "trap") return G.ask ? "trapCheck" : "trapAngles";
+  if (G.shape === "iso") return G.ask ? "isoCheck" : (hasLen("AB","AC") && hasLen("BC")) ? "isoHeight" : "isoAngles";
+  if (G.ask && G.letters.has("D")) return "trapCheck";
+  const four = G.letters.has("D") || G.par.length || lenOf(G,"BD") != null || hasEq(G,"AB","AD");
+  if (Object.keys(G.ang3).length) return "kiteDiag";
+  if (four) {
+    const kite = hasEq(G,"AB","AD") || hasEq(G,"CB","CD") || lenOf(G,"AC") != null || lenOf(G,"BD") != null || G.S != null;
+    if (kite) return (lenOf(G,"AC") != null || lenOf(G,"BD") != null || G.S != null) ? "kiteArea" : "kiteAngles";
+    if (G.par.length) return "trapAngles";
+    if (Object.keys(G.ang).length >= 3) return "trapCheck";
+    return SH[$("shape").value]?.f?.length === 4 ? $("shape").value : "trapAngles";
+  }
+  const iso = hasEq(G,"AB","AC");
+  if (iso && (lenOf(G,"AB") != null || lenOf(G,"AC") != null) && lenOf(G,"BC") != null) return "isoHeight";
+  if (iso) return "isoAngles";
+  if (Object.keys(G.ang).length >= 2) return "isoCheck";
+  if (lenOf(G,"BC") != null && (lenOf(G,"AB") != null || lenOf(G,"AC") != null)) return "isoHeight";
+  return null;
+}
+function fillFor(tool, G){
+  const vals = {};
+  const a = G.ang;
+  if (tool === "isoAngles") { vals.A = a.A; vals.B = a.B ?? a.C; }
+  else if (tool === "isoHeight") { vals.L = lenOf(G,"AB") ?? lenOf(G,"AC"); vals.b = lenOf(G,"BC"); }
+  else if (tool === "kiteArea") { vals.d1 = lenOf(G,"AC"); vals.d2 = lenOf(G,"BD"); vals.S = G.S; }
+  else if (tool === "kiteDiag") { vals.A = a.A; vals.B = a.B ?? a.D; vals.C = a.C; Object.assign(vals, G.ang3); }
+  else for (const k of ["A","B","C","D"]) vals[k] = a[k];
+  for (const [k] of SH[tool].f) { const i = $("g_"+k); if (i) i.value = vals[k] != null ? vals[k] : ""; }
+}
+
+// ---------- reading numbers written on the drawing itself ----------
+// The scanner gives every word with its position. Vertex letters (A–D, O) are found, and each number
+// is matched to the nearest vertex (an angle) or the nearest side (a length).
+function diagramGivens(items){
+  const inText = it => /=|∥|\|\||\/\//.test(it.line || "") || (it.line || "").trim().split(/\s+/).length > 3;
+  const V = {};
+  for (const it of items) {
+    const m = String(it.t).trim().match(/^([A-DO])$/);
+    if (!m || inText(it)) continue;
+    if (!V[m[1]]) V[m[1]] = it;
+  }
+  const verts = ["A","B","C","D"].filter(k => V[k]);
+  if (verts.length < 3) return [];
+  const pt = k => [V[k].x, V[k].y];
+  const dist = (a, b) => Math.hypot(a[0]-b[0], a[1]-b[1]);
+  const ring = verts;                      // A, B, C, (D) in drawing order
+  const sides = ring.map((k, i) => [k, ring[(i+1) % ring.length]]);
+  const scale = sides.reduce((t, [a,b]) => t + dist(pt(a), pt(b)), 0) / sides.length;
+  const segDist = (p, a, b) => { const [ax,ay]=a,[bx,by]=b, dx=bx-ax, dy=by-ay, L=dx*dx+dy*dy;
+    let u = L ? ((p[0]-ax)*dx + (p[1]-ay)*dy) / L : 0; const inside = u > 0.15 && u < 0.85; u = Math.max(0, Math.min(1, u));
+    return { d: Math.hypot(p[0]-(ax+u*dx), p[1]-(ay+u*dy)), inside }; };
+  const cross = (o, a, b) => (a[0]-o[0])*(b[1]-o[1]) - (a[1]-o[1])*(b[0]-o[0]);
+  const angles = {}, lens = {};
+  for (const it of items) {
+    if (inText(it)) continue;
+    const m = String(it.t).trim().match(/^(\d+(?:\.\d+)?)([°oº˚]?)$/);
+    if (!m) continue;
+    let v = parseFloat(m[1]); let deg = !!m[2];
+    if (!deg && v >= 180 && /0$/.test(m[1]) && v/10 < 180) { v = v/10; deg = true; }
+    const p = [it.x, it.y];
+    let best = null;
+    for (const k of verts) { const d = dist(p, pt(k)); if (!best || d < best.d) best = { k, d }; }
+    let bestSide = null;
+    for (const [a,b] of sides) { const r = segDist(p, pt(a), pt(b)); if (r.inside && (!bestSide || r.d < bestSide.d)) bestSide = { a, b, d: r.d }; }
+    const asAngle = deg ? best.d < 0.7*scale : (best.d < 0.4*scale && (!bestSide || best.d < bestSide.d*1.2));
+    if (asAngle && v < 360) {
+      let name = best.k;
+      if (V.O && ring.length === 4) {          // a diagonal splits this angle: find which part the number sits in
+        const i = ring.indexOf(best.k), n1 = ring[(i+3)%4], n2 = ring[(i+1)%4], w = ring[(i+2)%4];
+        const s0 = cross(pt(best.k), pt("O" in V ? "O" : w), p), s1 = cross(pt(best.k), pt("O"), pt(n1));
+        const near = Math.sign(s0) === Math.sign(s1) ? n1 : n2;
+        name = near + best.k + w;
+      }
+      if (!angles[name] || best.d < angles[name].d) angles[name] = { v, d: best.d };
+    } else if (bestSide && bestSide.d < 0.35*scale) {
+      const nm = bestSide.a + bestSide.b;
+      if (!lens[nm] || bestSide.d < lens[nm].d) lens[nm] = { v, d: bestSide.d };
+    }
+  }
+  return [...Object.entries(angles).map(([k,o]) => "∢"+k+" = "+R(o.v)+"°"),
+          ...Object.entries(lens).map(([k,o]) => k+" = "+R(o.v))];
+}
+let lastDetected = null;
+function clearGeo(){ lastDetected = null; $("geoDetected").hidden = true; $("geoResults").innerHTML = ""; $("geoResults").hidden = true; }
+function showDetected(d){
+  const box = $("geoDetected");
+  const list = [
+    ...Object.entries(d.G.ang).map(([k,v]) => "∢"+k+" = "+R(v)+"°"),
+    ...Object.entries(d.G.ang3 || {}).map(([k,v]) => "∢"+k+" = "+R(v)+"°"),
+    ...d.G.eq.map(([x,y]) => x+" = "+y),
+    ...Object.entries(d.G.len).map(([k,v]) => k+" = "+R(v)),
+    ...d.G.par.map(([x,y]) => x+" ∥ "+y),
+    ...(d.G.S != null ? ["S = "+R(d.G.S)] : []),
+  ].join(" ,  ");
+  const txt = T("detected", pick(...SH[d.tool].l), LRI(list));
+  box.textContent = txt; dirOf(box, txt); box.hidden = false;
+}
+function readGivens(){
+  const G = parseGivens($("geoText").value);
+  const tool = pickTool(G);
+  if (!tool) { setGeoStatus("noGivens", true); clearGeo(); return; }
+  setGeoStatus("");
+  $("shape").value = tool; buildFields(false); fillFor(tool, G);
+  lastDetected = { G, tool }; showDetected(lastDetected);
+  calcGeo();
+}
+$("geoRead").onclick = readGivens;
+function onGeoOcr(text, items){
+  let t = String(text).trim();
+  if (!/[A-D0-9]/.test(t)) { setGeoStatus("noMath", true); clearGeo(); return; }
+  const fromDrawing = Array.isArray(items) ? diagramGivens(items) : [];
+  if (fromDrawing.length) {
+    const written = t.split("\n").filter(l => /=|∥|\|\||\/\//.test(l));
+    t = written.concat(fromDrawing).join("\n");
+  }
+  $("geoText").value = t;
+  setGeoStatus("geoCheck");
+  readGivens();
+}
+
+
+// ---------- account: sign in, synced history, favorites, notes ----------
+// Sign-in and syncing live in the Android app (Account.kt). The page only shows them.
+const ACC = hasBridge && typeof Android.authState === "function";
+let account = null, history = [], sync = {}, meView = "all", authMode = "in", authMsg = null, busy = false, openNote = null, confirmDel = null, skipSave = false;
+const plain = x => String(x).replace(/[⁦-⁩]/g, "");
+const ICON = {
+  calc:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 7h8M8 12h2M14 12h2M8 16h2M14 16h2"/></svg>',
+  tri:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18L12 4z"/></svg>',
+  star:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg>',
+  hist:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 3"/></svg>',
+  sync:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>',
+  google:'<svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.5 12.2c0-.8-.1-1.5-.2-2.2H12v4.2h5.9a5 5 0 0 1-2.2 3.3v2.7h3.5c2.1-1.9 3.3-4.7 3.3-8z"/><path fill="#34A853" d="M12 23c3 0 5.5-1 7.3-2.7l-3.5-2.7c-1 .7-2.3 1.1-3.8 1.1-2.9 0-5.4-2-6.3-4.6H2.1v2.8A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.7 14.1a6.6 6.6 0 0 1 0-4.2V7.1H2.1a11 11 0 0 0 0 9.8z"/><path fill="#EA4335" d="M12 5.4c1.6 0 3.1.6 4.2 1.7l3.2-3.2A11 11 0 0 0 2.1 7.1l3.6 2.8C6.6 7.4 9.1 5.4 12 5.4z"/></svg>',
+};
+const svgEl = html => { const t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstChild; };
+
+window.onAuth = st => { account = st && st.signedIn ? st : null; busy = false; if (account) { authMsg = null; if (!$("welcome").hidden) { hideWelcome(); tab("me"); } } renderMe(); refreshSaveBars(); };
+window.onAuthError = (code) => { busy = false; authMsg = { bad:true, key:"err_" + (UI.en["err_"+code] ? code : "other") }; renderMe(); };
+window.onAuthInfo = code => { busy = false; authMsg = code === "cancelled" ? null : { bad:false, key:"info_" + code }; renderMe(); };
+window.onHistory = list => { history = Array.isArray(list) ? list : []; if (!$("mePanel").hidden) renderMe(); refreshSaveBars(); };
+window.onSync = st => { Object.assign(sync, st || {}); const p = $("syncPill"); if (p) fillSyncPill(p); };
+
+function saveProblem(rec){
+  if (skipSave) { skipSave = false; return null; }
+  if (!ACC || !account) return null;
+  const last = history[0];
+  if (last && last.kind === rec.kind && last.input === rec.input) return last.id;   // same problem again: don't save twice
+  try { return Android.saveProblem(JSON.stringify(rec)) || null; } catch (e) { return null; }
+}
+function afterGeo(quiet, answer){
+  if (quiet) { skipSave = false; return; }
+  const key = $("shape").value, sh = SH[key], vals = {};
+  for (const [k] of sh.f) { const i = $("g_"+k); if (i && i.value !== "") vals[k] = i.value; }
+  const typed = $("geoText").value.trim();
+  const input = lastDetected && typed ? typed : pick(...sh.l) + "\n" + Object.entries(vals).map(([k,v]) => k + " = " + v).join(",  ");
+  const id = saveProblem({kind:"geo", input, answer, tool:key, vals:JSON.stringify(vals)});
+  $("geoResults").prepend(saveBar(id));
+}
+function setFav(id, on){ if (!ACC || !id) return; try { Android.updateProblem(id, JSON.stringify({fav:on})); } catch(e) {} const h = history.find(x => x.id === id); if (h) h.fav = on; refreshSaveBars(); }
+
+function saveBar(id){
+  const bar = el("div", "savebar"); bar.dataset.id = id || "";
+  fillSaveBar(bar); return bar;
+}
+function fillSaveBar(bar){
+  bar.innerHTML = ""; const id = bar.dataset.id;
+  if (!ACC) { bar.hidden = true; return; }
+  bar.hidden = false;
+  if (!account || !id) {
+    bar.className = "savebar out";
+    const b = el("button", "linkbtn", T("signInToSave")); b.type = "button"; b.onclick = () => tab("me");
+    bar.append(b); return;
+  }
+  bar.className = "savebar";
+  const h = history.find(x => x.id === id), fav = !!(h && h.fav);
+  bar.append(el("span", null, "✓ " + T("savedBar")), el("span", "sp"));
+  const st = el("button", "star"); st.type = "button"; st.setAttribute("aria-pressed", String(fav)); st.setAttribute("aria-label", fav ? T("favOn") : T("addFav"));
+  st.append(svgEl(ICON.star)); st.onclick = () => setFav(id, !fav);
+  bar.append(el("span", null, fav ? T("favOn") : T("addFav")), st);
+}
+function refreshSaveBars(){ document.querySelectorAll(".savebar").forEach(fillSaveBar); }
+
+function fillSyncPill(p){
+  let txt = T("synced"), wait = false;
+  if (sync.paused) { txt = T("pausedSync"); wait = true; }
+  else if (sync.pending > 0) { txt = T("pendingN", sync.pending); wait = true; }
+  else if (sync.offline) { txt = T("offlineSync"); wait = true; }
+  p.textContent = txt; p.className = "syncpill" + (wait ? " wait" : "");
+}
+function when(ms){
+  if (!ms) return "";
+  const d = new Date(ms), now = new Date(), day = 864e5;
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const hm = d.toLocaleTimeString(lang === "he" ? "he-IL" : "en-GB", {hour:"2-digit", minute:"2-digit"});
+  if (ms >= start) return T("today") + " " + hm;
+  if (ms >= start - day) return T("yesterday") + " " + hm;
+  return d.toLocaleDateString(lang === "he" ? "he-IL" : "en-GB", {day:"numeric", month:"short"});
+}
+function reopen(h){
+  if (h.kind === "geo" && h.tool && SH[h.tool]) {
+    tab("geo");
+    $("shape").value = h.tool; buildFields(false);
+    let vals = {}; try { vals = JSON.parse(h.vals || "{}"); } catch(e) {}
+    for (const [k] of SH[h.tool].f) { const i = $("g_"+k); if (i) i.value = vals[k] ?? ""; }
+    $("geoText").value = h.input.includes("\n") ? "" : h.input; lastDetected = null; $("geoDetected").hidden = true;
+    skipSave = true; calcGeo();
+  } else {
+    tab("solve"); $("problem").value = h.input; solveNow(false, true);
+  }
+}
+
+function renderMe(){
+  const box = $("mePanel"); if (!box) return;
+  box.innerHTML = "";
+  if (!account) return renderSignIn(box);
+  // profile
+  const prof = el("section", "panel");
+  const row = el("div", "profile");
+  const nm = account.name || account.email || "";
+  row.append(el("div", "avatar", (nm.trim()[0] || "?").toUpperCase()));
+  const who = el("div", "who"); who.append(el("b", null, account.name || account.email), el("span", null, account.name ? account.email : ""));
+  row.append(who);
+  const out = el("button", "linkbtn", T("signOut")); out.type = "button"; out.onclick = () => { try { Android.signOut(); } catch(e) {} };
+  row.append(out);
+  const pill = el("span"); pill.id = "syncPill"; fillSyncPill(pill);
+  prof.append(row, pill);
+  // Wi-Fi only
+  const set = el("label", "setrow");
+  const txt = el("div", "txt"); txt.append(el("b", null, T("wifiTitle")), el("span", null, T("wifiSub")));
+  const sw = el("span", "switch"); const inp = document.createElement("input"); inp.type = "checkbox"; inp.id = "wifiOnly";
+  try { inp.checked = !!Android.wifiOnly(); } catch(e) {}
+  inp.onchange = () => { try { Android.setWifiOnly(inp.checked); } catch(e) {} };
+  sw.append(inp, el("span", "track")); set.append(txt, sw);
+  if (!Android.noWifiSetting) prof.append(set);
+  box.append(prof);
+  // history
+  const hp = el("section", "panel");
+  const head = el("div", "phead"); head.append(el("h2", null, T("myProblems"))); hp.append(head);
+  const favN = history.filter(x => x.fav).length;
+  const seg = el("div", "chips");
+  seg.append(chip(T("all") + " · " + history.length, "", () => { meView = "all"; renderMe(); }, meView === "all"),
+             chip(T("favs") + " · " + favN, "", () => { meView = "fav"; renderMe(); }, meView === "fav"));
+  hp.append(seg);
+  const list = el("div", "hlist");
+  const items = meView === "fav" ? history.filter(x => x.fav) : history;
+  if (!items.length) list.append(el("p", "empty", meView === "fav" ? T("emptyFav") : T("emptyAll")));
+  for (const h of items) list.append(historyItem(h));
+  hp.append(list);
+  box.append(hp);
+}
+function historyItem(h){
+  const it = el("div", "hitem");
+  const hd = el("div", "hhead");
+  hd.append(svgEl(h.kind === "geo" ? ICON.tri : ICON.calc), el("span", null, (h.kind === "geo" ? T("kindGeo") : T("kindSolve")) + " · " + when(h.created) + (h.pending ? " · " + T("waiting") : "")), el("span", "sp"));
+  const st = el("button", "star"); st.type = "button"; st.setAttribute("aria-pressed", String(!!h.fav)); st.setAttribute("aria-label", h.fav ? T("favOn") : T("addFav"));
+  st.append(svgEl(ICON.star)); st.onclick = () => { setFav(h.id, !h.fav); renderMe(); };
+  hd.append(st); it.append(hd);
+  const inp = el("div", "hin" + (HEB.test(h.input) ? " he" : ""), h.input); dirOf(inp, h.input); it.append(inp);
+  if (h.answer) { const a = el("div", "hans"); dirOf(a, h.answer); a.append(el("span", null, h.answer)); it.append(a); }
+  if (openNote === h.id) {
+    const ed = el("div", "hedit"); const ta = document.createElement("textarea"); ta.value = h.note || ""; ta.placeholder = T("notePh"); ta.dir = "auto";
+    const acts = el("div", "hact");
+    const sv = el("button", "primary", T("save")); sv.type = "button"; sv.onclick = () => { try { Android.updateProblem(h.id, JSON.stringify({note: ta.value.trim()})); } catch(e) {} h.note = ta.value.trim(); openNote = null; renderMe(); };
+    const cc = el("button", null, T("cancel")); cc.type = "button"; cc.onclick = () => { openNote = null; renderMe(); };
+    acts.append(sv, cc); ed.append(ta, acts); it.append(ed);
+    setTimeout(() => ta.focus(), 50);
+  } else if (h.note) { const n = el("div", "hnote", h.note); n.dir = "auto"; it.append(n); }
+  const acts = el("div", "hact");
+  if (confirmDel === h.id) {
+    acts.append(el("span", "hhead", T("sure")));
+    const y = el("button", "danger", T("yes")); y.type = "button"; y.onclick = () => { try { Android.deleteProblem(h.id); } catch(e) {} confirmDel = null; history = history.filter(x => x.id !== h.id); renderMe(); };
+    const n = el("button", null, T("no")); n.type = "button"; n.onclick = () => { confirmDel = null; renderMe(); };
+    acts.append(y, n);
+  } else {
+    const o = el("button", "primary", T("open")); o.type = "button"; o.onclick = () => reopen(h);
+    const nt = el("button", null, h.note ? T("note") : T("addNote")); nt.type = "button"; nt.onclick = () => { openNote = h.id; renderMe(); };
+    const d = el("button", "danger", T("del")); d.type = "button"; d.onclick = () => { confirmDel = h.id; renderMe(); };
+    acts.append(o, nt, d);
+  }
+  it.append(acts);
+  return it;
+}
+function renderSignIn(box){
+  const p = el("section", "panel");
+  const head = el("div", "phead"); head.append(el("h2", null, T("meTitle")), el("p", null, T("meSub"))); p.append(head);
+  const perks = el("ul", "perks");
+  for (const [ic, key] of [["hist","perkHistory"],["sync","perkSync"],["star","perkFav"]]) {
+    const li = el("li"); const c = el("span", "ic"); c.append(svgEl(ICON[ic])); li.append(c, el("span", null, T(key))); perks.append(li);
+  }
+  p.append(perks);
+  if (!ACC) { p.append(el("p", "status", T("appOnlyAcc"))); box.append(p); return; }
+  const g = el("button", "btn google"); g.type = "button"; g.disabled = busy;
+  g.append(svgEl(ICON.google), el("span", null, T("google")));
+  g.onclick = () => { busy = true; authMsg = null; renderMe(); try { Android.signInGoogle(); } catch(e) { busy = false; } };
+  p.append(g, el("div", "divider", T("orEmail")));
+  const f = el("form", "authform"); f.noValidate = true;
+  const mk = (id, type, ph, ac) => { const i = document.createElement("input"); i.id = id; i.type = type; i.placeholder = ph; i.autocomplete = ac; i.dir = "ltr"; return i; };
+  let nameI = null;
+  if (authMode === "up") { nameI = mk("accName", "text", T("name"), "name"); nameI.dir = "auto"; f.append(nameI); }
+  const em = mk("accEmail", "email", T("email"), "email"), pw = mk("accPass", "password", T("password"), authMode === "up" ? "new-password" : "current-password");
+  em.inputMode = "email"; f.append(em, pw);
+  const go = el("button", "btn", authMode === "up" ? T("signUp") : T("signIn")); go.type = "submit"; go.disabled = busy;
+  f.append(go);
+  if (authMsg) f.append(el("p", "status" + (authMsg.bad ? " bad" : ""), T(authMsg.key)));
+  f.onsubmit = ev => {
+    ev.preventDefault();
+    if (!em.value.trim() || !pw.value) { authMsg = {bad:true, key:"needEmail"}; renderMe(); return; }
+    busy = true; authMsg = null;
+    try { authMode === "up" ? Android.signUpEmail(em.value, pw.value, nameI ? nameI.value : "") : Android.signInEmail(em.value, pw.value); } catch(e) { busy = false; }
+    go.disabled = true; g.disabled = true;
+  };
+  p.append(f);
+  const links = el("div", "linkrow");
+  const sw = el("button", "linkbtn", authMode === "up" ? T("toIn") : T("toUp")); sw.type = "button";
+  sw.onclick = () => { authMode = authMode === "up" ? "in" : "up"; authMsg = null; renderMe(); };
+  links.append(sw);
+  if (authMode === "in") {
+    const fg = el("button", "linkbtn", T("forgot")); fg.type = "button";
+    fg.onclick = () => { if (!em.value.trim()) { authMsg = {bad:true, key:"needEmailOnly"}; renderMe(); return; } try { Android.resetPassword(em.value); } catch(e) {} };
+    links.append(fg);
+  }
+  p.append(links);
+  box.append(p);
+}
+
+// ---------- theorem bank ----------
+const BANK_CATS = [
+  ["angles",["Angles and parallel lines","זוויות וישרים מקבילים"]],
+  ["tri",["Triangles","משולשים"]],
+  ["cong",["Congruent triangles","חפיפת משולשים"]],
+  ["qty",["Equal quantities","גדלים שווים"]],
+  ["def",["Definitions","הגדרות"]],
+  ["iso",["Isosceles triangle","משולש שווה שוקיים"]],
+  ["trap",["Trapezoid","טרפז"]],
+  ["kite",["Kite","דלתון"]],
+];
+// [category, English, Hebrew]
+const BANK = [
+  ["angles","The sum of adjacent angles is 180°.","סכום זוויות צמודות הוא 180°."],
+  ["angles","The sum of the angles on a straight line is 180°.","סכום הזוויות על ישר הוא 180°."],
+  ["angles","The angles around a point (a full angle) add up to 360°.","סכום הזוויות בזווית מלאה הוא 360°."],
+  ["angles","Vertical angles are equal.","זוויות קודקודיות שוות."],
+  ["angles","Angles adjacent to equal angles are equal.","זוויות צמודות לזוויות שוות, שוות."],
+  ["angles","If the lines are parallel, corresponding angles are equal.","אם הישרים מקבילים, אז הזוויות המתאימות שוות."],
+  ["angles","If the lines are parallel, alternate angles are equal.","אם הישרים מקבילים, אז הזוויות המתחלפות שוות."],
+  ["angles","If the lines are parallel, co-interior angles add up to 180°.","אם הישרים מקבילים, אז סכום הזוויות החד-צדדיות 180°."],
+  ["angles","Converse: if corresponding angles are equal, the lines are parallel.","הפוך: אם הזוויות המתאימות שוות, אז הישרים מקבילים."],
+  ["angles","Converse: if alternate angles are equal, the lines are parallel.","הפוך: אם הזוויות המתחלפות שוות, אז הישרים מקבילים."],
+  ["angles","Converse: if co-interior angles add up to 180°, the lines are parallel.","הפוך: אם סכום הזוויות החד-צדדיות 180°, אז הישרים מקבילים."],
+  ["tri","The angles of a triangle add up to 180°.","סכום הזוויות במשולש הוא 180°."],
+  ["tri","An exterior angle of a triangle equals the sum of the two interior angles that are not adjacent to it.","זווית חיצונית למשולש שווה לסכום שתי הזוויות הפנימיות שאינן צמודות לה."],
+  ["tri","If two triangles have two pairs of equal angles, the third pair is equal too (the angles of a triangle add up to 180°).","אם בשני משולשים יש שני זוגות של זוויות שוות, אז גם הזוג השלישי שווה (לפי סכום הזוויות במשולש 180°)."],
+  ["cong","<b>SAS:</b> two sides and the angle between them.","<b>צ.ז.צ</b> (צלע, זווית, צלע): שתי צלעות והזווית שביניהן."],
+  ["cong","<b>ASA:</b> a side and the two angles next to it.","<b>ז.צ.ז</b> (זווית, צלע, זווית): צלע ושתי הזוויות שלידה."],
+  ["cong","<b>SSS:</b> three sides.","<b>צ.צ.צ</b> (צלע, צלע, צלע): שלוש צלעות."],
+  ["cong","<b>SSA:</b> two sides and the angle opposite the longer of them.","<b>צ.צ.ז</b> (צלע, צלע, זווית): שתי צלעות והזווית שמול הגדולה מביניהן."],
+  ["cong","In congruent triangles, corresponding sides are equal.","במשולשים חופפים, הצלעות שוות בהתאמה."],
+  ["cong","In congruent triangles, corresponding angles are equal.","במשולשים חופפים, הזוויות שוות בהתאמה."],
+  ["qty","Every quantity equals itself (a shared side, a shared angle).","כל גודל שווה לעצמו (צלע משותפת, זווית משותפת)."],
+  ["qty","<b>Shared side:</b> a side that belongs to both triangles is equal to itself.","<b>צלע משותפת:</b> צלע ששייכת לשני המשולשים שווה לעצמה."],
+  ["qty","<b>Shared angle:</b> an angle that belongs to both triangles is equal to itself.","<b>זווית משותפת:</b> זווית ששייכת לשני המשולשים שווה לעצמה."],
+  ["qty","If two quantities equal a third quantity, they are equal to each other.","אם שני גדלים שווים לגודל שלישי, אז הם שווים זה לזה."],
+  ["qty","Adding equal quantities to equal quantities gives equal quantities.","חיבור גדלים שווים לגדלים שווים נותן גדלים שווים."],
+  ["qty","Subtracting equal quantities from equal quantities gives equal quantities.","חיסור גדלים שווים מגדלים שווים נותן גדלים שווים."],
+  ["qty","Halves of equal angles are equal.","חצאי זוויות שוות, שווים."],
+  ["def","<b>Given:</b> the reason for anything stated in the question.","<b>נתון:</b> הנימוק לכל עובדה שכתובה בשאלה."],
+  ["def","<b>Perpendicular:</b> a line that makes a 90° angle with another line.","<b>הגדרת אנך:</b> ישר שיוצר זווית של 90° עם ישר אחר."],
+  ["def","<b>Angle bisector:</b> a ray that splits an angle into two equal angles.","<b>הגדרת חוצה זווית:</b> קרן שמחלקת זווית לשתי זוויות שוות."],
+  ["def","<b>Midpoint:</b> a point that splits a segment into two equal segments.","<b>הגדרת אמצע קטע:</b> נקודה שמחלקת קטע לשני קטעים שווים."],
+  ["iso","<b>Definition:</b> a triangle with two equal sides is isosceles.","<b>הגדרה:</b> משולש בעל שתי צלעות שוות נקרא משולש שווה שוקיים."],
+  ["iso","In an isosceles triangle, the base angles are equal.","במשולש שווה שוקיים, זוויות הבסיס שוות."],
+  ["iso","In an isosceles triangle, the median to the base is also the height and bisects the vertex angle.","במשולש שווה שוקיים, התיכון לבסיס הוא גם גובה וגם חוצה זווית הראש."],
+  ["iso","In an isosceles triangle, the height to the base is also the median and the bisector of the vertex angle.","במשולש שווה שוקיים, הגובה לבסיס הוא גם תיכון וגם חוצה זווית הראש."],
+  ["iso","In an isosceles triangle, the bisector of the vertex angle is also the height and the median to the base.","במשולש שווה שוקיים, חוצה זווית הראש הוא גם גובה וגם תיכון לבסיס."],
+  ["iso","Converse: if a triangle has two equal angles, it is isosceles.","הפוך: אם במשולש יש שתי זוויות שוות, אז הוא שווה שוקיים."],
+  ["iso","Converse: if a height matches an angle bisector, the triangle is isosceles.","הפוך: אם במשולש גובה מתלכד עם חוצה זווית, אז הוא שווה שוקיים."],
+  ["iso","Converse: if a median matches an angle bisector, the triangle is isosceles.","הפוך: אם במשולש תיכון מתלכד עם חוצה זווית, אז הוא שווה שוקיים."],
+  ["iso","Converse: if a height matches a median, the triangle is isosceles.","הפוך: אם במשולש גובה מתלכד עם תיכון, אז הוא שווה שוקיים."],
+  ["trap","<b>Definition:</b> a quadrilateral with exactly one pair of parallel sides is a trapezoid. The parallel sides are the bases, the others are the legs.","<b>הגדרה:</b> מרובע בעל זוג אחד בלבד של צלעות מקבילות נקרא טרפז. הצלעות המקבילות הן הבסיסים, והאחרות הן השוקיים."],
+  ["trap","In a trapezoid, the angles next to the same leg add up to 180°.","בטרפז, סכום הזוויות שליד אותה שוק הוא 180°."],
+  ["trap","To prove a trapezoid: one pair of sides is parallel and the other pair is not.","כדי להוכיח טרפז: זוג אחד של צלעות מקביל, והזוג השני לא מקביל."],
+  ["trap","The angles of a quadrilateral add up to 360°.","סכום הזוויות במרובע הוא 360°."],
+  ["kite","<b>Definition:</b> a quadrilateral made of two isosceles triangles with a shared base.","<b>הגדרה:</b> מרובע המורכב משני משולשים שווי שוקיים בעלי בסיס משותף."],
+  ["kite","<b>Definition:</b> a quadrilateral with two separate pairs of equal adjacent sides.","<b>הגדרה:</b> מרובע בעל שני זוגות זרים של צלעות סמוכות שוות."],
+  ["kite","In a kite, the angles opposite the main diagonal are equal.","בדלתון, הזוויות מול האלכסון הראשי שוות זו לזו."],
+  ["kite","In a kite, the main diagonal bisects the vertex angles.","בדלתון, האלכסון הראשי חוצה את זוויות הראש."],
+  ["kite","In a kite, the main diagonal is perpendicular to the other diagonal and bisects it.","בדלתון, האלכסון הראשי מאונך לאלכסון המשני וחוצה אותו."],
+  ["kite","Kite area = half the product of the diagonals.","שטח דלתון = מחצית מכפלת האלכסונים."],
+];
+let bankCat = "all";
+function renderBank(){
+  const cats = $("bankCats"); if (!cats) return;
+  cats.innerHTML = "";
+  cats.append(chip(T("bankAll") + " · " + BANK.length, "", () => { bankCat = "all"; renderBank(); }, bankCat === "all"));
+  for (const [k, l] of BANK_CATS) cats.append(chip(pick(...l), "", () => { bankCat = k; renderBank(); }, bankCat === k));
+  $("bankSearch").placeholder = T("bankSearch");
+  const q = $("bankSearch").value.trim().toLowerCase();
+  const list = $("bankList"); list.innerHTML = "";
+  let n = 0;
+  BANK.forEach(([c, en, he], i) => {
+    const txt = pick(en, he);
+    if (bankCat !== "all" && c !== bankCat) return;
+    const plainTxt = txt.replace(/<[^>]+>/g, "");
+    if (q && !plainTxt.toLowerCase().includes(q)) return;
+    n++;
+    const li = el("li"); li.append(el("span", "num", String(i + 1)));
+    const t = el("div", "t");
+    if (bankCat === "all") t.append(el("small", null, pick(...BANK_CATS.find(x => x[0] === c)[1])));
+    const body = el("span"); body.innerHTML = q ? txt.replace(new RegExp("(" + q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")(?![^<]*>)", "gi"), "<mark>$1</mark>") : txt;
+    t.append(body); li.append(t); list.append(li);
+  });
+  if (!n) list.append(el("li", "empty", T("bankNone")));
+}
+$("bankSearch").oninput = renderBank;
+
+// ---------- personalization: everyone can change the look ----------
+const UI_DEFAULT = {theme:"system", accent:"indigo", mark:"yellow", bg:"grid", size:"m", font:"rubik"};
+let ui = {...UI_DEFAULT};
+try { Object.assign(ui, JSON.parse(localStorage.getItem("ui") || "{}")); } catch(e) {}
+// [light pen, light pressed, light soft, dark pen, dark pressed, dark soft]
+const ACCENTS = {
+  indigo:["#3346E0","#2533B8","#ECEFFE","#8E9CFF","#A9B4FF","#1F2850"],
+  teal:["#0B8A7A","#086B5F","#E2F5F2","#4FD1BE","#7FE0D1","#123A36"],
+  violet:["#7B3FE4","#5F2BC0","#F1EAFE","#B694FF","#C9B0FF","#2C1F4F"],
+  pink:["#D23B86","#B02A6E","#FCE8F2","#FF8CC4","#FFAAD3","#45182F"],
+  coral:["#E0533F","#BE3F2D","#FDECE9","#FF8E7C","#FFAB9D","#43201B"],
+  orange:["#D9711A","#B65B0F","#FDF0E3","#FFB066","#FFC48C","#45290F"],
+  green:["#2E8B3E","#22702F","#E6F4E8","#74D483","#96E2A2","#18361D"],
+  ink:["#1E2638","#111827","#E9ECF2","#C9D1E3","#E0E6F2","#2A3245"],
+};
+const MARKS = { yellow:["#FFE27A","#6E5A12"], green:["#C3F0B2","#2F5A27"], pink:["#FFC6E0","#6A2848"], blue:["#C4DEFF","#1F4268"], orange:["#FFD2A8","#6B3F14"] };
+const SIZES = { s:0.92, m:1, l:1.1, xl:1.22 };
+const prefersDark = window.matchMedia ? matchMedia("(prefers-color-scheme: dark)") : null;
+function isDark(){ return ui.theme === "dark" || (ui.theme === "system" && prefersDark && prefersDark.matches); }
+function applyUI(){
+  const root = document.documentElement, st = root.style;
+  if (ui.theme === "system") root.removeAttribute("data-theme"); else root.setAttribute("data-theme", ui.theme);
+  const dark = isDark(), a = ACCENTS[ui.accent] || ACCENTS.indigo, m = MARKS[ui.mark] || MARKS.yellow;
+  st.setProperty("--pen", dark ? a[3] : a[0]); st.setProperty("--pen-press", dark ? a[4] : a[1]); st.setProperty("--pen-soft", dark ? a[5] : a[2]);
+  st.setProperty("--mark", dark ? m[1] : m[0]);
+  st.setProperty("--sans", ui.font === "system" ? 'Roboto,"Noto Sans Hebrew",system-ui,sans-serif' : '"Rubik",Roboto,"Noto Sans Hebrew",system-ui,sans-serif');
+  document.body.dataset.bg = ui.bg;
+  st.zoom = SIZES[ui.size] || 1;
+  if (hasBridge && typeof Android.setBars === "function") {
+    const cs = getComputedStyle(root);
+    try { Android.setBars(cs.getPropertyValue("--bg").trim(), cs.getPropertyValue("--surface").trim(), !dark); } catch(e) {}
+  }
+}
+function setUI(k, v){ ui[k] = v; try { localStorage.setItem("ui", JSON.stringify(ui)); } catch(e) {} applyUI(); renderCustomize(); }
+if (prefersDark && prefersDark.addEventListener) prefersDark.addEventListener("change", applyUI);
+
+function openCustomize(){ renderCustomize(); $("customize").hidden = false; $("customize").scrollTop = 0; }
+function closeCustomize(){ $("customize").hidden = true; }
+$("openCustom").onclick = openCustomize;
+function renderCustomize(){
+  const box = $("customInner"); if (!box || $("customize").hidden && box.childElementCount && false) return;
+  box.innerHTML = "";
+  const head = el("div", "sheethead"); const h = el("h2", null, T("custom")); h.id = "customTitle";
+  const x = el("button", "iconbtn"); x.type = "button"; x.setAttribute("aria-label", T("done"));
+  x.append(svgEl('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>')); x.onclick = closeCustomize;
+  head.append(h, x); box.append(head);
+  // live preview
+  const pv = el("section", "panel preview"); pv.append(el("p", "exlabel", T("previewH")));
+  const a = el("div", "ans"); a.append(el("small", null, T("answer"))); const v = el("div", null, "x = 6"); v.dir = "ltr"; a.append(v);
+  const r2 = el("div", "row2"); const pb = el("button", "btn", T("previewBtn")); pb.type = "button"; pb.style.flex = "1";
+  r2.append(chip("2x + 5 = 17", "math", () => {}, true), chip("360", "math", () => {}, false));
+  pv.append(a, r2, pb); box.append(pv);
+  const panel = el("section", "panel");
+  const opt = (title, content) => { const o = el("div", "opt"); o.append(el("h3", null, title), content); panel.append(o); };
+  const chips = (pairs, key) => { const c = el("div", "chips wrapchips"); for (const [val, label] of pairs) c.append(chip(label, "", () => setUI(key, val), ui[key] === val)); return c; };
+  opt(T("themeH"), chips([["system", T("themeSystem")], ["light", T("themeLight")], ["dark", T("themeDark")]], "theme"));
+  const sw = el("div", "swatches");
+  for (const [k, c] of Object.entries(ACCENTS)) { const b = el("button", "sw"); b.type = "button"; b.style.background = isDark() ? c[3] : c[0]; b.setAttribute("aria-label", k); b.setAttribute("aria-pressed", String(ui.accent === k)); b.onclick = () => setUI("accent", k); sw.append(b); }
+  opt(T("accentH"), sw);
+  const mk = el("div", "swatches");
+  for (const [k, c] of Object.entries(MARKS)) { const b = el("button", "sw"); b.type = "button"; b.style.background = isDark() ? c[1] : c[0]; b.setAttribute("aria-label", k); b.setAttribute("aria-pressed", String(ui.mark === k)); b.onclick = () => setUI("mark", k); mk.append(b); }
+  opt(T("markH"), mk);
+  const bgs = el("div", "swatches");
+  for (const [k, key] of [["grid","bgGrid"],["dots","bgDots"],["lines","bgLines"],["plain","bgPlain"]]) {
+    const b = el("button", "bgtile"); b.type = "button"; b.setAttribute("aria-pressed", String(ui.bg === k)); b.append(el("i", k), el("span", null, T(key))); b.onclick = () => setUI("bg", k); bgs.append(b);
+  }
+  opt(T("bgH"), bgs);
+  const sz = el("div", "chips wrapchips");
+  for (const [k, label, px] of [["s","A",13],["m","A",16],["l","A",19],["xl","A",22]]) { const c = chip(label, "", () => setUI("size", k), ui.size === k); c.style.fontSize = px + "px"; c.style.minWidth = "48px"; sz.append(c); }
+  opt(T("sizeH"), sz);
+  opt(T("fontH"), chips([["rubik", T("fontRubik")], ["system", T("fontSystem")]], "font"));
+  const lg = el("div", "chips wrapchips");
+  lg.append(chip("English", "", () => { setLang("en"); renderCustomize(); }, lang === "en"), chip("עברית", "", () => { setLang("he"); renderCustomize(); }, lang === "he"));
+  opt(T("langH"), lg);
+  box.append(panel);
+  const done = el("button", "btn", T("done")); done.type = "button"; done.onclick = closeCustomize;
+  const rs = el("button", "btn quiet", T("reset")); rs.type = "button"; rs.onclick = () => { ui = {...UI_DEFAULT}; try { localStorage.removeItem("ui"); } catch(e) {} applyUI(); renderCustomize(); };
+  box.append(done, rs);
+}
+
+// ---------- welcome: the first screen after installing ----------
+function seenWelcome(){ try { return localStorage.getItem("welcomed") === "1"; } catch(e) { return true; } }
+function hideWelcome(){ try { localStorage.setItem("welcomed", "1"); } catch(e) {} $("welcome").hidden = true; }
+function showWelcome(){ renderWelcome(); $("welcome").hidden = false; }
+function renderWelcome(){
+  const box = $("welcomeInner"); box.innerHTML = "";
+  const lg = el("div", "lang"); lg.setAttribute("role", "group");
+  for (const [k, label] of [["en","EN"],["he","עב"]]) { const b = el("button", null, label); b.type = "button"; b.setAttribute("aria-pressed", String(lang === k)); b.onclick = () => { setLang(k); renderWelcome(); }; lg.append(b); }
+  const hero = el("div", "hero");
+  hero.append(svgEl('<span class="logo" aria-hidden="true"><svg viewBox="0 0 28 28" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V6a2 2 0 0 1 2-2h3M19 4h3a2 2 0 0 1 2 2v3M24 19v3a2 2 0 0 1-2 2h-3M9 24H6a2 2 0 0 1-2-2v-3"/><path d="M10 12h8M10 16h8"/><circle cx="20.5" cy="20.5" r="0.1" stroke="#FFE27A" stroke-width="3.2"/></svg></span>'));
+  for (const [cls, txt] of [["f1","2x + 5 = 17"],["f2","3/4 + 2/3"],["f3","∢A = 110°"]]) hero.append(el("span", "float " + cls, txt));
+  const f4 = el("span", "float f4"); f4.append(el("span", null, "x = 6")); hero.append(f4);
+  const h = el("h2", null, T("welcomeTitle")); h.id = "welcomeTitle";
+  const acts = el("div", "acts");
+  if (ACC) { const g = el("button", "btn google"); g.type = "button"; g.append(svgEl(ICON.google), el("span", null, T("google"))); g.onclick = () => { try { Android.signInGoogle(); } catch(e) {} }; acts.append(g); }
+  const si = el("button", "btn"); si.type = "button"; si.textContent = T("wSignIn"); si.onclick = () => { hideWelcome(); authMode = "in"; tab("me"); setTimeout(() => $("accEmail") && $("accEmail").focus(), 80); };
+  const su = el("button", "btn quiet"); su.type = "button"; su.textContent = T("wSignUp"); su.onclick = () => { hideWelcome(); authMode = "up"; tab("me"); setTimeout(() => $("accName") && $("accName").focus(), 80); };
+  acts.append(si, su);
+  const skip = el("button", "skip", T("wSkip")); skip.type = "button"; skip.onclick = () => { hideWelcome(); tab("solve"); };
+  box.append(lg, hero, h, el("p", "lead", T("welcomeLead")), acts, skip);
+}
+
+// start
+applyUI();
+setLang(lang);
+solveNow(true);
+if (ACC) { try { const st = JSON.parse(Android.authState()); account = st.signedIn ? st : null; } catch(e) {} try { Android.ready(); } catch(e) {} }
+if (ACC && !account && !seenWelcome()) showWelcome();
+</script>
+<script>
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});
+</script>
+</body>
+</html>
