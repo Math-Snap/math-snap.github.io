@@ -4,6 +4,8 @@
         <item name="colorOnPrimary">@color/paper</item>
         <item name="android:windowBackground">@color/paper</item>
         <item name="android:statusBarColor">@color/paper</item>
+        <item name="android:navigationBarColor">@color/card</item>
+        <item name="android:windowLightStatusBar">@bool/light_bars</item>
         <item name="android:textColor">@color/ink</item>
     </style>
 </resources>

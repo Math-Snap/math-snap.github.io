@@ -1,7 +1,7 @@
 <resources>
     <color name="pen">#8DA2FF</color>
-    <color name="paper">#11151D</color>
-    <color name="card">#171C26</color>
+    <color name="paper">#0D111C</color>
+    <color name="card">#161C2B</color>
     <color name="ink">#E7ECF5</color>
     <color name="muted">#97A3B8</color>
     <color name="line">#2B3446</color>

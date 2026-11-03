@@ -5,87 +5,153 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Math Snap</title>
 <style>
+/* Layout: phone app — app bar, one working card per tab, results below, bottom navigation.
+   Identity: a math notebook. Ink-blue pen, highlighter-yellow answers, faint graph paper. */
+@font-face{font-family:"Rubik";src:url("fonts/Rubik.ttf") format("truetype");font-weight:300 900;font-display:swap}
+@font-face{font-family:"JetBrains Mono";src:url("fonts/JetBrainsMono.ttf") format("truetype");font-weight:100 800;font-display:swap}
 :root{
-  --paper:#f7f9fc; --grid:#e3e9f3; --ink:#1a2233; --muted:#5d6b82;
-  --pen:#2346d6; --on-pen:#ffffff; --pen-soft:#e6ebff; --card:#ffffff; --line:#cfd8e6;
-  --ok:#0f7a4a; --ok-soft:#e3f5ec; --warn:#a33a1c; --warn-soft:#fdebe5;
-  --sans:Roboto,"Noto Sans Hebrew",system-ui,sans-serif; --mono:ui-monospace,"Roboto Mono","Droid Sans Mono",monospace;
+  --bg:#F2F4F9; --grid:#E6EAF3; --surface:#FFFFFF; --surface-2:#F6F7FB; --ink:#141B2D; --muted:#647089; --line:#E3E7F0;
+  --pen:#3346E0; --pen-press:#2533B8; --on-pen:#FFFFFF; --pen-soft:#ECEFFE; --mark:#FFE27A;
+  --ok:#11845B; --ok-soft:#E5F5EE; --warn:#B03A1E; --warn-soft:#FDECE7;
+  --shadow:0 1px 2px rgba(20,27,45,.05),0 6px 20px rgba(20,27,45,.07);
+  --sans:"Rubik",Roboto,"Noto Sans Hebrew",system-ui,sans-serif; --mono:"JetBrains Mono","Roboto Mono",ui-monospace,monospace;
+  --r:20px;
 }
 @media (prefers-color-scheme:dark){:root{
-  --paper:#11151d; --grid:#1a202c; --ink:#e7ecf5; --muted:#97a3b8;
-  --pen:#8da2ff; --on-pen:#0b0f1a; --pen-soft:#20284a; --card:#171c26; --line:#2b3446;
-  --ok:#5fd39b; --ok-soft:#14302a; --warn:#ff9a7a; --warn-soft:#3a1d16; color-scheme:dark}}
+  --bg:#0D111C; --grid:#141A28; --surface:#161C2B; --surface-2:#1C2335; --ink:#E9EDF7; --muted:#98A2BC; --line:#262E44;
+  --pen:#8E9CFF; --pen-press:#A9B4FF; --on-pen:#0B0F1A; --pen-soft:#1F2850; --mark:#6E5A12;
+  --ok:#5FD39B; --ok-soft:#12302A; --warn:#FF9A7A; --warn-soft:#3A1D16;
+  --shadow:0 0 0 1px var(--line); color-scheme:dark}}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-body{margin:0;background-color:var(--paper);color:var(--ink);font:16px/1.5 var(--sans);
-  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
-  background-size:24px 24px;-webkit-tap-highlight-color:transparent}
-.wrap{max-width:640px;margin:0 auto;padding:18px 16px 40px;display:flex;flex-direction:column;gap:14px}
-header{display:flex;align-items:flex-start;gap:12px}
-header > div{flex:1;min-width:0}
-h1{margin:0;font-size:32px;line-height:1;font-weight:800;letter-spacing:-.02em}
-h1 span{color:var(--pen)}
-.sub{margin:6px 0 0;color:var(--muted)}
-.lang{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--card);flex:none}
-.lang button{border:0;background:none;color:var(--muted);font:700 14px/1 var(--sans);padding:9px 11px}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background-color:var(--bg);color:var(--ink);font:16px/1.5 var(--sans);-webkit-tap-highlight-color:transparent;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:22px 22px;background-attachment:fixed}
+.wrap{max-width:640px;margin:0 auto;padding:12px 16px 112px;display:flex;flex-direction:column;gap:16px}
+
+/* app bar */
+.appbar{display:flex;align-items:center;gap:12px;padding:6px 2px 2px}
+.brand{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
+.logo{width:44px;height:44px;border-radius:14px;background:var(--pen);display:grid;place-items:center;flex:none;box-shadow:0 6px 16px rgba(51,70,224,.28)}
+.logo svg{width:28px;height:28px}
+h1{margin:0;font-size:22px;line-height:1.1;font-weight:800;letter-spacing:-.01em}
+.sub{margin:2px 0 0;color:var(--muted);font-size:13px;line-height:1.35}
+.lang{display:flex;background:var(--surface);border-radius:999px;padding:3px;box-shadow:var(--shadow);flex:none}
+.lang button{border:0;background:none;color:var(--muted);font:600 13px/1 var(--sans);padding:9px 12px;border-radius:999px}
 .lang button[aria-pressed="true"]{background:var(--pen);color:var(--on-pen)}
-.tabs{display:grid;grid-template-columns:1fr 1fr;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:4px;gap:4px}
-.tabs button{border:0;background:none;color:var(--muted);font:600 16px/1 var(--sans);padding:12px;border-radius:7px}
-.tabs button[aria-selected="true"]{background:var(--pen);color:var(--on-pen)}
-.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px}
+
+/* cards */
+.panel{background:var(--surface);border-radius:var(--r);padding:18px;display:flex;flex-direction:column;gap:14px;box-shadow:var(--shadow)}
+.phead h2{margin:0;font-size:20px;font-weight:700;line-height:1.2;text-wrap:balance}
+.phead p{margin:4px 0 0;color:var(--muted);font-size:14px}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.btn{border:0;border-radius:10px;padding:16px 12px;font:700 16px/1 var(--sans);background:var(--pen);color:var(--on-pen);display:flex;align-items:center;justify-content:center;gap:8px}
-.btn.alt{background:var(--pen-soft);color:var(--pen)}
+
+/* buttons */
+.btn{border:0;border-radius:16px;min-height:56px;padding:0 16px;font:600 17px/1 var(--sans);background:var(--pen);color:var(--on-pen);
+  display:flex;align-items:center;justify-content:center;gap:10px;transition:transform .12s ease,background .12s ease}
+.btn:active{transform:scale(.98);background:var(--pen-press)}
 .btn svg{width:22px;height:22px;flex:none}
-.lbl{font:700 12px/1.3 var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-[dir="rtl"] .lbl{letter-spacing:0}
-textarea,input,select{width:100%;border:1px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);font:17px/1.5 var(--mono);padding:12px}
-textarea{min-height:96px;resize:vertical}
-select{font-family:var(--sans)}
-.status{color:var(--muted);font-style:italic;margin:0}
-.status.bad{color:var(--warn);font-style:normal}
-.result{display:flex;flex-direction:column;gap:10px}
+[dir="rtl"] .btn .go{transform:scaleX(-1)}
+.tile{border:0;border-radius:16px;background:var(--pen-soft);color:var(--pen);padding:14px 10px;font:600 15px/1.2 var(--sans);
+  display:flex;flex-direction:column;align-items:center;gap:8px;transition:transform .12s ease}
+.tile:active{transform:scale(.97)}
+.tile .ic{width:44px;height:44px;border-radius:50%;background:var(--surface);display:grid;place-items:center}
+.tile svg{width:24px;height:24px}
+
+/* inputs */
+.lbl{font:600 13px/1.3 var(--sans);color:var(--muted)}
+textarea,input,select{width:100%;border:1.5px solid transparent;border-radius:14px;background:var(--surface-2);color:var(--ink);font:18px/1.55 var(--mono);padding:14px;transition:border-color .15s ease,background .15s ease}
+textarea{min-height:104px;resize:vertical}
+textarea::placeholder,input::placeholder{color:var(--muted);opacity:.7}
+textarea:focus,input:focus,select:focus{outline:none;border-color:var(--pen);background:var(--surface)}
+button:focus-visible{outline:2px solid var(--pen);outline-offset:2px}
+select{font:16px/1.3 var(--sans)}
+.vh{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* example chips and tool chips */
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px 0 4px;margin:0 -2px}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:8px 14px;font:500 14px/1.2 var(--sans);white-space:nowrap}
+.chip.math{font-family:var(--mono);font-size:14px}
+.chip[aria-pressed="true"]{background:var(--pen);border-color:var(--pen);color:var(--on-pen)}
+.chips.wrapchips{flex-wrap:wrap;overflow:visible}
+.chips.wrapchips .chip{white-space:normal;text-align:start;max-width:100%}
+.exlabel{font-size:12px;font-weight:600;color:var(--muted);margin:0}
+
+/* status and detected */
+.status{margin:0;font-size:14px;color:var(--muted);background:var(--surface-2);border-radius:12px;padding:10px 12px}
+.status.bad{color:var(--warn);background:var(--warn-soft)}
+.hint{margin:0;font-size:14px;color:var(--pen);background:var(--pen-soft);border-radius:12px;padding:10px 12px;font-weight:500}
+
+/* results */
+.result{display:flex;flex-direction:column;gap:14px}
 .prob{font:600 15px/1.4 var(--mono);color:var(--muted);overflow-wrap:anywhere}
-.ans{background:var(--ok-soft);border:1px solid var(--ok);border-radius:10px;padding:12px 14px}
-.ans small{display:block;font:700 11px/1 var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ok);margin-bottom:6px}
-.ans div{font:700 20px/1.4 var(--mono);overflow-wrap:anywhere}
-.err{background:var(--warn-soft);border:1px solid var(--warn);color:var(--warn);border-radius:10px;padding:12px 14px}
-.steps{margin:0;padding:0;list-style:none;font:15px/1.6 var(--mono);display:flex;flex-direction:column;gap:6px}
-.steps li{overflow-wrap:anywhere;white-space:pre-wrap;display:flex;flex-direction:column;gap:2px;padding-bottom:6px;border-bottom:1px dashed var(--line)}
-.steps li:last-child{border-bottom:0}
-.steps .why{font:13px/1.4 var(--sans);color:var(--muted)}
-[dir="rtl"] [dir="ltr"]{text-align:right}
-.ex{font-size:13px;color:var(--muted);margin:0}
-[data-t="givensExList"]{display:block;white-space:pre-line;margin-top:2px}
-.fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.fields label{display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--muted)}
-.hint{font-size:14px;color:var(--muted);margin:0}
-.notes{background:var(--pen-soft);border-radius:10px;padding:12px 14px;font-size:14px;line-height:1.6;display:flex;flex-direction:column;gap:6px}
-.notes b{color:var(--pen)}
-.notes summary{font-weight:700;color:var(--pen);cursor:pointer}
-.notes table{border-collapse:collapse;margin-top:8px;width:100%}
-.notes td{padding:4px 6px;border-bottom:1px solid var(--line);vertical-align:top}
-.notes td.f{font-family:var(--mono);white-space:nowrap}
-.fig svg{direction:ltr;width:100%;max-width:320px;height:auto;display:block;margin:0 auto}
-.proofwrap{overflow-x:auto}
-table.proof{width:100%;border-collapse:collapse;font-size:14px;line-height:1.5}
-.proof th{background:var(--pen);color:var(--on-pen);padding:8px;font-weight:700;text-align:start}
-.proof td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top;overflow-wrap:anywhere}
-.proof td.claim{font-family:var(--mono)}
-.proof td.claim.he{font-family:var(--sans)}
-.ans div{white-space:pre-line}
+.ans{background:var(--surface-2);border-radius:16px;padding:14px 16px}
+.ans small{display:block;font:600 12px/1 var(--sans);color:var(--ok);margin-bottom:8px}
+.ans div{display:inline;font:700 22px/1.7 var(--mono);white-space:pre-line;overflow-wrap:anywhere;
+  background-image:linear-gradient(transparent 58%,var(--mark) 58%,var(--mark) 90%,transparent 90%);-webkit-box-decoration-break:clone;box-decoration-break:clone;padding:0 2px}
 .ans div[dir="rtl"]{font-family:var(--sans)}
-.proof td.n{color:var(--muted);width:1.6em;text-align:center}
-hr{border:0;border-top:1px dashed var(--line);width:100%;margin:4px 0}
-button:focus-visible,textarea:focus,input:focus,select:focus{outline:2px solid var(--pen);outline-offset:1px}
+.err{background:var(--warn-soft);color:var(--warn);border-radius:14px;padding:12px 14px;font-weight:500}
+.steps{list-style:none;margin:0;padding:0;counter-reset:s;display:flex;flex-direction:column}
+.steps li{position:relative;padding-inline-start:40px;padding-bottom:16px;counter-increment:s;overflow-wrap:anywhere}
+.steps li::before{content:counter(s);position:absolute;inset-inline-start:0;top:0;width:26px;height:26px;border-radius:50%;background:var(--pen-soft);color:var(--pen);font:700 13px/26px var(--sans);text-align:center}
+.steps li::after{content:"";position:absolute;inset-inline-start:12.5px;top:30px;bottom:4px;width:1.5px;background:var(--line)}
+.steps li:last-child{padding-bottom:0}
+.steps li:last-child::after{display:none}
+.steps .math{font:16px/1.6 var(--mono);white-space:pre-wrap}
+.steps .why{font:13px/1.45 var(--sans);color:var(--muted);margin-top:2px}
+[dir="rtl"] [dir="ltr"]{text-align:right}
+hr{border:0;border-top:1px solid var(--line);width:100%;margin:2px 0}
+
+/* notes / formulas */
+.notes{background:var(--pen-soft);border-radius:16px;padding:12px 14px;font-size:14px;line-height:1.6}
+.notes summary{font-weight:600;color:var(--pen);cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px}
+.notes summary::-webkit-details-marker{display:none}
+.notes summary::after{content:"";width:8px;height:8px;border-inline-end:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin-inline-start:auto;transition:transform .2s ease}
+.notes[open] summary::after{transform:rotate(-135deg)}
+.notes summary svg{width:18px;height:18px;flex:none}
+.notes .body{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.notes b{color:var(--pen)}
+.notes table{border-collapse:collapse;width:100%}
+.notes td{padding:6px 4px;border-bottom:1px solid rgba(51,70,224,.15);vertical-align:top}
+.notes tr:last-child td{border-bottom:0}
+.notes td.f{font-family:var(--mono);white-space:nowrap}
+
+/* geometry fields, figure, proof table */
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fields label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted);font-weight:500}
+.fields input{text-align:center;font-size:19px;font-weight:600}
+.fig{background:var(--surface-2);border-radius:16px;padding:10px}
+.fig svg{direction:ltr;width:100%;max-width:330px;height:auto;display:block;margin:0 auto}
+.proofwrap{overflow-x:auto;border-radius:16px;border:1px solid var(--line)}
+table.proof{width:100%;border-collapse:collapse;font-size:14px;line-height:1.5}
+.proof th{background:var(--pen-soft);color:var(--pen);padding:10px 8px;font-weight:700;text-align:start}
+.proof td{padding:10px 8px;border-top:1px solid var(--line);vertical-align:top;overflow-wrap:anywhere}
+.proof td.claim{font-family:var(--mono);font-weight:500}
+.proof td.claim.he{font-family:var(--sans)}
+.proof td.n{width:2em;text-align:center}
+.proof td.n::before{content:attr(data-n);display:inline-block;min-width:22px;height:22px;border-radius:50%;background:var(--surface-2);color:var(--muted);font:600 12px/22px var(--sans)}
+.proof td:last-child{color:var(--muted)}
+.section-title{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px;color:var(--ink);margin:0}
+.section-title svg{width:18px;height:18px;color:var(--pen)}
+
+/* bottom navigation */
+.bottomnav{position:fixed;inset:auto 0 0 0;z-index:10;background:var(--surface);box-shadow:0 -1px 0 var(--line),0 -8px 24px rgba(20,27,45,.06);
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px max(16px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.bottomnav button{border:0;background:none;color:var(--muted);font:600 13px/1 var(--sans);display:flex;flex-direction:column;align-items:center;gap:6px;padding:6px 0}
+.bottomnav .pill{width:64px;height:32px;border-radius:999px;display:grid;place-items:center;transition:background .2s ease}
+.bottomnav svg{width:22px;height:22px}
+.bottomnav button[aria-selected="true"]{color:var(--pen)}
+.bottomnav button[aria-selected="true"] .pill{background:var(--pen-soft)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <div>
-      <h1>Math <span>Snap</span></h1>
-      <p class="sub" data-t="sub"></p>
+  <header class="appbar">
+    <div class="brand">
+      <span class="logo" aria-hidden="true"><svg viewBox="0 0 28 28" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V6a2 2 0 0 1 2-2h3M19 4h3a2 2 0 0 1 2 2v3M24 19v3a2 2 0 0 1-2 2h-3M9 24H6a2 2 0 0 1-2-2v-3"/><path d="M10 12h8M10 16h8" /><circle cx="20.5" cy="20.5" r="0.1" stroke="#FFE27A" stroke-width="3.2"/></svg></span>
+      <div><h1>Math Snap</h1><p class="sub" data-t="sub"></p></div>
     </div>
     <div class="lang" role="group" aria-label="Language">
       <button type="button" id="langEn" lang="en">EN</button>
@@ -93,61 +159,59 @@ button:focus-visible,textarea:focus,input:focus,select:focus{outline:2px solid v
     </div>
   </header>
 
-  <div class="tabs" role="tablist">
-    <button role="tab" id="tabSolve" aria-selected="true" data-t="tabSolve"></button>
-    <button role="tab" id="tabGeo" aria-selected="false" data-t="tabGeo"></button>
-  </div>
-
   <!-- SOLVE -->
   <section id="solvePanel" class="panel">
+    <div class="phead"><h2 data-t="solveTitle"></h2><p data-t="solveSub"></p></div>
     <div class="row">
-      <button class="btn" id="camera" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
-        <span data-t="camera"></span></button>
-      <button class="btn alt" id="gallery" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 17-5-5-9 8"/></svg>
-        <span data-t="gallery"></span></button>
+      <button class="tile" id="camera" type="button"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span><span data-t="camera"></span></button>
+      <button class="tile" id="gallery" type="button"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 17-5-5-9 8"/></svg></span><span data-t="gallery"></span></button>
     </div>
     <p class="status" id="ocrStatus" hidden></p>
     <label class="lbl" for="problem" data-t="problemLbl"></label>
     <textarea id="problem" dir="ltr" spellcheck="false" autocapitalize="off" autocomplete="off">3/4 + 2/3
 2x + 5 = 17</textarea>
-    <p class="ex"><span data-t="examples"></span> <span dir="ltr">2³ · 2⁵ · (x²)³ : x⁴ · 360 · (x + 2)(x − 3) · (x+2)(x+3) = x² + 10 · 3/4 + 2/3 · 2x + 5 = 17</span></p>
-    <details class="notes" id="formulas"><summary data-t="formulas"></summary><div id="formulaBody"></div></details>
-    <button class="btn" id="solve" type="button" data-t="solve"></button>
+    <div><p class="exlabel" data-t="tryOne"></p><div class="chips" id="solveChips"></div></div>
+    <details class="notes" id="formulas"><summary><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M8 7h6"/></svg><span data-t="formulas"></span></summary><div class="body" id="formulaBody"></div></details>
+    <button class="btn" id="solve" type="button"><span data-t="solve"></span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
   </section>
 
   <section id="results" class="panel" aria-live="polite"></section>
 
   <!-- GEOMETRY -->
   <section id="geoPanel" class="panel" hidden>
+    <div class="phead"><h2 data-t="geoTitle"></h2><p data-t="geoSub"></p></div>
     <label class="lbl" for="geoText" data-t="givensLbl"></label>
-    <textarea id="geoText" dir="auto" spellcheck="false" autocomplete="off" style="min-height:110px;font-family:var(--sans)"></textarea>
-    <p class="ex"><span data-t="givensEx"></span> <span data-t="givensExList"></span></p>
-    <button class="btn" id="geoRead" type="button" data-t="givensGo"></button>
+    <textarea id="geoText" dir="auto" spellcheck="false" autocomplete="off" style="min-height:120px;font-family:var(--sans);font-size:17px"></textarea>
+    <div><p class="exlabel" data-t="tryOne"></p><div class="chips wrapchips" id="geoChips"></div></div>
+    <button class="btn" id="geoRead" type="button"><span data-t="givensGo"></span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
     <p class="status" id="geoStatus" hidden></p>
     <p class="hint" id="geoDetected" hidden></p>
     <div class="row">
-      <button class="btn alt" id="geoCamera" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
-        <span data-t="camera"></span></button>
-      <button class="btn alt" id="geoGallery" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 17-5-5-9 8"/></svg>
-        <span data-t="gallery"></span></button>
+      <button class="tile" id="geoCamera" type="button"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span><span data-t="camera"></span></button>
+      <button class="tile" id="geoGallery" type="button"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 17-5-5-9 8"/></svg></span><span data-t="gallery"></span></button>
     </div>
-    <hr>
-    <label class="lbl" for="shape" data-t="shape"></label>
-    <select id="shape"></select>
-    <div class="notes" id="geoNotes" hidden></div>
+  </section>
+
+  <section id="toolPanel" class="panel" hidden>
+    <p class="section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18L12 4z"/></svg><span data-t="shape"></span></p>
+    <div class="chips" id="groupChips"></div>
+    <div class="chips wrapchips" id="toolChips"></div>
+    <label class="vh" for="shape">shape</label><select id="shape" class="vh"></select>
+    <details class="notes" id="geoNotesWrap" hidden><summary><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M8 7h6"/></svg><span data-t="reminder"></span></summary><div class="body" id="geoNotes"></div></details>
     <div class="fields" id="geoFields"></div>
-    <div id="unitRow" style="display:flex;flex-direction:column;gap:12px">
+    <div id="unitRow" style="display:flex;flex-direction:column;gap:8px">
       <label class="lbl" for="unit" data-t="units"></label>
       <select id="unit"></select>
     </div>
-    <button class="btn" id="calc" type="button" data-t="calc"></button>
+    <button class="btn" id="calc" type="button"><span data-t="calc"></span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
   </section>
   <section id="geoResults" class="panel" hidden aria-live="polite"></section>
 </div>
+
+<nav class="bottomnav" role="tablist">
+  <button role="tab" id="tabSolve" aria-selected="true" type="button"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 7h8M8 12h2M14 12h2M8 16h2M14 16h2"/></svg></span><span data-t="tabSolve"></span></button>
+  <button role="tab" id="tabGeo" aria-selected="false" type="button"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18L12 4z"/><path d="M12 20v-5"/></svg></span><span data-t="tabGeo"></span></button>
+</nav>
 
 <script src="math.js"></script>
 <script src="solver.js"></script>
@@ -160,7 +224,9 @@ const FSI = s => "⁨" + s + "⁩", LRI = s => "⁦" + s + "⁩";
 // ---------- words ----------
 const UI = {
   en: {
-    sub:"Snap a math problem or type it. Works offline.", tabSolve:"Solve", tabGeo:"Geometry",
+    sub:"Snap it, type it, solved step by step",
+    solveTitle:"New problem", solveSub:"Take a photo, pick one from the gallery, or type it", tryOne:"Try one:",
+    geoTitle:"Geometry", geoSub:"Write the givens and get a proof with claims and reasons", reminder:"Reminder: definitions and theorems", tabSolve:"Solve", tabGeo:"Geometry",
     camera:"Take photo", gallery:"Gallery", problemLbl:"Problem (one per line, fix anything misread)",
     geoCheck:"Check the givens above and fix anything misread, then tap Solve.",
     givensLbl:"Write the givens in words or symbols", givensEx:"Examples:", givensGo:"Solve",
@@ -180,7 +246,9 @@ const UI = {
     angBig:"Those two angles add up to 180° or more, so they can't be in one triangle.",
   },
   he: {
-    sub:"צלמו תרגיל או הקלידו אותו. עובד בלי אינטרנט.", tabSolve:"פתרון", tabGeo:"גאומטריה",
+    sub:"מצלמים, מקלידים, ומקבלים פתרון שלב אחרי שלב",
+    solveTitle:"תרגיל חדש", solveSub:"צלמו, בחרו מהגלריה או הקלידו", tryOne:"נסו דוגמה:",
+    geoTitle:"גאומטריה", geoSub:"כתבו את הנתונים וקבלו הוכחה עם טענה ונימוק", reminder:"תזכורת: הגדרות ומשפטים", tabSolve:"פתרון", tabGeo:"גאומטריה",
     camera:"צילום", gallery:"גלריה", problemLbl:"התרגיל (אחד בכל שורה, תקנו מה שנקרא לא נכון)",
     geoCheck:"בדקו את הנתונים למעלה ותקנו מה שנקרא לא נכון, ואז לחצו פתור.",
     givensLbl:"כתבו את הנתונים במילים או בסימנים", givensEx:"דוגמאות:", givensGo:"פתור",
@@ -216,7 +284,7 @@ function setLang(l){
   $("langHe").setAttribute("aria-pressed", String(l === "he"));
   document.querySelectorAll("[data-t]").forEach(e => e.textContent = T(e.dataset.t));
   $("geoText").placeholder = T("givensPh");
-  fillShapes(); fillUnits(); fillFormulas();
+  fillShapes(); fillUnits(); fillFormulas(); renderExamples(); renderToolChips();
   if (statusKey) { const f=photoFor; photoFor="solve"; setStatus(statusKey, statusBad); photoFor=f; }
   if (geoKey) setGeoStatus(geoKey, geoBad);
   if (!$("geoDetected").hidden && lastDetected) showDetected(lastDetected);
@@ -232,7 +300,8 @@ function tab(which){
   $("tabSolve").setAttribute("aria-selected", String(!geo));
   $("tabGeo").setAttribute("aria-selected", String(geo));
   $("solvePanel").hidden = geo; $("results").hidden = geo || !$("results").childElementCount;
-  $("geoPanel").hidden = !geo; $("geoResults").hidden = !geo || !$("geoResults").childElementCount;
+  $("geoPanel").hidden = !geo; $("toolPanel").hidden = !geo; $("geoResults").hidden = !geo || !$("geoResults").childElementCount;
+  window.scrollTo({top:0, behavior:"smooth"});
 }
 $("tabSolve").onclick = () => tab("solve");
 $("tabGeo").onclick = () => tab("geo");
@@ -283,13 +352,43 @@ function fillFormulas(){
   FORMULAS[lang].forEach(([name,f])=>{ const tr=document.createElement("tr"); const fc=el("td","f",f); fc.dir = HEB.test(f) ? "rtl" : "ltr"; if (HEB.test(f)) fc.style.whiteSpace="normal"; tr.append(el("td",null,name), fc); tb.append(tr); });
   box.append(tb);
 }
+
+// ---------- chips: examples and tool picker ----------
+const SOLVE_EX = ["3/4 + 2/3", "2x + 5 = 17", "(x + 2)(x − 3)", "2³ · 2⁵", "(x²)³ : x⁴", "360", "x² − 5x + 6 = 0", "(x+2)(x+3) = x² + 10", "20% of 80"];
+const GROUPS = [["trap",["Trapezoid","טרפז"]],["iso",["Isosceles","שווה שוקיים"]],["kite",["Kite","דלתון"]],[undefined,["Shapes","צורות"]]];
+function chip(text, cls, onClick, pressed){
+  const b = el("button", "chip" + (cls ? " " + cls : ""), text); b.type = "button";
+  if (pressed != null) b.setAttribute("aria-pressed", String(pressed));
+  b.onclick = onClick; return b;
+}
+function renderExamples(){
+  const sc = $("solveChips"); sc.innerHTML = "";
+  SOLVE_EX.forEach(x => { const c = chip(x, "math", () => { $("problem").value = x; solveNow(); }); c.dir = "ltr"; sc.append(c); });
+  const gc = $("geoChips"); gc.innerHTML = "";
+  T("givensExList").split("\n").forEach(x => gc.append(chip(x, "", () => { $("geoText").value = x; readGivens(); }, null)));
+}
+function renderToolChips(){
+  const cur = $("shape").value, curG = SH[cur] ? SH[cur].g : undefined;
+  const gBox = $("groupChips"), tBox = $("toolChips"); gBox.innerHTML = ""; tBox.innerHTML = "";
+  for (const [g, label] of GROUPS) {
+    gBox.append(chip(pick(...label), "", () => {
+      const first = Object.keys(SH).find(k => SH[k].g === g);
+      $("shape").value = first; buildFields(false); $("geoResults").innerHTML = ""; $("geoResults").hidden = true;
+    }, g === curG));
+  }
+  for (const [k, sh] of Object.entries(SH)) if (sh.g === curG) {
+    let name = pick(...sh.l); const gl = GROUPS.find(x => x[0] === curG);
+    if (gl) name = name.replace(new RegExp("^" + pick(...gl[1]) + "\\s*:\\s*"), "");
+    tBox.append(chip(name, "", () => { $("shape").value = k; buildFields(false); $("geoResults").innerHTML = ""; $("geoResults").hidden = true; }, k === cur));
+  }
+}
 function proofTable(rows){
   const W=TW(), wrap=el("div","proofwrap"), tb=document.createElement("table"); tb.className="proof";
   const hr=document.createElement("tr"); ["#", W.claim, W.reason].forEach(h=>hr.append(el("th",null,h)));
   const th=document.createElement("thead"); th.append(hr); tb.append(th);
   const body=document.createElement("tbody");
   rows.forEach(([c,why],i)=>{ const tr=document.createElement("tr");
-    tr.append(el("td","n",String(i+1)), dirOf(el("td", HEB.test(c) ? "claim he" : "claim", c), c), dirOf(el("td",null,why), why)); body.append(tr); });
+    const nc = el("td","n"); nc.dataset.n = String(i+1); tr.append(nc, dirOf(el("td", HEB.test(c) ? "claim he" : "claim", c), c), dirOf(el("td",null,why), why)); body.append(tr); });
   tb.append(body); wrap.append(tb); return wrap;
 }
 function solveNow(quiet){
@@ -799,7 +898,8 @@ function buildFields(keep){
   const notes=$("geoNotes"); notes.innerHTML="";
   const list = s.g==="trap" ? TW().notes : (s.g && NOTES[s.g] ? NOTES[s.g][lang] : null);
   if (list) list.forEach(h=>{ const p=document.createElement("div"); p.innerHTML=h; notes.append(p); });
-  notes.hidden = !list;
+  $("geoNotesWrap").hidden = !list;
+  renderToolChips();
   $("unitRow").hidden = !!s.noUnit;
 }
 $("shape").onchange = () => { buildFields(false); $("geoResults").innerHTML=""; $("geoResults").hidden=true; };
