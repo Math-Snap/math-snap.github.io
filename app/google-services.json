@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "852289270633",
+    "project_id": "math-snap-529bc",
+    "storage_bucket": "math-snap-529bc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:852289270633:android:f609a3a48822fb02b043f8",
+        "android_client_info": {
+          "package_name": "com.mathsnap"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAb526ddpk8T8R66COOSfpVuIa_zYrtplI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
