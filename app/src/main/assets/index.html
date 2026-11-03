@@ -17,11 +17,16 @@
   --sans:"Rubik",Roboto,"Noto Sans Hebrew",system-ui,sans-serif; --mono:"JetBrains Mono","Roboto Mono",ui-monospace,monospace;
   --r:20px;
 }
-@media (prefers-color-scheme:dark){:root{
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#0D111C; --grid:#141A28; --surface:#161C2B; --surface-2:#1C2335; --ink:#E9EDF7; --muted:#98A2BC; --line:#262E44;
   --pen:#8E9CFF; --pen-press:#A9B4FF; --on-pen:#0B0F1A; --pen-soft:#1F2850; --mark:#6E5A12;
   --ok:#5FD39B; --ok-soft:#12302A; --warn:#FF9A7A; --warn-soft:#3A1D16;
   --shadow:0 0 0 1px var(--line); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0D111C; --grid:#141A28; --surface:#161C2B; --surface-2:#1C2335; --ink:#E9EDF7; --muted:#98A2BC; --line:#262E44;
+  --pen:#8E9CFF; --pen-press:#A9B4FF; --on-pen:#0B0F1A; --pen-soft:#1F2850; --mark:#6E5A12;
+  --ok:#5FD39B; --ok-soft:#12302A; --warn:#FF9A7A; --warn-soft:#3A1D16;
+  --shadow:0 0 0 1px var(--line); color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html{-webkit-text-size-adjust:100%}
@@ -204,6 +209,48 @@ table.proof{width:100%;border-collapse:collapse;font-size:14px;line-height:1.5}
 .savebar .sp{flex:1}
 .savebar .star{color:var(--ok)}
 .savebar.out{background:var(--surface-2);color:var(--muted);font-weight:500}
+/* background choices */
+body[data-bg="dots"]{background-image:radial-gradient(var(--grid) 1.4px,transparent 1.7px);background-size:18px 18px}
+body[data-bg="lines"]{background-image:linear-gradient(transparent 27px,var(--grid) 27px,var(--grid) 28px);background-size:100% 28px}
+body[data-bg="plain"]{background-image:none}
+.iconbtn{width:42px;height:42px;border-radius:50%;border:0;background:var(--surface);color:var(--ink);box-shadow:var(--shadow);display:grid;place-items:center;flex:none}
+.iconbtn svg{width:22px;height:22px}
+/* full-screen layers */
+.overlay{position:fixed;inset:0;z-index:30;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch}
+.overlay .inner{max-width:640px;margin:0 auto;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:16px}
+.sheethead{display:flex;align-items:center;gap:12px;padding-top:6px}
+.sheethead h2{flex:1;margin:0;font-size:22px;font-weight:800}
+.opt{display:flex;flex-direction:column;gap:10px}
+.opt h3{margin:0;font-size:14px;font-weight:600;color:var(--muted)}
+.swatches{display:flex;flex-wrap:wrap;gap:12px}
+.sw{width:42px;height:42px;border-radius:50%;border:3px solid var(--surface);box-shadow:0 0 0 1.5px var(--line);padding:0;cursor:pointer}
+.sw[aria-pressed="true"]{box-shadow:0 0 0 2.5px var(--ink)}
+.bgtile{display:flex;flex-direction:column;align-items:center;gap:6px;border:0;background:none;color:var(--ink);font:500 13px/1 var(--sans);padding:0}
+.bgtile i{width:64px;height:48px;border-radius:12px;background-color:var(--bg);box-shadow:0 0 0 1.5px var(--line);display:block}
+.bgtile[aria-pressed="true"] i{box-shadow:0 0 0 2.5px var(--pen)}
+.bgtile i.grid{background-image:linear-gradient(var(--muted) 1px,transparent 1px),linear-gradient(90deg,var(--muted) 1px,transparent 1px);background-size:10px 10px;opacity:.9}
+.bgtile i.dots{background-image:radial-gradient(var(--muted) 1.2px,transparent 1.5px);background-size:9px 9px}
+.bgtile i.lines{background-image:linear-gradient(transparent 11px,var(--muted) 11px,var(--muted) 12px);background-size:100% 12px}
+.preview{display:flex;flex-direction:column;gap:12px}
+.preview .row2{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+/* welcome */
+.welcome .inner{min-height:100%;justify-content:center;text-align:center;gap:20px}
+.hero{position:relative;height:200px;display:grid;place-items:center}
+.hero .logo{width:96px;height:96px;border-radius:30px}
+.hero .logo svg{width:60px;height:60px}
+.hero .float{position:absolute;background:var(--surface);box-shadow:var(--shadow);border-radius:14px;padding:8px 12px;font:600 15px/1 var(--mono);direction:ltr}
+.hero .f1{top:14px;left:8%;transform:rotate(-6deg)}
+.hero .f2{top:30px;right:6%;transform:rotate(5deg)}
+.hero .f3{bottom:18px;left:14%;transform:rotate(4deg)}
+.hero .f4{bottom:8px;right:12%;transform:rotate(-4deg)}
+.hero .f4 span{background-image:linear-gradient(transparent 55%,var(--mark) 55%,var(--mark) 92%,transparent 92%)}
+.welcome h2{margin:0;font-size:28px;font-weight:800;line-height:1.15;text-wrap:balance}
+.welcome p.lead{margin:0;color:var(--muted);font-size:16px;text-wrap:balance}
+.welcome .acts{display:flex;flex-direction:column;gap:10px;text-align:start}
+.welcome .skip{border:0;background:none;color:var(--muted);font:600 15px/1 var(--sans);padding:12px}
+.welcome .lang{align-self:center}
+@media (prefers-reduced-motion:no-preference){.hero .float{animation:bob 5s ease-in-out infinite}.hero .f2{animation-delay:-1.2s}.hero .f3{animation-delay:-2.4s}.hero .f4{animation-delay:-3.6s}}
+@keyframes bob{50%{translate:0 -6px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -214,10 +261,7 @@ table.proof{width:100%;border-collapse:collapse;font-size:14px;line-height:1.5}
       <span class="logo" aria-hidden="true"><svg viewBox="0 0 28 28" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V6a2 2 0 0 1 2-2h3M19 4h3a2 2 0 0 1 2 2v3M24 19v3a2 2 0 0 1-2 2h-3M9 24H6a2 2 0 0 1-2-2v-3"/><path d="M10 12h8M10 16h8" /><circle cx="20.5" cy="20.5" r="0.1" stroke="#FFE27A" stroke-width="3.2"/></svg></span>
       <div><h1>Math Snap</h1><p class="sub" data-t="sub"></p></div>
     </div>
-    <div class="lang" role="group" aria-label="Language">
-      <button type="button" id="langEn" lang="en">EN</button>
-      <button type="button" id="langHe" lang="he">עב</button>
-    </div>
+    <button class="iconbtn" id="openCustom" type="button" aria-label="Customize" data-tlabel="custom"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="1.5"/><circle cx="17.5" cy="10.5" r="1.5"/><circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12.5" r="1.5"/><path d="M12 2a10 10 0 0 0 0 20c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.3 0-1.1.9-2 2-2h2.4A5.6 5.6 0 0 0 22 9.8C22 5.5 17.5 2 12 2z"/></svg></button>
   </header>
 
   <!-- SOLVE -->
@@ -272,6 +316,9 @@ table.proof{width:100%;border-collapse:collapse;font-size:14px;line-height:1.5}
   <div id="mePanel" hidden style="display:flex;flex-direction:column;gap:16px"></div>
 </div>
 
+<div class="overlay" id="customize" hidden role="dialog" aria-modal="true" aria-labelledby="customTitle"><div class="inner" id="customInner"></div></div>
+<div class="overlay welcome" id="welcome" hidden role="dialog" aria-modal="true" aria-labelledby="welcomeTitle"><div class="inner" id="welcomeInner"></div></div>
+
 <nav class="bottomnav" role="tablist">
   <button role="tab" id="tabSolve" aria-selected="true" type="button"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 7h8M8 12h2M14 12h2M8 16h2M14 16h2"/></svg></span><span data-t="tabSolve"></span></button>
   <button role="tab" id="tabGeo" aria-selected="false" type="button"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18L12 4z"/><path d="M12 20v-5"/></svg></span><span data-t="tabGeo"></span></button>
@@ -291,6 +338,11 @@ const UI = {
   en: {
     sub:"Snap it, type it, solved step by step",
     tabMe:"Mine",
+    custom:"Customize", done:"Done", reset:"Reset to default", themeH:"Theme", themeSystem:"Like the phone", themeLight:"Light", themeDark:"Dark",
+    accentH:"Main color", markH:"Highlighter", bgH:"Background", bgGrid:"Grid", bgDots:"Dots", bgLines:"Lines", bgPlain:"Plain",
+    sizeH:"Text size", fontH:"Font", fontRubik:"Rubik", fontSystem:"Phone font", langH:"Language", previewH:"Preview", previewBtn:"Solve",
+    welcomeTitle:"Welcome to Math Snap", welcomeLead:"Snap a problem, get every step. Sign in to keep your problems on every phone.",
+    wSignIn:"Sign in", wSignUp:"Create an account", wSkip:"Continue without an account",
     meTitle:"My account", meSub:"Sign in to save your problems and sync them between phones",
     perkHistory:"Every problem you solve is saved", perkSync:"The same history on every phone", perkFav:"Star important problems and add notes",
     google:"Continue with Google", orEmail:"or with email", name:"Name (optional)", email:"Email", password:"Password",
@@ -330,6 +382,11 @@ const UI = {
   he: {
     sub:"מצלמים, מקלידים, ומקבלים פתרון שלב אחרי שלב",
     tabMe:"שלי",
+    custom:"התאמה אישית", done:"סיום", reset:"חזרה לברירת המחדל", themeH:"ערכת צבעים", themeSystem:"כמו בטלפון", themeLight:"בהיר", themeDark:"כהה",
+    accentH:"צבע ראשי", markH:"צבע מרקר", bgH:"רקע", bgGrid:"משבצות", bgDots:"נקודות", bgLines:"שורות", bgPlain:"חלק",
+    sizeH:"גודל טקסט", fontH:"גופן", fontRubik:"Rubik", fontSystem:"הגופן של הטלפון", langH:"שפה", previewH:"תצוגה מקדימה", previewBtn:"פתור",
+    welcomeTitle:"ברוכים הבאים ל-Math Snap", welcomeLead:"מצלמים תרגיל ומקבלים את כל השלבים. התחברו כדי לשמור את התרגילים בכל טלפון.",
+    wSignIn:"התחברות", wSignUp:"הרשמה", wSkip:"המשך בלי חשבון",
     meTitle:"החשבון שלי", meSub:"התחברו כדי לשמור את התרגילים ולסנכרן אותם בין טלפונים",
     perkHistory:"כל תרגיל שפותרים נשמר", perkSync:"אותה היסטוריה בכל טלפון", perkFav:"כוכב לתרגילים חשובים, והערות",
     google:"המשך עם Google", orEmail:"או עם אימייל", name:"שם (לא חובה)", email:"אימייל", password:"סיסמה",
@@ -379,12 +436,13 @@ function setLang(l){
   try { localStorage.setItem("lang", l); } catch(e) {}
   document.documentElement.lang = l;
   document.documentElement.dir = l === "he" ? "rtl" : "ltr";
-  $("langEn").setAttribute("aria-pressed", String(l === "en"));
-  $("langHe").setAttribute("aria-pressed", String(l === "he"));
+
   document.querySelectorAll("[data-t]").forEach(e => e.textContent = T(e.dataset.t));
+  document.querySelectorAll("[data-tlabel]").forEach(e => e.setAttribute("aria-label", T(e.dataset.tlabel)));
   $("geoText").placeholder = T("givensPh");
   fillShapes(); fillUnits(); fillFormulas(); renderExamples(); renderToolChips();
   if (typeof renderMe === "function" && !$("mePanel").hidden) renderMe();
+  if (!$("customize").hidden) renderCustomize();
   if (typeof refreshSaveBars === "function") refreshSaveBars();
   if (statusKey) { const f=photoFor; photoFor="solve"; setStatus(statusKey, statusBad); photoFor=f; }
   if (geoKey) setGeoStatus(geoKey, geoBad);
@@ -392,8 +450,7 @@ function setLang(l){
   if ($("results").childElementCount) solveNow(true);
   if ($("geoResults").childElementCount) calcGeo(true);
 }
-$("langEn").onclick = () => setLang("en");
-$("langHe").onclick = () => setLang("he");
+
 
 // ---------- tabs ----------
 function tab(which){
@@ -1265,7 +1322,7 @@ const ICON = {
 };
 const svgEl = html => { const t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstChild; };
 
-window.onAuth = st => { account = st && st.signedIn ? st : null; busy = false; if (account) authMsg = null; renderMe(); refreshSaveBars(); };
+window.onAuth = st => { account = st && st.signedIn ? st : null; busy = false; if (account) { authMsg = null; if (!$("welcome").hidden) { hideWelcome(); tab("me"); } } renderMe(); refreshSaveBars(); };
 window.onAuthError = (code) => { busy = false; authMsg = { bad:true, key:"err_" + (UI.en["err_"+code] ? code : "other") }; renderMe(); };
 window.onAuthInfo = code => { busy = false; authMsg = code === "cancelled" ? null : { bad:false, key:"info_" + code }; renderMe(); };
 window.onHistory = list => { history = Array.isArray(list) ? list : []; if (!$("mePanel").hidden) renderMe(); refreshSaveBars(); };
@@ -1454,10 +1511,114 @@ function renderSignIn(box){
   box.append(p);
 }
 
+// ---------- personalization: everyone can change the look ----------
+const UI_DEFAULT = {theme:"system", accent:"indigo", mark:"yellow", bg:"grid", size:"m", font:"rubik"};
+let ui = {...UI_DEFAULT};
+try { Object.assign(ui, JSON.parse(localStorage.getItem("ui") || "{}")); } catch(e) {}
+// [light pen, light pressed, light soft, dark pen, dark pressed, dark soft]
+const ACCENTS = {
+  indigo:["#3346E0","#2533B8","#ECEFFE","#8E9CFF","#A9B4FF","#1F2850"],
+  teal:["#0B8A7A","#086B5F","#E2F5F2","#4FD1BE","#7FE0D1","#123A36"],
+  violet:["#7B3FE4","#5F2BC0","#F1EAFE","#B694FF","#C9B0FF","#2C1F4F"],
+  pink:["#D23B86","#B02A6E","#FCE8F2","#FF8CC4","#FFAAD3","#45182F"],
+  coral:["#E0533F","#BE3F2D","#FDECE9","#FF8E7C","#FFAB9D","#43201B"],
+  orange:["#D9711A","#B65B0F","#FDF0E3","#FFB066","#FFC48C","#45290F"],
+  green:["#2E8B3E","#22702F","#E6F4E8","#74D483","#96E2A2","#18361D"],
+  ink:["#1E2638","#111827","#E9ECF2","#C9D1E3","#E0E6F2","#2A3245"],
+};
+const MARKS = { yellow:["#FFE27A","#6E5A12"], green:["#C3F0B2","#2F5A27"], pink:["#FFC6E0","#6A2848"], blue:["#C4DEFF","#1F4268"], orange:["#FFD2A8","#6B3F14"] };
+const SIZES = { s:0.92, m:1, l:1.1, xl:1.22 };
+const prefersDark = window.matchMedia ? matchMedia("(prefers-color-scheme: dark)") : null;
+function isDark(){ return ui.theme === "dark" || (ui.theme === "system" && prefersDark && prefersDark.matches); }
+function applyUI(){
+  const root = document.documentElement, st = root.style;
+  if (ui.theme === "system") root.removeAttribute("data-theme"); else root.setAttribute("data-theme", ui.theme);
+  const dark = isDark(), a = ACCENTS[ui.accent] || ACCENTS.indigo, m = MARKS[ui.mark] || MARKS.yellow;
+  st.setProperty("--pen", dark ? a[3] : a[0]); st.setProperty("--pen-press", dark ? a[4] : a[1]); st.setProperty("--pen-soft", dark ? a[5] : a[2]);
+  st.setProperty("--mark", dark ? m[1] : m[0]);
+  st.setProperty("--sans", ui.font === "system" ? 'Roboto,"Noto Sans Hebrew",system-ui,sans-serif' : '"Rubik",Roboto,"Noto Sans Hebrew",system-ui,sans-serif');
+  document.body.dataset.bg = ui.bg;
+  st.zoom = SIZES[ui.size] || 1;
+  if (hasBridge && typeof Android.setBars === "function") {
+    const cs = getComputedStyle(root);
+    try { Android.setBars(cs.getPropertyValue("--bg").trim(), cs.getPropertyValue("--surface").trim(), !dark); } catch(e) {}
+  }
+}
+function setUI(k, v){ ui[k] = v; try { localStorage.setItem("ui", JSON.stringify(ui)); } catch(e) {} applyUI(); renderCustomize(); }
+if (prefersDark && prefersDark.addEventListener) prefersDark.addEventListener("change", applyUI);
+
+function openCustomize(){ renderCustomize(); $("customize").hidden = false; $("customize").scrollTop = 0; }
+function closeCustomize(){ $("customize").hidden = true; }
+$("openCustom").onclick = openCustomize;
+function renderCustomize(){
+  const box = $("customInner"); if (!box || $("customize").hidden && box.childElementCount && false) return;
+  box.innerHTML = "";
+  const head = el("div", "sheethead"); const h = el("h2", null, T("custom")); h.id = "customTitle";
+  const x = el("button", "iconbtn"); x.type = "button"; x.setAttribute("aria-label", T("done"));
+  x.append(svgEl('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>')); x.onclick = closeCustomize;
+  head.append(h, x); box.append(head);
+  // live preview
+  const pv = el("section", "panel preview"); pv.append(el("p", "exlabel", T("previewH")));
+  const a = el("div", "ans"); a.append(el("small", null, T("answer"))); const v = el("div", null, "x = 6"); v.dir = "ltr"; a.append(v);
+  const r2 = el("div", "row2"); const pb = el("button", "btn", T("previewBtn")); pb.type = "button"; pb.style.flex = "1";
+  r2.append(chip("2x + 5 = 17", "math", () => {}, true), chip("360", "math", () => {}, false));
+  pv.append(a, r2, pb); box.append(pv);
+  const panel = el("section", "panel");
+  const opt = (title, content) => { const o = el("div", "opt"); o.append(el("h3", null, title), content); panel.append(o); };
+  const chips = (pairs, key) => { const c = el("div", "chips wrapchips"); for (const [val, label] of pairs) c.append(chip(label, "", () => setUI(key, val), ui[key] === val)); return c; };
+  opt(T("themeH"), chips([["system", T("themeSystem")], ["light", T("themeLight")], ["dark", T("themeDark")]], "theme"));
+  const sw = el("div", "swatches");
+  for (const [k, c] of Object.entries(ACCENTS)) { const b = el("button", "sw"); b.type = "button"; b.style.background = isDark() ? c[3] : c[0]; b.setAttribute("aria-label", k); b.setAttribute("aria-pressed", String(ui.accent === k)); b.onclick = () => setUI("accent", k); sw.append(b); }
+  opt(T("accentH"), sw);
+  const mk = el("div", "swatches");
+  for (const [k, c] of Object.entries(MARKS)) { const b = el("button", "sw"); b.type = "button"; b.style.background = isDark() ? c[1] : c[0]; b.setAttribute("aria-label", k); b.setAttribute("aria-pressed", String(ui.mark === k)); b.onclick = () => setUI("mark", k); mk.append(b); }
+  opt(T("markH"), mk);
+  const bgs = el("div", "swatches");
+  for (const [k, key] of [["grid","bgGrid"],["dots","bgDots"],["lines","bgLines"],["plain","bgPlain"]]) {
+    const b = el("button", "bgtile"); b.type = "button"; b.setAttribute("aria-pressed", String(ui.bg === k)); b.append(el("i", k), el("span", null, T(key))); b.onclick = () => setUI("bg", k); bgs.append(b);
+  }
+  opt(T("bgH"), bgs);
+  const sz = el("div", "chips wrapchips");
+  for (const [k, label, px] of [["s","A",13],["m","A",16],["l","A",19],["xl","A",22]]) { const c = chip(label, "", () => setUI("size", k), ui.size === k); c.style.fontSize = px + "px"; c.style.minWidth = "48px"; sz.append(c); }
+  opt(T("sizeH"), sz);
+  opt(T("fontH"), chips([["rubik", T("fontRubik")], ["system", T("fontSystem")]], "font"));
+  const lg = el("div", "chips wrapchips");
+  lg.append(chip("English", "", () => { setLang("en"); renderCustomize(); }, lang === "en"), chip("עברית", "", () => { setLang("he"); renderCustomize(); }, lang === "he"));
+  opt(T("langH"), lg);
+  box.append(panel);
+  const done = el("button", "btn", T("done")); done.type = "button"; done.onclick = closeCustomize;
+  const rs = el("button", "btn quiet", T("reset")); rs.type = "button"; rs.onclick = () => { ui = {...UI_DEFAULT}; try { localStorage.removeItem("ui"); } catch(e) {} applyUI(); renderCustomize(); };
+  box.append(done, rs);
+}
+
+// ---------- welcome: the first screen after installing ----------
+function seenWelcome(){ try { return localStorage.getItem("welcomed") === "1"; } catch(e) { return true; } }
+function hideWelcome(){ try { localStorage.setItem("welcomed", "1"); } catch(e) {} $("welcome").hidden = true; }
+function showWelcome(){ renderWelcome(); $("welcome").hidden = false; }
+function renderWelcome(){
+  const box = $("welcomeInner"); box.innerHTML = "";
+  const lg = el("div", "lang"); lg.setAttribute("role", "group");
+  for (const [k, label] of [["en","EN"],["he","עב"]]) { const b = el("button", null, label); b.type = "button"; b.setAttribute("aria-pressed", String(lang === k)); b.onclick = () => { setLang(k); renderWelcome(); }; lg.append(b); }
+  const hero = el("div", "hero");
+  hero.append(svgEl('<span class="logo" aria-hidden="true"><svg viewBox="0 0 28 28" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V6a2 2 0 0 1 2-2h3M19 4h3a2 2 0 0 1 2 2v3M24 19v3a2 2 0 0 1-2 2h-3M9 24H6a2 2 0 0 1-2-2v-3"/><path d="M10 12h8M10 16h8"/><circle cx="20.5" cy="20.5" r="0.1" stroke="#FFE27A" stroke-width="3.2"/></svg></span>'));
+  for (const [cls, txt] of [["f1","2x + 5 = 17"],["f2","3/4 + 2/3"],["f3","∢A = 110°"]]) hero.append(el("span", "float " + cls, txt));
+  const f4 = el("span", "float f4"); f4.append(el("span", null, "x = 6")); hero.append(f4);
+  const h = el("h2", null, T("welcomeTitle")); h.id = "welcomeTitle";
+  const acts = el("div", "acts");
+  if (ACC) { const g = el("button", "btn google"); g.type = "button"; g.append(svgEl(ICON.google), el("span", null, T("google"))); g.onclick = () => { try { Android.signInGoogle(); } catch(e) {} }; acts.append(g); }
+  const si = el("button", "btn"); si.type = "button"; si.textContent = T("wSignIn"); si.onclick = () => { hideWelcome(); authMode = "in"; tab("me"); setTimeout(() => $("accEmail") && $("accEmail").focus(), 80); };
+  const su = el("button", "btn quiet"); su.type = "button"; su.textContent = T("wSignUp"); su.onclick = () => { hideWelcome(); authMode = "up"; tab("me"); setTimeout(() => $("accName") && $("accName").focus(), 80); };
+  acts.append(si, su);
+  const skip = el("button", "skip", T("wSkip")); skip.type = "button"; skip.onclick = () => { hideWelcome(); tab("solve"); };
+  box.append(lg, hero, h, el("p", "lead", T("welcomeLead")), acts, skip);
+}
+
 // start
+applyUI();
 setLang(lang);
 solveNow(true);
 if (ACC) { try { const st = JSON.parse(Android.authState()); account = st.signedIn ? st : null; } catch(e) {} try { Android.ready(); } catch(e) {} }
+if (!account && !seenWelcome()) showWelcome();
 </script>
 </body>
 </html>

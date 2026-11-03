@@ -79,6 +79,18 @@ class MainActivity : AppCompatActivity() {
         @JavascriptInterface fun deleteProblem(id: String) = account.delete(id)
         @JavascriptInterface fun wifiOnly(): Boolean = account.wifiOnly()
         @JavascriptInterface fun setWifiOnly(on: Boolean) = runOnUiThread { account.setWifiOnly(on) }
+
+        // ---- look: the status and navigation bars follow the theme chosen in the app ----
+        @JavascriptInterface fun setBars(bg: String, nav: String, lightIcons: Boolean) = runOnUiThread {
+            try {
+                window.statusBarColor = android.graphics.Color.parseColor(bg)
+                window.navigationBarColor = android.graphics.Color.parseColor(nav)
+                web.setBackgroundColor(android.graphics.Color.parseColor(bg))
+                val c = androidx.core.view.WindowInsetsControllerCompat(window, window.decorView)
+                c.isAppearanceLightStatusBars = lightIcons
+                c.isAppearanceLightNavigationBars = lightIcons
+            } catch (_: Exception) { }
+        }
     }
 
     private fun openCamera() {
