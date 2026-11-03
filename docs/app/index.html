@@ -102,6 +102,7 @@ select{font:16px/1.3 var(--sans)}
 .result{display:flex;flex-direction:column;gap:14px}
 .prob{font:600 15px/1.4 var(--mono);color:var(--muted);overflow-wrap:anywhere}
 .ans{background:var(--surface-2);border-radius:16px;padding:14px 16px}
+.steps .exp{font:600 16px/1.55 var(--sans);overflow-wrap:anywhere}
 .askbox{background:var(--pen-soft);border-radius:16px;padding:12px 16px;display:flex;flex-direction:column;gap:2px}
 .askbox small{font:700 13px/1.4 var(--sans);color:var(--pen)}
 .askbox div{font:700 20px/1.6 var(--mono);overflow-wrap:anywhere}
@@ -570,7 +571,7 @@ function fillFormulas(){
 // ---------- chips: examples and tool picker ----------
 const SOLVE_EX = ["3/4 + 2/3", "2x + 5 = 17", "(x + 2)(x − 3)", "2³ · 2⁵", "360", "x² − 5x + 6 = 0", "x² − 5x + 6 < 0", "x + y = 5 ; x − y = 1",
   "2^x = 8", "log₂(32)", "sin(x) = 0.5", "f(x) = x³ − 3x", "f'(x) of x³ + 2x", "∫ 3x² dx", "(1,2) (3,6)", "x² + y² − 4x + 2y − 4 = 0", "3, 7, 11, 15", "C(10,3)", "20% of 80"];
-const GROUPS = [["trap",["Trapezoid","טרפז"]],["iso",["Isosceles","שווה שוקיים"]],["kite",["Kite","דלתון"]],["trig",["Trig & circle","טריגו ומעגל"]],[undefined,["Shapes","צורות"]]];
+const GROUPS = [["trap",["Trapezoid","טרפז"]],["iso",["Isosceles","שווה שוקיים"]],["kite",["Kite","דלתון"]],["trig",["Trig & circle","טריגו ומעגל"]],["para",["Quadrilaterals","מרובעים"]],["lines",["Angles","זוויות"]],[undefined,["Shapes","צורות"]]];
 function chip(text, cls, onClick, pressed){
   const b = el("button", "chip" + (cls ? " " + cls : ""), text); b.type = "button";
   if (pressed != null) b.setAttribute("aria-pressed", String(pressed));
@@ -1306,9 +1307,358 @@ NOTES.trig = {
       "<b>שטח:</b> ⁦S = ½·a·b·sin C⁩. <b>מעגל:</b> קשת ⁦= 2πr·α/360⁩, גזרה ⁦= πr²·α/360⁩. זווית היקפית שווה למחצית הזווית המרכזית הנשענת על אותה קשת."],
 };
 
+// ---------- more shapes: isosceles trapezoid, parallelogram, rhombus, equilateral, polygons, angle relations ----------
+const R_ADJ = () => g2("Adjacent angles add up to 180°", "סכום זוויות צמודות 180°");
+const R_VERT = () => g2("Vertical angles are equal", "זוויות קודקודיות שוות");
+const R_CORR = () => g2("Corresponding angles between parallel lines are equal", "זוויות מתאימות בין ישרים מקבילים שוות");
+const R_ALT = () => g2("Alternate angles between parallel lines are equal", "זוויות מתחלפות בין ישרים מקבילים שוות");
+const R_COINT = () => g2("Co-interior angles between parallel lines add up to 180°", "סכום זוויות חד-צדדיות בין ישרים מקבילים 180°");
+const R_Q360 = () => g2("The angles of a quadrilateral add up to 360°", "סכום הזוויות במרובע 360°");
+const numOk = x => x != null && isFinite(x);
+let geoFocus = null;
+
+function isoTrap(v){
+  angRange(v, ["A"]); lenPos(v, ["a", "b", "L", "h"]);
+  const u = usuf, rows = [[g2("ABCD is an isosceles trapezoid (AB ∥ DC, AD = BC)", LRI("ABCD") + " טרפז שווה שוקיים " + LRI("(AB ∥ DC ,  AD = BC)")), GV()]];
+  const giv = [["A", "∢A", "°"], ["a", "AB", ""], ["b", "DC", ""], ["L", "AD = BC", ""], ["h", "h", ""]].filter(([k]) => v[k] != null).map(([k, n, d]) => n + " = " + R(v[k]) + d);
+  if (giv.length) rows.push([LRI(giv.join(" ,  ")), GV()]);
+  let A = v.A, h = v.h; const { a, b, L } = v, computed = [], ans = [];
+  const long = a != null && b != null ? Math.max(a, b) : null, short = a != null && b != null ? Math.min(a, b) : null, x = long != null ? (long - short) / 2 : null;
+  if (x != null && (L != null || h != null || A != null)) rows.push([LRI("x = (" + R(long) + " − " + R(short) + ") ÷ 2 = " + R(x) + u(1)), g2("Drop two heights from the short base: they cut equal pieces x off each end of the long base", "מורידים שני גבהים מהבסיס הקצר: הם חותכים מכל צד של הבסיס הארוך קטע שווה x")]);
+  if (h == null && x != null && L != null) { if (L <= x) throw g2("The leg is too short for these bases.", "השוק קצרה מדי לבסיסים האלה."); h = Math.sqrt(L * L - x * x); rows.push([LRI("h = √(" + R(L) + "² − " + R(x) + "²)" + AE(h) + u(1)), R_PYTH()]); ans.push(LRI("h" + AE(h) + u(1))); }
+  if (A == null && x != null && h != null && x > 0) { A = atanD(h / x); rows.push([LRI("tan A = h ÷ x = " + R(h) + " ÷ " + R(x) + "  ⇒  ∢A" + AE(A) + "°"), R_TAN()]); computed.push("A"); }
+  if (h == null && x != null && A != null) { h = x * tanD(A); rows.push([LRI("h = x · tan A = " + R(x) + " · tan " + R(A) + "°" + AE(h) + u(1)), R_TAN()]); ans.push(LRI("h" + AE(h) + u(1))); }
+  let ang = null;
+  if (A != null) {
+    if (A >= 90 && x != null) A = 180 - A;
+    ang = { A, B: A, C: 180 - A, D: 180 - A }; computed.push("B", "C", "D");
+    rows.push([LRI("∢B = ∢A = " + R(A) + "°"), g2("In an isosceles trapezoid the base angles are equal", "בטרפז שווה שוקיים זוויות הבסיס שוות")]);
+    rows.push([LRI("∢D = 180° − ∢A = 180 − " + R(A) + " = " + R(180 - A) + "°"), g2("In a trapezoid, the angles next to the same leg add up to 180°", "בטרפז, סכום הזוויות שליד אותה שוק 180°")]);
+    rows.push([LRI("∢C = ∢D = " + R(180 - A) + "°"), g2("In an isosceles trapezoid the base angles are equal", "בטרפז שווה שוקיים זוויות הבסיס שוות")]);
+    ans.unshift(LRI("∢A = ∢B = " + R(A) + "°   ∢C = ∢D = " + R(180 - A) + "°"));
+  }
+  if (a != null && b != null && h != null) { const S = (a + b) * h / 2; rows.push([LRI("S = (" + R(a) + " + " + R(b) + ") · " + R(h) + " ÷ 2" + AE(S) + u(2)), g2("Trapezoid area = (sum of the bases) × height ÷ 2", "שטח טרפז = סכום הבסיסים × גובה ÷ 2")]); ans.push(LRI("S" + AE(S) + u(2))); }
+  if (a != null && b != null && L != null) { const P = a + b + 2 * L; rows.push([LRI("P = " + R(a) + " + " + R(b) + " + 2 · " + R(L) + " = " + R(P) + u(1)), g2("Perimeter = sum of the sides", "היקף = סכום הצלעות")]); ans.push(LRI("P = " + R(P) + u(1))); }
+  if (!ans.length) throw g2("Enter a base angle ∢A, or the two bases with the leg or the height.", "הכניסו זווית בסיס ∢A, או את שני הבסיסים יחד עם השוק או הגובה.");
+  return { rows, title: g2("Isosceles trapezoid", "טרפז שווה שוקיים"), answer: ans.join("\n"), svg: ang ? trapSVG(ang, [true, false], computed) : "" };
+}
+
+function paraT(v){
+  angRange(v, ["A"]); lenPos(v, ["a", "b", "h"]);
+  const u = usuf, rows = [[g2("ABCD is a parallelogram (AB ∥ DC, AD ∥ BC)", LRI("ABCD") + " מקבילית " + LRI("(AB ∥ DC ,  AD ∥ BC)")), GV()]], ans = [];
+  const giv = [["A", "∢A", "°"], ["a", "AB", ""], ["b", "AD", ""], ["h", "h", ""]].filter(([k]) => v[k] != null).map(([k, n, d]) => n + " = " + R(v[k]) + d);
+  if (giv.length) rows.push([LRI(giv.join(" ,  ")), GV()]);
+  if (v.A != null) {
+    rows.push([LRI("∢C = ∢A = " + R(v.A) + "°"), g2("In a parallelogram opposite angles are equal", "במקבילית זוויות נגדיות שוות")]);
+    rows.push([LRI("∢B = ∢D = 180° − " + R(v.A) + "° = " + R(180 - v.A) + "°"), g2("In a parallelogram adjacent angles add up to 180°", "במקבילית סכום זוויות סמוכות 180°")]);
+    ans.push(LRI("∢A = ∢C = " + R(v.A) + "°   ∢B = ∢D = " + R(180 - v.A) + "°"));
+  }
+  if (v.a != null && v.b != null) {
+    rows.push([LRI("DC = AB = " + R(v.a) + " ,  BC = AD = " + R(v.b)), g2("In a parallelogram opposite sides are equal", "במקבילית צלעות נגדיות שוות")]);
+    const P = 2 * (v.a + v.b); rows.push([LRI("P = 2 · (" + R(v.a) + " + " + R(v.b) + ") = " + R(P) + u(1)), g2("Perimeter = sum of the sides", "היקף = סכום הצלעות")]); ans.push(LRI("P = " + R(P) + u(1)));
+  }
+  let S = null;
+  if (v.a != null && v.h != null) { S = v.a * v.h; rows.push([LRI("S = AB · h = " + R(v.a) + " · " + R(v.h) + AE(S) + u(2)), g2("Parallelogram area = side × the height to it", "שטח מקבילית = צלע × הגובה אליה")]); }
+  else if (v.a != null && v.b != null && v.A != null) { S = v.a * v.b * sinD(v.A); rows.push([LRI("S = AB · AD · sin A = " + R(v.a) + " · " + R(v.b) + " · sin " + R(v.A) + "°" + AE(S) + u(2)), g2("Parallelogram area = side × side × sin of the angle between them", "שטח מקבילית = צלע × צלע × sin הזווית שביניהן")]); }
+  if (S != null) ans.push(LRI("S" + AE(S) + u(2)));
+  rows.push([g2("The diagonals bisect each other", "האלכסונים חוצים זה את זה"), g2("A property of a parallelogram", "תכונה של מקבילית")]);
+  if (!ans.length) throw g2("Enter an angle, or sides and a height.", "הכניסו זווית, או צלעות וגובה.");
+  return { rows, title: g2("Parallelogram", "מקבילית"), answer: ans.join("\n"), svg: v.A != null ? trapSVG({ A: v.A, B: 180 - v.A, C: v.A, D: 180 - v.A }, [true, true], ["B", "C", "D"]) : "" };
+}
+
+function rhombus(v){
+  angRange(v, ["A"]); lenPos(v, ["d1", "d2", "s"]);
+  const u = usuf, rows = [[g2("ABCD is a rhombus (all sides equal)", LRI("ABCD") + " מעוין (כל הצלעות שוות)"), GV()]], ans = [];
+  let { d1, d2, s, A } = v;
+  const giv = [["d1", "AC"], ["d2", "BD"], ["s", "AB"], ["A", "∢A"]].filter(([k]) => v[k] != null).map(([k, n]) => n + " = " + R(v[k]) + (k === "A" ? "°" : ""));
+  if (giv.length) rows.push([LRI(giv.join(" ,  ")), GV()]);
+  const R_D = g2("In a rhombus the diagonals are perpendicular and bisect each other", "במעוין האלכסונים מאונכים זה לזה וחוצים זה את זה");
+  if (d1 != null && d2 != null) {
+    rows.push([LRI("AO = " + R(d1 / 2) + " ,  BO = " + R(d2 / 2) + " ,  ∢AOB = 90°"), R_D]);
+    if (s == null) { s = Math.hypot(d1 / 2, d2 / 2); rows.push([LRI("AB = √(" + R(d1 / 2) + "² + " + R(d2 / 2) + "²)" + AE(s) + u(1)), R_PYTH()]); ans.push(LRI("AB" + AE(s) + u(1))); }
+    if (A == null) { A = 2 * atanD(d2 / d1); rows.push([LRI("tan(A ÷ 2) = BO ÷ AO = " + R(d2 / 2) + " ÷ " + R(d1 / 2) + "  ⇒  ∢A" + AE(A) + "°"), g2("The diagonals bisect the angles of a rhombus", "האלכסונים חוצים את זוויות המעוין")]); }
+  } else if (s != null && A != null) {
+    d1 = 2 * s * cosD(A / 2); d2 = 2 * s * sinD(A / 2);
+    rows.push([LRI("AO = AB · cos(A ÷ 2)  ⇒  AC = 2 · " + R(s) + " · cos " + R(A / 2) + "°" + AE(d1) + u(1)), g2("The diagonals bisect the angles and are perpendicular (right triangle AOB)", "האלכסונים חוצים את הזוויות ומאונכים (משולש ישר-זווית " + LRI("AOB") + ")")]);
+    rows.push([LRI("BD = 2 · " + R(s) + " · sin " + R(A / 2) + "°" + AE(d2) + u(1)), R_SIN()]);
+    ans.push(LRI("AC" + AE(d1) + u(1)), LRI("BD" + AE(d2) + u(1)));
+  } else if (s != null && (d1 != null || d2 != null)) {
+    const k = d1 != null ? d1 : d2, o = 2 * Math.sqrt(s * s - (k / 2) ** 2);
+    if (!(s > k / 2)) throw g2("The side must be longer than half the diagonal.", "הצלע חייבת להיות ארוכה ממחצית האלכסון.");
+    rows.push([LRI((d1 != null ? "BD" : "AC") + " = 2 · √(" + R(s) + "² − " + R(k / 2) + "²)" + AE(o) + u(1)), R_PYTH()]);
+    if (d1 != null) d2 = o; else d1 = o; ans.push(LRI((d1 === o ? "AC" : "BD") + AE(o) + u(1)));
+    A = 2 * atanD(d2 / d1);
+  }
+  if (A != null) { rows.push([LRI("∢C = ∢A = " + R(A) + "° ,  ∢B = ∢D = " + R(180 - A) + "°"), g2("Opposite angles are equal and adjacent angles add up to 180°", "זוויות נגדיות שוות, וסכום זוויות סמוכות 180°")]); ans.unshift(LRI("∢A = ∢C" + AE(A) + "°"), LRI("∢B = ∢D" + AE(180 - A) + "°")); }
+  if (d1 != null && d2 != null) { const S = d1 * d2 / 2; rows.push([LRI("S = AC · BD ÷ 2" + AE(S) + u(2)), g2("Rhombus area = half the product of the diagonals", "שטח מעוין = מחצית מכפלת האלכסונים")]); ans.push(LRI("S" + AE(S) + u(2))); }
+  if (s != null) { rows.push([LRI("P = 4 · " + R(s) + AE(4 * s) + u(1)), g2("Four equal sides", "ארבע צלעות שוות")]); ans.push(LRI("P" + AE(4 * s) + u(1))); }
+  if (!ans.length) throw g2("Enter the two diagonals, or a side and an angle.", "הכניסו את שני האלכסונים, או צלע וזווית.");
+  return { rows, title: g2("Rhombus", "מעוין"), answer: ans.join("\n"), svg: rhombSVG(A) };
+}
+function rhombSVG(A){
+  const w = A != null ? Math.max(40, Math.min(110, 70 * tanD(A / 2))) : 80;
+  const P = { A: [140, 16], B: [140 - w, 86], C: [140, 156], D: [140 + w, 86] }, cen = [140, 86];
+  let s = `<svg viewBox="0 0 280 172" role="img" aria-label="ABCD"><polygon points="${P.A} ${P.B} ${P.C} ${P.D}" style="fill:var(--pen-soft);stroke:var(--pen);stroke-width:2.5;stroke-linejoin:round"/>`;
+  s += tickMarks(P.A, P.B, 1) + tickMarks(P.A, P.D, 1) + tickMarks(P.C, P.B, 1) + tickMarks(P.C, P.D, 1);
+  s += `<line x1="140" y1="16" x2="140" y2="156" style="stroke:var(--pen);stroke-width:1.5;stroke-dasharray:5 4"/><line x1="${140 - w}" y1="86" x2="${140 + w}" y2="86" style="stroke:var(--pen);stroke-width:1.5;stroke-dasharray:5 4"/><path d="M140,76 h10 v10" style="fill:none;stroke:var(--ink);stroke-width:1.2"/>`;
+  s += svgText(140, 11, "A", LBL) + svgText(140 - w - 12, 91, "B", LBL) + svgText(140, 170, "C", LBL) + svgText(140 + w + 12, 91, "D", LBL) + svgText(130, 102, "O", LBL.replace("15px", "12px"));
+  if (A != null) { const ang = { A, B: 180 - A, C: A, D: 180 - A }, r1 = x => R(Math.round(x * 10) / 10);
+    for (const k of ["A", "B", "C", "D"]) { const x = P[k][0] + (cen[0] - P[k][0]) * 0.42, y = P[k][1] + (cen[1] - P[k][1]) * 0.42 + 5; s += svgText(x.toFixed(1), y.toFixed(1), r1(ang[k]) + "°", angStyle(k !== "A")); } }
+  return s + "</svg>";
+}
+
+function equi(v){
+  lenPos(v, ["a"]);
+  if (v.a == null) throw g2("Enter the side.", "הכניסו את הצלע.");
+  const a = v.a, u = usuf, h = a * Math.sqrt(3) / 2, S = a * a * Math.sqrt(3) / 4;
+  const rows = [
+    [g2("ΔABC is equilateral", LRI("ΔABC") + " שווה צלעות"), GV()], [LRI("AB = BC = AC = " + R(a)), GV()],
+    [LRI("∢A = ∢B = ∢C = 60°"), g2("In an equilateral triangle every angle is 60°", "במשולש שווה צלעות כל זווית 60°")],
+    [LRI("BD = " + R(a / 2)), g2("The height is also a median: it cuts the side in half", "הגובה הוא גם תיכון: חוצה את הצלע")],
+    [LRI("h = √(" + R(a) + "² − " + R(a / 2) + "²) = " + R(a) + "√3 ÷ 2" + AE(h) + u(1)), R_PYTH()],
+    [LRI("S = " + R(a) + " · " + R(h) + " ÷ 2" + AE(S) + u(2)), g2("Triangle area = side × height ÷ 2", "שטח משולש = צלע × גובה ÷ 2")],
+    [LRI("P = 3 · " + R(a) + " = " + R(3 * a) + u(1)), g2("Perimeter = sum of the sides", "היקף = סכום הצלעות")],
+  ];
+  return { rows, title: g2("Equilateral triangle", "משולש שווה צלעות"), answer: [LRI("∢A = ∢B = ∢C = 60°"), LRI("h" + AE(h) + u(1)), LRI("S" + AE(S) + u(2)), LRI("P = " + R(3 * a) + u(1))].join("\n"), svg: isoSVG({ A: 60, B: 60, C: 60 }, ["A", "B", "C"], { ticks: [["A", "B", 1], ["A", "C", 1], ["B", "C", 1]] }) };
+}
+
+const POLYN = { 3: ["Triangle", "משולש"], 4: ["Quadrilateral", "מרובע"], 5: ["Pentagon", "מחומש"], 6: ["Hexagon", "משושה"], 7: ["Heptagon", "משובע"], 8: ["Octagon", "מתומן"], 9: ["Nonagon", "מתושע"], 10: ["Decagon", "מעושר"], 12: ["Dodecagon", "מצולע בן 12 צלעות"] };
+function polyT(v){
+  const n = v.n;
+  if (!(Number.isInteger(n) && n >= 3 && n <= 1000)) throw g2("Enter the number of sides (3 or more).", "הכניסו את מספר הצלעות (3 או יותר).");
+  const sum = (n - 2) * 180, each = sum / n, ext = 360 / n, diag = n * (n - 3) / 2;
+  const name = POLYN[n] ? pick(...POLYN[n]) : g2(n + "-gon", "מצולע בן " + n + " צלעות");
+  const rows = [
+    [g2(name + " (n = " + n + ")", name + " " + LRI("(n = " + n + ")")), GV()],
+    [LRI("(n − 2) · 180° = (" + n + " − 2) · 180 = " + R(sum) + "°"), g2("Sum of the angles of a polygon = (n − 2) · 180°", "סכום הזוויות במצולע = ⁦(n − 2) · 180°⁩")],
+    [LRI(R(sum) + "° ÷ " + n + AE(each) + "°"), g2("Regular polygon: all angles are equal", "במצולע משוכלל כל הזוויות שוות")],
+    [LRI("360° ÷ " + n + AE(ext) + "°"), g2("The exterior angles add up to 360°", "סכום הזוויות החיצוניות 360°")],
+    [LRI("n(n − 3) ÷ 2 = " + n + " · " + (n - 3) + " ÷ 2 = " + R(diag)), g2("Number of diagonals = n(n − 3) ÷ 2", "מספר האלכסונים = ⁦n(n − 3) ÷ 2⁩")],
+  ];
+  return { rows, title: name, answer: [g2("Sum of angles: ", "סכום הזוויות: ") + LRI(R(sum) + "°"), g2("Each angle (regular): ", "כל זווית (משוכלל): ") + LRI(R(each) + "°"), g2("Exterior angle: ", "זווית חיצונית: ") + LRI(R(ext) + "°"), g2("Diagonals: ", "אלכסונים: ") + LRI(R(diag))].join("\n"), svg: "" };
+}
+
+function quadAngles(v){
+  const K = ["A", "B", "C", "D"]; angRange(v, K);
+  const given = K.filter(k => v[k] != null);
+  if (given.length < 3) throw g2("Enter 3 of the 4 angles.", "הכניסו 3 מתוך 4 הזוויות.");
+  const rows = [givenRow(v, K)], sum = given.reduce((t, k) => t + v[k], 0), computed = [];
+  if (given.length === 3) {
+    const m = K.find(k => v[k] == null); v[m] = 360 - sum;
+    if (!(v[m] > 0)) throw TW().sumBad(R(sum));
+    computed.push(m);
+    rows.push([LRI("∢" + m + " = 360° − " + given.map(k => R(v[k])).join(" − ") + " = " + R(v[m]) + "°"), R_Q360()]);
+  } else if (Math.abs(sum - 360) > 1e-9) throw TW().sumBad(R(sum));
+  else rows.push([LRI(given.map(k => R(v[k])).join(" + ") + " = 360° ✓"), R_Q360()]);
+  return { rows, title: g2("Quadrilateral", "מרובע"), answer: LRI(K.map(k => "∢" + k + " = " + R(v[k]) + "°").join("   ")), svg: trapSVG(v, [false, false], computed) };
+}
+
+function extAngle(v){
+  angRange(v, ["e", "p"]);
+  if (v.e == null) throw g2("Enter the exterior angle.", "הכניסו את הזווית החיצונית.");
+  const rows = [[LRI("∢ACD = " + R(v.e) + "°" + (v.p != null ? " ,  ∢A = " + R(v.p) + "°" : "")), GV()]], ans = [];
+  rows.push([LRI("∢ACB = 180° − " + R(v.e) + "° = " + R(180 - v.e) + "°"), R_ADJ()]); ans.push(LRI("∢ACB = " + R(180 - v.e) + "°"));
+  if (v.p != null) {
+    if (v.p >= v.e) throw g2("A remote interior angle must be smaller than the exterior angle.", "זווית פנימית שאינה צמודה חייבת להיות קטנה מהזווית החיצונית.");
+    rows.push([LRI("∢B = ∢ACD − ∢A = " + R(v.e) + " − " + R(v.p) + " = " + R(v.e - v.p) + "°"), g2("An exterior angle equals the sum of the two interior angles not next to it", "זווית חיצונית למשולש שווה לסכום שתי הזוויות הפנימיות שאינן צמודות לה")]);
+    ans.push(LRI("∢B = " + R(v.e - v.p) + "°"));
+  }
+  return { rows, title: g2("Exterior angle", "זווית חיצונית"), answer: ans.join("\n"), svg: "" };
+}
+
+function linesSVG(a){
+  const f = n => n.toFixed(1), s = `<svg viewBox="0 0 280 160" role="img" aria-label="lines"><line x1="20" y1="50" x2="260" y2="50" style="stroke:var(--pen);stroke-width:2.5"/><line x1="20" y1="115" x2="260" y2="115" style="stroke:var(--pen);stroke-width:2.5"/>`;
+  const dx = 65 / Math.tan(Math.max(20, Math.min(160, a)) * DEGR);
+  const x1 = 140 - dx / 2, x2 = 140 + dx / 2, ext = 0.45;
+  const L = `<line x1="${f(x2 + dx * ext)}" y1="${f(50 - 65 * ext)}" x2="${f(x1 - dx * ext)}" y2="${f(115 + 65 * ext)}" style="stroke:var(--ink);stroke-width:2"/>`;
+  const lab = (x, y, t, on) => svgText(f(x), f(y), t, angStyle(on));
+  const b = R(180 - a);
+  return s + L + lab(x2 + 22, 44, R(a) + "°", true) + lab(x2 - 22, 44, b + "°", false) + lab(x2 - 22, 66, R(a) + "°", false) + lab(x2 + 22, 66, b + "°", false)
+    + lab(x1 + 22, 109, R(a) + "°", false) + lab(x1 - 22, 109, b + "°", false) + lab(x1 - 22, 131, R(a) + "°", false) + lab(x1 + 22, 131, b + "°", false) + "</svg>";
+}
+function angPair(v){
+  angRange(v, ["a"]);
+  if (v.a == null) throw g2("Enter one angle.", "הכניסו זווית אחת.");
+  const a = v.a, b = 180 - a, f = geoFocus || "lines";
+  const rows = [[LRI("α = " + R(a) + "°"), GV()],
+    [g2("adjacent", "צמודה") + ":  " + LRI("180° − " + R(a) + "° = " + R(b) + "°"), R_ADJ()],
+    [g2("vertical", "קודקודית") + ":  " + LRI(R(a) + "°"), R_VERT()]];
+  if (f === "lines") rows.push([g2("corresponding", "מתאימה") + ":  " + LRI(R(a) + "°"), R_CORR()], [g2("alternate", "מתחלפת") + ":  " + LRI(R(a) + "°"), R_ALT()], [g2("co-interior", "חד-צדדית") + ":  " + LRI(R(b) + "°"), R_COINT()]);
+  const answer = f === "adj" ? g2("The adjacent angle: ", "הזווית הצמודה: ") + LRI(R(b) + "°") : f === "vert" ? g2("The vertical angle: ", "הזווית הקודקודית: ") + LRI(R(a) + "°")
+    : g2("Equal to α: vertical, corresponding, alternate", "שוות ל-α: קודקודית, מתאימה, מתחלפת") + "  " + LRI(R(a) + "°") + "\n" + g2("Adding to 180° with α: adjacent, co-interior", "משלימות ל-180°: צמודה, חד-צדדית") + "  " + LRI(R(b) + "°");
+  return { rows, title: g2("Angles", "זוויות"), answer, svg: linesSVG(a) };
+}
+
+function angX(v){
+  const K = ["A", "B", "C", "D"].filter(k => v[k] != null && String(v[k]).trim() !== "");
+  if (K.length < 3) throw g2("Enter the angles of the triangle (3) or quadrilateral (4); you can use x, like 2x + 10.", "הכניסו את זוויות המשולש (3) או המרובע (4). אפשר לכתוב עם x, למשל ⁦2x + 10⁩.");
+  const total = K.length === 4 ? 360 : 180;
+  const norm = s => String(s).replace(/[−–]/g, "-").replace(/[×·]/g, "*").replace(/(\d)\s*x/gi, "$1*x").replace(/X/g, "x").replace(/°/g, "");
+  const ev = (s, x) => { const r = math.evaluate(norm(s), { x }); if (typeof r !== "number" || !isFinite(r)) throw g2("I couldn't read " + s + ".", "לא הצלחתי לקרוא את " + s + "."); return r; };
+  const c0 = K.reduce((t, k) => t + ev(v[k], 0), 0), c1 = K.reduce((t, k) => t + ev(v[k], 1), 0) - c0;
+  const show = s => String(s).replace(/\*/g, "").replace(/-/g, "−");
+  const rows = [[LRI(K.map(k => "∢" + k + " = " + show(v[k])).join(" ,  ")), GV()],
+    [LRI(K.map(k => "∢" + k).join(" + ") + " = " + total + "°"), total === 180 ? R_SUM180() : R_Q360()],
+    [LRI(K.map(k => "(" + show(v[k]) + ")").join(" + ") + " = " + total), g2("Substitute", "הצבה")]];
+  let x = null;
+  if (Math.abs(c1) > 1e-12) {
+    rows.push([LRI(R(c1) + "x + " + R(c0) + " = " + total).replace("+ −", "− "), g2("Combine like terms", "כינוס איברים דומים")]);
+    x = (total - c0) / c1;
+    rows.push([LRI("x = (" + total + " − " + R(c0) + ") ÷ " + R(c1) + " = " + R(x)), g2("Solve the equation", "פתרון המשוואה")]);
+  } else if (Math.abs(c0 - total) > 1e-9) throw total === 180 ? g2("The angles add up to " + R(c0) + "°, not 180°.", "סכום הזוויות יוצא " + R(c0) + "°, ולא 180°.") : TW().sumBad(R(c0));
+  const vals = {}; K.forEach(k => vals[k] = ev(v[k], x ?? 0));
+  if (K.some(k => !(vals[k] > 0 && vals[k] < 360))) throw g2("With x = " + R(x) + " an angle is not positive. Check the givens.", "כש-⁦x = " + R(x) + "⁩ יוצאת זווית לא חיובית. בדקו את הנתונים.");
+  K.forEach(k => { if (/x/i.test(v[k])) rows.push([LRI("∢" + k + " = " + show(v[k]).replace(/x/gi, "·" + R(x)).replace(/^·/, "") + " = " + R(vals[k]) + "°"), g2("Substitute x", "הצבת x")]); });
+  return { rows, title: g2("Angles", "הזוויות"), answer: (x != null ? LRI("x = " + R(x)) + "\n" : "") + LRI(K.map(k => "∢" + k + " = " + R(vals[k]) + "°").join("   ")),
+    svg: K.length === 3 ? triSVGAngles(vals) : trapSVG(vals, [false, false], K) };
+}
+function triSVGAngles(A){ try { return triSVG({ a: sinD(A.A), b: sinD(A.B), c: sinD(A.C) }, A, ["A", "B", "C"]).replace(/<text[^>]*>[\d.]+<\/text>/g, m => /°/.test(m) ? m : ""); } catch (e) { return ""; } }
+
+const T2 = (k, en, he, extra) => [k, en, he].concat(extra ? [extra] : []);
+SH.isoTrap = {g:"trap", kind:"proof", l:["Isosceles trapezoid: angles, height, area","טרפז שווה שוקיים: זוויות, גובה ושטח"],
+  f:[T2("A","Base angle ∢A (°)","זווית בסיס ∢A (°)"),T2("a","Base AB","בסיס AB"),T2("b","Base DC","בסיס DC"),T2("L","Leg AD = BC","שוק AD = BC"),T2("h","Height","גובה")], ex:{a:10,b:4,L:5}, calc:isoTrap};
+SH.paraT = {g:"para", kind:"proof", l:["Parallelogram: angles, perimeter, area","מקבילית: זוויות, היקף ושטח"],
+  f:[T2("A","∢A (°)","∢A (°)"),T2("a","AB","AB"),T2("b","AD","AD"),T2("h","Height to AB","גובה ל-AB")], ex:{A:70,a:8,b:5}, calc:paraT};
+SH.rhombus = {g:"para", kind:"proof", l:["Rhombus: diagonals, side, angles, area","מעוין: אלכסונים, צלע, זוויות ושטח"],
+  f:[T2("d1","Diagonal AC","אלכסון AC"),T2("d2","Diagonal BD","אלכסון BD"),T2("s","Side","צלע"),T2("A","∢A (°)","∢A (°)")], ex:{d1:6,d2:8}, calc:rhombus};
+SH.quadAngles = {g:"para", kind:"proof", noUnit:true, l:["Quadrilateral: the 4th angle","מרובע: הזווית הרביעית"], f:[ANG4("A"),ANG4("B"),ANG4("C"),ANG4("D")], ex:{A:80,B:90,C:100}, calc:quadAngles};
+SH.polyT = {g:"para", kind:"proof", noUnit:true, l:["Polygon: angles and diagonals","מצולע: זוויות ואלכסונים"], f:[T2("n","Number of sides n","מספר הצלעות n")], ex:{n:5}, calc:polyT};
+SH.equi = {g:"iso", kind:"proof", l:["Equilateral triangle: height, area","משולש שווה צלעות: גובה ושטח"], f:[T2("a","Side","צלע")], ex:{a:6}, calc:equi};
+SH.extAngle = {g:"lines", kind:"proof", noUnit:true, l:["Exterior angle of a triangle","זווית חיצונית למשולש"], f:[T2("e","Exterior angle ∢ACD (°)","זווית חיצונית ∢ACD (°)"),T2("p","Interior angle ∢A (°)","זווית פנימית ∢A (°)")], ex:{e:120,p:50}, calc:extAngle};
+SH.angPair = {g:"lines", kind:"proof", noUnit:true, l:["Angles: adjacent, vertical, parallel lines","זוויות: צמודות, קודקודיות, ישרים מקבילים"], f:[T2("a","Angle α (°)","זווית α (°)")], ex:{a:70}, calc:angPair};
+SH.angX = {g:"lines", kind:"proof", noUnit:true, l:["Angles with x (triangle or quadrilateral)","זוויות עם x (משולש או מרובע)"],
+  f:[T2("A","∢A","∢A","text"),T2("B","∢B","∢B","text"),T2("C","∢C","∢C","text"),T2("D","∢D (quadrilateral)","∢D (למרובע)","text")], ex:{A:"2x",B:"x",C:"60"}, calc:angX};
+
+// ---------- understanding a problem written in words ----------
+const ROLE = {
+  len: "אורך|length", wid: "רוחב|width", h: "גובה|height", side: "צלעות|צלע|sides|side", base: "בסיסים|בסיס|bases|base",
+  leg: "שוקיים|שוקים|שוק", rleg: "ניצבים|ניצב|legs|leg", hyp: "יתר|hypotenuse", r: "רדיוס|radius", d: "קוטר|diameter", edge: "מקצוע|edge",
+  diag: "אלכסונים|אלכסון|diagonals|diagonal", ang: "זוויות|זווית|angles|angle",
+};
+const CONNECT = /^(?:ו|ה|הם|הן|הוא|היא|שווה|שווים|שוות|=|:|של|is|are|of|the|equals?|and|&|cm|m|mm|ס"מ|ס״מ|סמ|מטר|מ'|מ׳|מעלות|מעלה|°|deg|degrees?|-|ו-|,)$/i;
+function rolesOf(raw){
+  const s = " " + String(raw).replace(/[−–]/g, "-").replace(/\n/g, " , ").replace(/(\d)\s*°/g, "$1 ").replace(/([,()])/g, " $1 ") + " ";
+  const out = {};
+  const all = Object.values(ROLE).join("|");
+  const re = new RegExp("(?:^|[^א-תa-zA-Z])(?:ו|ה|וה|ב|ל|ש)?(" + all + ")(?:ו|ה|ם|ן|יו|יה)?(?![א-תa-zA-Z])", "gi");
+  const hits = [...s.matchAll(re)].map(m => ({ word: m[1].toLowerCase(), start: m.index, end: m.index + m[0].length }));
+  hits.forEach((hit, i) => {
+    const key = Object.keys(ROLE).find(k => new RegExp("^(?:" + ROLE[k] + ")$", "i").test(hit.word));
+    const seg = s.slice(hit.end, i + 1 < hits.length ? hits[i + 1].start : s.length);
+    const toks = seg.split(/\s+/).filter(Boolean);
+    const nums = []; let skipped = 0;
+    if (key === "ang" && toks[0] && /^(?:ה?ראש|ה?בסיס|ה?מרכזית|ה?חיצונית|ה?פנימית|[A-DO]{1,3}|vertex|base|central|exterior)$/i.test(toks[0])) return;
+    for (const tk of toks) {
+      const m = tk.match(/^ו?-?(\d+(?:\.\d+)?)$/) || tk.match(/^(\d+(?:\.\d+)?)(?:°|ס"מ|cm)?$/);
+      if (m) { nums.push(parseFloat(m[1])); continue; }
+      if (CONNECT.test(tk)) continue;
+      if (!nums.length && skipped < 2 && !/^\d/.test(tk)) { skipped++; continue; }
+      break;
+    }
+    if (nums.length) out[key] = (out[key] || []).concat(nums);
+  });
+  return out;
+}
+function understand(raw){
+  const t = " " + String(raw) + " ";
+  const has = re => re.test(t);
+  const Rl = rolesOf(raw), G = parseGivens(raw);
+  const first = (...ks) => { for (const k of ks) if (Rl[k] && Rl[k].length) return Rl[k][0]; return null; };
+  const nth = (k, i) => (Rl[k] && Rl[k][i] != null ? Rl[k][i] : null);
+  const L = s => lenOf(G, s), a = G.ang;
+  const radius = first("r") ?? (first("d") != null ? first("d") / 2 : null);
+  // x in the angles: ∢A = 2x
+  const X = {}; for (const m of t.replace(/[−–]/g, "-").matchAll(/(?:∢|∠|זווית\s*|angle\s*)([A-D])\s*(?:=|שווה|:|is)\s*([0-9x+\-*/ ().]*x[0-9x+\-*/ ().]*)/gi)) X[m[1].toUpperCase()] = m[2].trim();
+  const times = t.match(/(?:זווית\s*)?([A-D])\s*(?:גדולה|גדול|קטנה|קטן)?\s*פי\s*(\d+(?:\.\d+)?)\s*מ(?:ה)?(?:זווית\s*)?([A-D])/) || t.match(/angle\s*([A-D])\s*is\s*(\d+(?:\.\d+)?|twice|three times)\s*(?:times\s*)?(?:as\s+big\s+as\s*)?angle\s*([A-D])/i);
+  if (times) { const k = times[2] === "twice" ? 2 : times[2] === "three times" ? 3 : parseFloat(times[2]); const small = /קטנה|קטן/.test(times[0]); X[times[1]] = small ? "x" : k + "x"; X[times[3]] = small ? k + "x" : "x"; }
+  if (Object.keys(X).length) {
+    const vals = {}; for (const k of ["A", "B", "C", "D"]) vals[k] = X[k] ?? (a[k] != null ? String(a[k]) : "");
+    const n = ["A", "B", "C", "D"].filter(k => vals[k] !== "").length;
+    if (n >= 3 || (n === 2 && !has(/מרובע|quadrilateral/))) return { tool: "angX", vals };
+  }
+  if (has(/טרפז\s+שווה[\s-]*שוקיים|isosceles\s+trapezoid/i)) return { tool: "isoTrap", vals: { A: a.A ?? a.B ?? (a.C != null ? 180 - a.C : a.D != null ? 180 - a.D : first("ang")), a: L("AB") ?? nth("base", 0), b: L("DC") ?? nth("base", 1), L: L("AD") ?? L("BC") ?? first("leg", "side"), h: first("h") } };
+  if (has(/מעוי?ין|rhomb/i)) return { tool: "rhombus", vals: { d1: L("AC") ?? nth("diag", 0), d2: L("BD") ?? nth("diag", 1), s: L("AB") ?? first("side"), A: a.A ?? (a.B != null ? 180 - a.B : first("ang")) } };
+  if (has(/מקבילית|parallelogram/i)) return { tool: "paraT", vals: { A: a.A ?? a.C ?? (a.B != null ? 180 - a.B : a.D != null ? 180 - a.D : first("ang")), a: L("AB") ?? nth("side", 0) ?? first("base"), b: L("AD") ?? L("BC") ?? nth("side", 1), h: first("h") } };
+  if (has(/מלבן|rectangle/i)) return { tool: "rect", vals: { a: first("len") ?? nth("side", 0) ?? L("AB"), b: first("wid") ?? nth("side", 1) ?? L("BC") ?? L("AD") } };
+  if (has(/(?:^|[^ב])ריבוע(?!ים)|\bsquare\b/i) && !has(/בריבוע|squared/i)) return { tool: "square", vals: { a: first("side", "len") ?? L("AB") } };
+  if (has(/שווה[\s-]*צלעות|equilateral/i)) return { tool: "equi", vals: { a: first("side") ?? L("AB") ?? L("BC") } };
+  if (has(/קובי?יה|\bcube\b/i)) return { tool: "cube", vals: { a: first("edge", "side") } };
+  if (has(/תיבה|cuboid|\bbox\b/i)) return { tool: "box", vals: { l: first("len"), w: first("wid"), h: first("h") } };
+  if (has(/גליל|cylinder/i)) return { tool: "cyl", vals: { r: radius, h: first("h") } };
+  if (has(/חרוט|\bcone\b/i)) return { tool: "cone", vals: { r: radius, h: first("h") } };
+  if (has(/כדור|sphere|\bball\b/i)) return { tool: "sphere", vals: { r: radius } };
+  const POLYW = { "מחומש": 5, "משושה": 6, "משובע": 7, "מתומן": 8, "מתושע": 9, "מעושר": 10, "pentagon": 5, "hexagon": 6, "heptagon": 7, "octagon": 8, "nonagon": 9, "decagon": 10 };
+  for (const [w, n] of Object.entries(POLYW)) if (t.toLowerCase().includes(w)) return { tool: "polyT", vals: { n } };
+  const pn = t.match(/(?:מצולע|polygon)[^\d]{0,12}(\d+)|(\d+)\s*(?:צלעות|sides|-gon)/i);
+  if (pn && has(/מצולע|polygon|משוכלל|regular|-gon/i)) return { tool: "polyT", vals: { n: parseInt(pn[1] || pn[2]) } };
+  if (has(/חיצונית|exterior/i)) { const e = t.match(/(?:חיצונית|exterior)[^\d]{0,24}(\d+(?:\.\d+)?)/i), p = t.match(/(?:פנימית|interior)[^\d]{0,24}(\d+(?:\.\d+)?)/i);
+    if (e) return { tool: "extAngle", vals: { e: parseFloat(e[1]), p: p ? parseFloat(p[1]) : null } }; }
+  if (has(/מרובע|quadrilateral/i) && Object.keys(a).length >= 3) return { tool: "quadAngles", vals: { A: a.A, B: a.B, C: a.C, D: a.D } };
+  const anyAng = first("ang") ?? (t.match(/(\d+(?:\.\d+)?)\s*(?:°|מעלות)/) || t.match(/(\d+(?:\.\d+)?)/) || [])[1];
+  if (has(/צמוד|adjacent|supplementary/i) && anyAng != null) return { tool: "angPair", vals: { a: +anyAng }, focus: "adj" };
+  if (has(/קודקודי|vertical\s+angle|vertically/i) && anyAng != null) return { tool: "angPair", vals: { a: +anyAng }, focus: "vert" };
+  if ((has(/חותך|transversal|מתאימ|מתחלפ|חד[\s-]*צדדי|corresponding|alternate|co-?interior/i) || (has(/מקבילים|parallel\s+lines/i) && !G.letters.size)) && (anyAng != null || Object.keys(a).length)) return { tool: "angPair", vals: { a: +(anyAng ?? Object.values(a)[0]) }, focus: "lines" };
+  // circle with no central angle: area and circumference
+  if ((has(/מעגל|עיגול|circle/i) || radius != null) && !has(/מרכזית|central|קשת|\barc\b|גזרה|sector/i) && G.al == null && radius != null) return { tool: "circle", vals: { r: radius } };
+  // triangles from numbers without letters
+  const tri = has(/משולש|triangle/i), right = has(/ישר[\s-]*זווית|right/i) || Rl.rleg || Rl.hyp;
+  if ((tri || right) && !G.letters.has("D") && !has(/שווה[\s-]*שוקיים|isosceles/i)) {
+    if (Rl.rleg && Rl.rleg.length >= 2) return { tool: "triSolve", vals: { a: Rl.rleg[0], b: Rl.rleg[1], C: 90 } };
+    if (Rl.hyp && (Rl.rleg || L("BC") != null || L("AC") != null)) return { tool: "triSolve", vals: { c: Rl.hyp[0], a: Rl.rleg ? Rl.rleg[0] : L("BC"), b: Rl.rleg ? null : L("AC"), C: 90, A: a.A, B: a.B } };
+    if (Rl.hyp && (a.A != null || a.B != null || Rl.ang)) return { tool: "triSolve", vals: { c: Rl.hyp[0], C: 90, A: a.A ?? (Rl.ang ? Rl.ang[0] : null), B: a.B } };
+    if (Rl.rleg && Rl.rleg.length === 1 && (a.A != null || a.B != null || Rl.ang)) return { tool: "triSolve", vals: { a: Rl.rleg[0], C: 90, A: a.A ?? (Rl.ang ? Rl.ang[0] : null), B: a.B } };
+    if (Rl.side && Rl.side.length >= 3) return { tool: "triSolve", vals: { a: Rl.side[0], b: Rl.side[1], c: Rl.side[2] } };
+    if (first("base") != null && first("h") != null) return { tool: "tri", vals: { b: first("base"), h: first("h") } };
+    if (Rl.ang && Rl.ang.length >= 2 && !Object.keys(a).length) return { tool: "isoCheck", vals: { A: Rl.ang[0], B: Rl.ang[1], C: Rl.ang[2] } };
+  }
+  if (has(/טרפז|trapez/i) && Rl.base && Rl.base.length >= 2 && first("h") != null && !Object.keys(a).length) return { tool: "trap", vals: { a: Rl.base[0], b: Rl.base[1], h: first("h") } };
+  if (has(/טרפז|trapez/i) && L("AB") != null && L("DC") != null && first("h") != null && !Object.keys(a).length) return { tool: "trap", vals: { a: L("AB"), b: L("DC"), h: first("h") } };
+  return null;
+}
+
+// ---------- when the givens aren't enough: explain instead of failing ----------
+const SHAPE_WORDS = [["trap", /טרפז|trapez/i, "טרפז", "Trapezoid", "טרפז"], ["kite", /דלתון|kite/i, "דלתון", "Kite", "דלתון"], ["iso", /שווה[\s-]*שוקיים|isosceles/i, "שווה שוקיים", "Isosceles triangle", "משולש שווה שוקיים"], ["circle", /מעגל|עיגול|circle/i, "מעגל|זווית היקפית|משיק", "Circle", "מעגל"],
+  ["para", /מקבילית|parallelogram|מעוי?ין|rhomb|מלבן|rectangle|ריבוע|square/i, "מקבילית|מעוין|מלבן|ריבוע", "Quadrilateral", "מרובע"], ["tri", /משולש|triangle/i, "משולש", "Triangle", "משולש"], ["lines", /מקביל|parallel|צמוד|קודקודי/i, "צמודות|קודקודיות|מקבילים|מתאימות|מתחלפות", "Angles and lines", "זוויות וישרים"]];
+const SHAPE_EX = {
+  trap: ["trapezoid ABCD, AB parallel to DC, angle A = 110, angle C = 43", "טרפז ABCD, AB מקביל ל-DC, זווית A שווה 110, זווית C שווה 43"],
+  kite: ["kite ABCD, angle A = 100, angle C = 60", "דלתון ABCD, זווית A שווה 100, זווית C שווה 60"],
+  iso: ["isosceles triangle, vertex angle 40  /  leg 13, base 10", "משולש שווה שוקיים, זווית הראש 40  /  שוק 13, בסיס 10"],
+  circle: ["circle, radius 6, central angle 60", "מעגל, רדיוס 6, זווית מרכזית 60"],
+  para: ["parallelogram ABCD, angle A = 70, AB = 8, AD = 5  /  rhombus, diagonals 6 and 8", "מקבילית ABCD, זווית A שווה 70, AB שווה 8, AD שווה 5  /  מעוין, אלכסונים 6 ו-8"],
+  tri: ["triangle ABC, AB = 7, AC = 5, angle A = 60  /  right triangle, legs 3 and 4", "משולש ABC, AB שווה 7, AC שווה 5, זווית A שווה 60  /  משולש ישר זווית, ניצבים 3 ו-4"],
+  lines: ["parallel lines and a transversal, one angle 70", "שני ישרים מקבילים וחותך, זווית אחת 70"],
+};
+function explainGeo(raw, msg){
+  const out = $("geoResults"); out.innerHTML = "";
+  const G = parseGivens(raw), Rl = rolesOf(raw);
+  const shape = SHAPE_WORDS.find(([, re]) => re.test(raw));
+  const box = el("div", "result");
+  const items = [
+    ...Object.entries(G.ang).map(([k, v]) => "∢" + k + " = " + R(v) + "°"), ...Object.entries(G.ang3 || {}).map(([k, v]) => "∢" + k + " = " + R(v) + "°"),
+    ...G.eq.map(([x, y]) => x + " = " + y), ...Object.entries(G.len).map(([k, v]) => k + " = " + R(v)), ...G.par.map(([x, y]) => x + " ∥ " + y),
+    ...Object.entries(Rl).map(([k, v]) => ({ len: g2("length", "אורך"), wid: g2("width", "רוחב"), h: g2("height", "גובה"), side: g2("side", "צלע"), base: g2("base", "בסיס"), leg: g2("leg", "שוק"), rleg: g2("leg", "ניצב"), hyp: g2("hypotenuse", "יתר"), r: g2("radius", "רדיוס"), d: g2("diameter", "קוטר"), edge: g2("edge", "מקצוע"), diag: g2("diagonal", "אלכסון"), ang: g2("angle", "זווית") }[k]) + " " + LRI(v.map(R).join(", "))),
+  ];
+  const a = el("div", "ans");
+  a.append(el("small", null, g2("What I understood", "מה הבנתי")));
+  const und = (shape ? g2("Shape: ", "צורה: ") + pick(shape[3], shape[4]) : g2("I didn't find the shape (triangle, trapezoid, circle…)", "לא מצאתי את הצורה (משולש, טרפז, מעגל…)")) + "\n" + (items.length ? g2("Givens: ", "נתונים: ") + items.map(x => /[א-ת]/.test(x) ? x : LRI(x)).join(" ,  ") : g2("I didn't find numbers with a name (like angle A = 40 or AB = 5)", "לא מצאתי מספרים עם שם (כמו זווית A שווה 40 או AB שווה 5)"));
+  a.append(dirOf(el("div", null, und), und)); a.querySelector("div").style.fontSize = "17px"; box.append(a);
+  const rows = [];
+  if (msg) rows.push([msg, g2("What's missing", "מה חסר")]);
+  const ex = SHAPE_EX[shape ? shape[0] : "tri"];
+  rows.push([pick(...ex), g2("You can write it like this", "אפשר לכתוב כך")]);
+  if (!shape) Object.values(SHAPE_EX).slice(0, 4).forEach(e => rows.push([pick(...e), g2("Another example", "עוד דוגמה")]));
+  const words = shape ? new RegExp(shape[2]) : /משולש/;
+  const th = BANK.filter(b => words.test(b[2])).slice(0, 5);
+  th.forEach(b => rows.push([pick(b[1], b[2]).replace(/<[^>]+>/g, ""), g2("A theorem that can help", "משפט שיכול לעזור")]));
+  const ol = el("ol", "steps");
+  rows.forEach(([c, why]) => { const li = el("li"); li.append(dirOf(el("div", "exp", c), c), dirOf(el("div", "why", why), why)); ol.append(li); });
+  box.append(ol);
+  out.append(box); out.hidden = $("geoPanel").hidden;
+}
+
 function fillShapes(){
   const sel = $("shape"), cur = sel.value || "trapAngles"; sel.innerHTML = "";
-  for (const [g,label] of [["trap",["Trapezoid: angles & proofs","טרפז: זוויות והוכחות"]],["iso",["Isosceles triangle","משולש שווה שוקיים"]],["kite",["Kite","דלתון"]],["trig",["Trigonometry, circle, similarity","טריגונומטריה, מעגל ודמיון"]],[undefined,["Shapes","צורות"]]]) {
+  for (const [g,label] of [["trap",["Trapezoid: angles & proofs","טרפז: זוויות והוכחות"]],["iso",["Isosceles triangle","משולש שווה שוקיים"]],["kite",["Kite","דלתון"]],["trig",["Trigonometry, circle, similarity","טריגונומטריה, מעגל ודמיון"]],["para",["Quadrilaterals and polygons","מרובעים ומצולעים"]],["lines",["Angles and lines","זוויות וישרים"]],[undefined,["Shapes","צורות"]]]) {
     const og=document.createElement("optgroup"); og.label=pick(...label);
     for (const [k,s] of Object.entries(SH)) if (s.g===g) { const o=document.createElement("option"); o.value=k; o.textContent=pick(...s.l); og.append(o); }
     sel.append(og);
@@ -1325,8 +1675,9 @@ function buildFields(keep){
   const s=SH[$("shape").value], box=$("geoFields"), old={};
   if (keep) box.querySelectorAll("input").forEach(i => old[i.id] = i.value);
   box.innerHTML="";
-  s.f.forEach(([k,en,he])=>{ const l=el("label",null,pick(en,he)); const i=document.createElement("input");
-    i.type="number"; i.inputMode="decimal"; i.id="g_"+k; i.min="0"; i.step="any"; i.dir="ltr";
+  s.f.forEach(([k,en,he,kind])=>{ const l=el("label",null,pick(en,he)); const i=document.createElement("input");
+    if (kind==="text") { i.type="text"; i.autocomplete="off"; i.spellcheck=false; } else { i.type="number"; i.inputMode="decimal"; i.min="0"; i.step="any"; }
+    i.id="g_"+k; i.dir="ltr";
     if (s.kind==="proof") i.placeholder="?";
     i.value = old["g_"+k] ?? (s.ex ? (s.ex[k] ?? "") : EX[k]); l.append(i); box.append(l); });
   const notes=$("geoNotes"); notes.innerHTML="";
@@ -1342,10 +1693,10 @@ function calcGeo(quiet){
   try {
     if (s.kind==="proof") {
       const v={};
-      for (const [k] of s.f) { const raw=$("g_"+k).value.trim(); v[k] = raw==="" ? null : parseFloat(raw); if (raw!=="" && isNaN(v[k])) throw TW().nan; }
+      for (const [k,,,kind] of s.f) { const raw=$("g_"+k).value.trim(); v[k] = raw==="" ? null : kind==="text" ? raw : parseFloat(raw); if (raw!=="" && kind!=="text" && isNaN(v[k])) throw TW().nan; }
       const r = s.calc(v), W=TW();
       const box=el("div","result");
-      const fig=el("div","fig"); fig.innerHTML = r.svg !== undefined ? r.svg : trapSVG(r.angles, r.par, r.computed); box.append(fig);
+      if (r.svg !== "") { const fig=el("div","fig"); fig.innerHTML = r.svg !== undefined ? r.svg : trapSVG(r.angles, r.par, r.computed); box.append(fig); }
       const a=el("div","ans"); a.append(el("small",null,r.title), dirOf(el("div",null,r.answer), r.answer)); box.append(a);
       box.append(proofTable(r.rows));
       const tg = askTargets(); if (tg.length) { const ab = askBox(r, tg); if (ab) box.prepend(ab); }
@@ -1371,11 +1722,17 @@ function calcGeo(quiet){
       box.append(ol); out.append(box);
     }
     afterGeo(quiet, [...out.querySelectorAll(".ans")].map(a => a.querySelector("small").textContent + ": " + plain(a.querySelector("div").textContent)).join("   ;   "));
-  } catch(e) { skipSave = false; out.append(dirOf(el("div","err",String(e)), String(e))); }
+  } catch(e) {
+    skipSave = false;
+    if (geoFromText && $("geoText").value.trim()) { explainGeo($("geoText").value, String(e)); geoFromText = false; if (!quiet) out.scrollIntoView({behavior:"smooth",block:"start"}); return; }
+    out.append(dirOf(el("div","err",String(e)), String(e)));
+  }
+  geoFromText = false;
   out.hidden = $("geoPanel").hidden;
   if (!quiet) out.scrollIntoView({behavior:"smooth",block:"start"});
 }
-$("calc").onclick = () => calcGeo();
+let geoFromText = false;
+$("calc").onclick = () => { geoFromText = false; geoFocus = null; calcGeo(); };
 
 // ---------- the question: what to find ----------
 function askTargets(){
@@ -1393,10 +1750,13 @@ function askTargets(){
   if (/גובה|height/i.test(t)) out.push("AD");
   if (/מיתר|chord/i.test(t)) out.push("AB");
   if (/יחס|ratio/i.test(t)) out.push("k");
+  if (/צלע|\bside/i.test(t) && !out.some(x => /^[A-D]{2}$/.test(x))) out.push("AB");
+  if (/אלכסון|diagonal/i.test(t)) out.push("AC", "BD");
+  if (/x\b|את x|הנעלם/i.test(t)) out.push("x");
   return [...new Set(out)];
 }
 function askBox(r, targets){
-  const texts = [...plain(r.answer).split("\n"), ...r.rows.slice().reverse().map(x => plain(x[0]))].map(x => x.replace(/\s+/g, " "));
+  const texts = [...plain(r.answer).split("\n"), ...r.rows.slice().reverse().map(x => plain(x[0]))];
   const esc = x => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const box = el("div", "askbox"); box.append(el("small", null, T("askAns")));
   const miss = [];
@@ -1407,7 +1767,7 @@ function askBox(r, targets){
       for (const nm of names) {
         const m = x.match(new RegExp("(?:^|[\\s,(⇒])" + esc(nm) + "(?![A-Za-z²³])\\s*([=≈][^,⇒;]*)"));
         if (!m) continue;
-        const parts = m[1].split(/(?=[=≈])/).map(p => p.trim()).filter(p => /^[=≈]\s*[−-]?\d/.test(p));
+        const parts = m[1].split(/\s{2,}/)[0].split(/(?=[=≈])/).map(p => p.trim().replace(/\s*✓$/, "")).filter(p => /^[=≈]\s*[−-]?\d/.test(p));
         if (parts.length) { hit = nm + " " + parts[parts.length - 1]; break; }
       }
       if (hit) break;
@@ -1597,7 +1957,7 @@ let lastDetected = null;
 function clearGeo(){ lastDetected = null; $("geoDetected").hidden = true; $("geoResults").innerHTML = ""; $("geoResults").hidden = true; }
 function showDetected(d){
   const box = $("geoDetected");
-  const list = [
+  const list = d.vals ? SH[d.tool].f.filter(([k]) => d.vals[k] != null && d.vals[k] !== "").map(([k,en,he]) => pick(en,he).replace(/\s*\(°\)/, "") + " = " + (typeof d.vals[k] === "number" ? R(d.vals[k]) : d.vals[k])).join(" ,  ") : [
     ...Object.entries(d.G.ang).map(([k,v]) => "∢"+k+" = "+R(v)+"°"),
     ...Object.entries(d.G.ang3 || {}).map(([k,v]) => "∢"+k+" = "+R(v)+"°"),
     ...d.G.eq.map(([x,y]) => x+" = "+y),
@@ -1607,18 +1967,30 @@ function showDetected(d){
     ...(d.G.r != null ? ["r = "+R(d.G.r)] : []),
     ...(d.G.al != null ? ["α = "+R(d.G.al)+"°"] : []),
   ].join(" ,  ");
-  const txt = T("detected", pick(...SH[d.tool].l), LRI(list));
+  const txt = T("detected", pick(...SH[d.tool].l), d.vals ? list : LRI(list));
   box.textContent = txt; dirOf(box, txt); box.hidden = false;
 }
 function readGivens(){
-  const G = parseGivens($("geoText").value);
+  geoFocus = null;
+  const text = $("geoText").value;
+  if (!text.trim()) { setGeoStatus("noGivens", true); clearGeo(); return; }
+  let plan = null; try { plan = understand(text); } catch (e) { plan = null; }
+  if (plan && SH[plan.tool]) {
+    setGeoStatus("");
+    $("shape").value = plan.tool; buildFields(false);
+    for (const [k] of SH[plan.tool].f) { const i = $("g_"+k); if (i) i.value = plan.vals[k] != null && plan.vals[k] !== "" ? plan.vals[k] : ""; }
+    geoFocus = plan.focus || null;
+    lastDetected = { G: parseGivens(text), tool: plan.tool, vals: plan.vals }; showDetected(lastDetected);
+    geoFromText = true; calcGeo(); return;
+  }
+  const G = parseGivens(text);
   if (G.shape === "right" && !Object.values(G.ang).some(x => Math.abs(x - 90) < 1e-9)) { const k = ["C","B","A"].find(k => G.ang[k] == null); if (k) G.ang[k] = 90; }
   const tool = pickTool(G);
-  if (!tool) { setGeoStatus("noGivens", true); clearGeo(); return; }
+  if (!tool) { setGeoStatus(""); clearGeo(); lastDetected = { G, tool: null }; explainGeo(text, T("noGivens")); return; }
   setGeoStatus("");
   $("shape").value = tool; buildFields(false); fillFor(tool, G);
   lastDetected = { G, tool }; showDetected(lastDetected);
-  calcGeo();
+  geoFromText = true; calcGeo();
 }
 $("geoRead").onclick = readGivens;
 function onGeoOcr(text, items){
