@@ -524,9 +524,62 @@ $("geoGallery").onclick = () => photo("geo", true);
 window.onPhotoStart = () => setStatus("reading");
 window.onPhotoCancelled = () => setStatus("");
 window.onOcrError = key => setStatus("ocr_" + key, true);
+// ---------- cleaning up what the camera read ----------
+// The scanner reads words, not math: superscripts come out as plain digits (x2), Hebrew printed text comes out
+// as random Latin letters, and 0/O, 1/l, x/× get mixed up. This turns it back into a math problem.
+const OCR_FN = /^(sin|cos|tan|log|ln|sqrt|abs|exp|pi)$/i;
+function ocrLines(text, items){
+  if (!Array.isArray(items) || !items.length) return String(text).split("\n");
+  const byLine = new Map();
+  for (const it of items) { if (!byLine.has(it.id)) byLine.set(it.id, []); byLine.get(it.id).push(it); }
+  const out = [];
+  for (const words of byLine.values()) {
+    words.sort((a, b) => a.x - b.x);
+    const hs = words.map(w => w.h).sort((a, b) => a - b), mh = hs[Math.floor(hs.length / 2)] || 1;
+    const ys = words.map(w => w.y).sort((a, b) => a - b), my = ys[Math.floor(ys.length / 2)];
+    let line = "";
+    words.forEach((w, i) => {
+      const small = /^[0-9]{1,2}$/.test(w.t) && w.h < 0.72 * mh && w.y < my - 0.12 * mh && i > 0;
+      line += small ? "^" + w.t : (i ? " " : "") + w.t;
+    });
+    out.push(line);
+  }
+  // keep the scanner's order of lines (top to bottom)
+  return out;
+}
+function cleanOcrLine(l){
+  const before = l;
+  let dropped = false;
+  l = " " + l.replace(/[−–—]/g, "-") + " ";
+  // × read for x (and x read for ×)
+  l = l.replace(/×(?=\s*(?:[^\d\s(]|$))/g, "x").replace(/(?<=[+\-=(\s]|^)×/g, "x");
+  // look-alikes next to numbers
+  l = l.replace(/(?<=\d)[Oo](?![a-zA-Z])|(?<![a-zA-Z])[Oo](?=\d)/g, "0").replace(/(?<=\d)[Il|](?![a-zA-Z])|(?<![a-zA-Z])[Il|](?=\d)/g, "1").replace(/(?<=\d)S(?=\d)/g, "5");
+  // drop garbage words (printed Hebrew read as Latin letters), keep functions and variables
+  l = l.split(/(\s+)/).map(tok => {
+    const w = tok.replace(/[^A-Za-z]/g, "");
+    if (!w) return tok;
+    if (/[A-Z]{2,}/.test(tok) || (/\d/.test(tok) && /[A-Za-z]{2,}/.test(tok) && /[A-Z]/.test(tok))) { dropped = true; return " "; }
+    if (tok !== w) return tok;
+    if (OCR_FN.test(w)) return tok;
+    if (w.length >= 4 || (w.length >= 2 && /[A-Z]/.test(w) && /[a-z]/.test(w))) { dropped = true; return " "; }
+    return tok;
+  }).join("");
+  if (dropped && !/[=+\-*/^×÷<>()]/.test(l)) return "";
+  // superscripts read as plain digits: x2 → x², 3ab2 → 3ab² (not a1 = 3 in a sequence, not log2)
+  l = l.replace(/(?<![A-Za-z])([A-Za-z]{1,3})(\d)(?![\d.])/g, (m, v, d, off, all) => {
+    if (OCR_FN.test(v) || /^(log|ln)$/i.test(v)) return m;
+    if (/^[aS]$/.test(v) && /^\s*=/.test(all.slice(off + m.length))) return m;
+    return v + "^" + d;
+  });
+  l = l.replace(/\)(\d)(?![\d.])/g, ")^$1");
+  // capital single letters are variables: 2A + 3B → 2a + 3b
+  l = l.replace(/(?<![A-Za-z])[A-Z](?![A-Za-z])/g, c => (c === "S" ? c : c.toLowerCase()));
+  return l.replace(/\s+/g, " ").trim();
+}
 window.onOcr = (text, items) => {
   if (photoFor === "geo") return onGeoOcr(text, items);
-  const lines = String(text).split("\n").map(l => l.trim()).filter(l => /\d|=/.test(l));
+  const lines = ocrLines(text, items).map(cleanOcrLine).filter(l => /[\d=]/.test(l) || (/[a-z]/.test(l) && /[+\-*/^×÷·<>≤≥()]/.test(l)));
   if (!lines.length) { setStatus("noMath", true); return; }
   $("problem").value = lines.join("\n");
   setStatus("checkText");

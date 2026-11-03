@@ -49,7 +49,7 @@
       if (!window.Tesseract) await loadScript("https://cdn.jsdelivr.net/npm/tesseract.js@5.1.0/dist/tesseract.min.js");
       if (!worker) {
         worker = await Tesseract.createWorker("eng");
-        await worker.setParameters({ tessedit_char_whitelist: "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+-=*/:().,%<>|^°√π²³×÷−∢∥ " });
+        await worker.setParameters({ tessedit_pageseg_mode: "6", preserve_interword_spaces: "1", tessedit_char_whitelist: "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+-=*/:().,%<>|^°√π²³×÷−∢∥ " });
       }
       const img = await shrink(file, 1800);
       const { data } = await worker.recognize(img);
