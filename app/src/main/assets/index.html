@@ -16,6 +16,7 @@
   --pen:#8da2ff; --on-pen:#0b0f1a; --pen-soft:#20284a; --card:#171c26; --line:#2b3446;
   --ok:#5fd39b; --ok-soft:#14302a; --warn:#ff9a7a; --warn-soft:#3a1d16; color-scheme:dark}}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{margin:0;background-color:var(--paper);color:var(--ink);font:16px/1.5 var(--sans);
   background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
   background-size:24px 24px;-webkit-tap-highlight-color:transparent}
@@ -56,6 +57,15 @@ select{font-family:var(--sans)}
 .fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .fields label{display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--muted)}
 .hint{font-size:14px;color:var(--muted);margin:0}
+.notes{background:var(--pen-soft);border-radius:10px;padding:12px 14px;font-size:14px;line-height:1.6;display:flex;flex-direction:column;gap:6px}
+.notes b{color:var(--pen)}
+.fig svg{width:100%;max-width:320px;height:auto;display:block;margin:0 auto}
+.proofwrap{overflow-x:auto}
+table.proof{width:100%;border-collapse:collapse;font-size:14px;line-height:1.5}
+.proof th{background:var(--pen);color:var(--on-pen);padding:8px;font-weight:700;text-align:start}
+.proof td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top;overflow-wrap:anywhere}
+.proof td.claim{font-family:var(--mono)}
+.proof td.n{color:var(--muted);width:1.6em;text-align:center}
 hr{border:0;border-top:1px dashed var(--line);width:100%;margin:4px 0}
 button:focus-visible,textarea:focus,input:focus,select:focus{outline:2px solid var(--pen);outline-offset:1px}
 </style>
@@ -102,9 +112,12 @@ button:focus-visible,textarea:focus,input:focus,select:focus{outline:2px solid v
   <section id="geoPanel" class="panel" hidden>
     <label class="lbl" for="shape" data-t="shape"></label>
     <select id="shape"></select>
+    <div class="notes" id="geoNotes" hidden></div>
     <div class="fields" id="geoFields"></div>
-    <label class="lbl" for="unit" data-t="units"></label>
-    <select id="unit"></select>
+    <div id="unitRow" style="display:flex;flex-direction:column;gap:12px">
+      <label class="lbl" for="unit" data-t="units"></label>
+      <select id="unit"></select>
+    </div>
     <button class="btn" id="calc" type="button" data-t="calc"></button>
   </section>
   <section id="geoResults" class="panel" hidden aria-live="polite"></section>
@@ -262,7 +275,7 @@ const SH = {
     [pick("Diameter","קוטר"),"2 × r",`2 × ${v.r}`,2*v.r,1],
     [pick("Area","שטח"),"π × r²",`π × ${v.r}²`,Math.PI*v.r*v.r,2,v.r*v.r],
     [pick("Circumference","היקף"),"2 × π × r",`2 × π × ${v.r}`,2*Math.PI*v.r,1,2*v.r]]},
-  trap:{l:["Trapezoid","טרפז"], f:[["a","Top side","בסיס עליון"],["b","Bottom side","בסיס תחתון"],["h","Height","גובה"]], calc:v=>[
+  trap:{l:["Trapezoid (area)","טרפז (שטח)"], f:[["a","Top side","בסיס עליון"],["b","Bottom side","בסיס תחתון"],["h","Height","גובה"]], calc:v=>[
     [pick("Area","שטח"),"(a + b) × h ÷ 2",`(${v.a} + ${v.b}) × ${v.h} ÷ 2`,(v.a+v.b)*v.h/2,2]]},
   para:{l:["Parallelogram","מקבילית"], f:[["b","Base","צלע"],["h","Height","גובה לצלע"]], calc:v=>[
     [pick("Area","שטח"),pick("base × height","צלע × גובה"),`${v.b} × ${v.h}`,v.b*v.h,2]]},
@@ -283,9 +296,128 @@ const SH = {
 };
 const EX = {a:5,b:3,c:4,h:4,r:3,l:5,w:3,A:60,B:45};
 
+// ---------- trapezoid: angles & proofs (class material, pages 338–339) ----------
+const TRW = {
+  en:{ given:"Given", trap:"ABCD is a trapezoid (AB ∥ DC)",
+    legThm:"In a trapezoid, the angles next to the same leg add up to 180°",
+    quad:"The angles of a quadrilateral add up to 360°",
+    coint:"Co-interior angles, substituting the sizes",
+    par:"If co-interior angles add up to 180°, the lines are parallel",
+    notPar:"If co-interior angles don't add up to 180°, the lines are not parallel",
+    defTrap:"A quadrilateral with exactly one pair of parallel opposite sides is a trapezoid",
+    twoPairs:"It has two pairs of parallel sides, so it is a parallelogram, not a trapezoid",
+    noPairs:"It has no pair of parallel sides",
+    isTrap:"ABCD is a trapezoid", isPara:"ABCD is not a trapezoid (it's a parallelogram)", notTrap:"ABCD is not a trapezoid",
+    claim:"Statement", reason:"Reason", missing:"Missing angles", result:"Result", allGiven:"All four angles are given.",
+    needLeg:"Enter at least one angle next to each leg: A or D, and also B or C.",
+    need3:"Enter at least 3 of the 4 angles.", range:"Each angle must be between 0° and 180°.", nan:"Angles must be numbers.",
+    sumBad:s=>"The angles add up to "+s+"°, but the angles of a quadrilateral must add up to 360°.",
+    legBad:(p,q,x)=>"∢"+p+" + ∢"+q+" = "+x+"°, but in a trapezoid with AB ∥ DC it must be 180°.",
+    notes:["<b>Definition:</b> A quadrilateral with exactly one pair of parallel sides is a <b>trapezoid</b>. The parallel sides (AB, DC) are the <b>bases</b>. The sides that aren't parallel (AD, BC) are the <b>legs</b>.",
+      "<b>Theorem:</b> In a trapezoid, the angles next to the same leg add up to 180°:  ∢A + ∢D = 180°,  ∢B + ∢C = 180°.",
+      "<b>To prove a trapezoid</b>, prove both: one pair of sides is parallel, and the other pair is not parallel (using angles)."] },
+  he:{ given:"נתון", trap:"⁦ABCD⁩ טרפז (⁦AB ∥ DC⁩)",
+    legThm:"בטרפז, סכום הזוויות שליד אותה שוק 180°",
+    quad:"סכום הזוויות במרובע 360°",
+    coint:"זוויות חד-צדדיות, הצבת גדלים",
+    par:"אם סכום הזוויות החד-צדדיות 180°, אז הישרים מקבילים",
+    notPar:"אם סכום הזוויות החד-צדדיות שונה מ-180°, אז הישרים לא מקבילים",
+    defTrap:"מרובע שבו זוג אחד בלבד של צלעות נגדיות מקבילות נקרא טרפז",
+    twoPairs:"יש בו שני זוגות של צלעות מקבילות, לכן הוא מקבילית ולא טרפז",
+    noPairs:"אין בו אף זוג של צלעות מקבילות",
+    isTrap:"⁦ABCD⁩ טרפז", isPara:"⁦ABCD⁩ לא טרפז (זו מקבילית)", notTrap:"⁦ABCD⁩ לא טרפז",
+    claim:"טענה", reason:"נימוק", missing:"הזוויות החסרות", result:"מסקנה", allGiven:"כל ארבע הזוויות נתונות.",
+    needLeg:"הכניסו לפחות זווית אחת ליד כל שוק: A או D, וגם B או C.",
+    need3:"הכניסו לפחות 3 מתוך 4 הזוויות.", range:"כל זווית צריכה להיות בין 0° ל-180°.", nan:"הזוויות צריכות להיות מספרים.",
+    sumBad:s=>"סכום הזוויות יוצא "+s+"°, אבל במרובע סכום הזוויות חייב להיות 360°.",
+    legBad:(p,q,x)=>"⁦∢"+p+" + ∢"+q+" = "+x+"°⁩, אבל בטרפז שבו ⁦AB ∥ DC⁩ הסכום חייב להיות 180°.",
+    notes:["<b>הגדרה:</b> מרובע בעל זוג אחד <b>בלבד</b> של צלעות מקבילות נקרא <b>טרפז</b>. הצלעות המקבילות (AB, DC) נקראות <b>בסיסי הטרפז</b>. הצלעות שאינן מקבילות (AD, BC) נקראות <b>שוקי הטרפז</b>.",
+      "<b>משפט:</b> בטרפז, סכום הזוויות שליד אותה שוק 180°: <span dir=\"ltr\">∢A + ∢D = 180°,  ∢B + ∢C = 180°</span>",
+      "<b>כדי לזהות טרפז</b> צריך להוכיח את שניהם: זוג אחד של צלעות מקביל, וזוג שני לא מקביל (לפי זוויות)."] },
+};
+const TW = () => TRW[lang];
+const K4 = ["A","B","C","D"];
+function checkAngles(v){ const W=TW(); for (const k of K4) if (v[k]!=null && !(v[k]>0 && v[k]<180)) throw W.range; }
+
+function trapMissing(v){
+  const W=TW(); checkAngles(v);
+  const given = K4.filter(k=>v[k]!=null);
+  if (!given.length) throw W.needLeg;
+  const rows = [[W.trap, W.given], [LRI(given.map(k=>"∢"+k+" = "+R(v[k])+"°").join(" ,  ")), W.given]];
+  for (const [p,q] of [["A","D"],["B","C"]]) {
+    if (v[p]==null && v[q]==null) throw W.needLeg;
+    if (v[p]!=null && v[q]!=null) { const x=v[p]+v[q]; if (Math.abs(x-180)>1e-9) throw W.legBad(p,q,R(x)); continue; }
+    const [kn, ms] = v[p]!=null ? [p,q] : [q,p];
+    v[ms] = 180 - v[kn];
+    rows.push([LRI("∢"+ms+" = 180° − ∢"+kn+" = 180 − "+R(v[kn])+" = "+R(v[ms])+"°"), W.legThm]);
+  }
+  const missing = K4.filter(k=>!given.includes(k));
+  if (missing.length) rows.push([LRI("∢A + ∢B + ∢C + ∢D = "+K4.map(k=>R(v[k])).join(" + ")+" = 360° ✓"), W.quad]);
+  return { rows, title:W.missing, answer: missing.length ? missing.map(k=>LRI("∢"+k+" = "+R(v[k])+"°")).join("    ") : W.allGiven,
+           angles:v, computed:missing, par:[true,false] };
+}
+
+function trapCheck(v){
+  const W=TW(); checkAngles(v);
+  const given = K4.filter(k=>v[k]!=null);
+  if (given.length < 3) throw W.need3;
+  const rows = [[LRI(given.map(k=>"∢"+k+" = "+R(v[k])+"°").join(" ,  ")), W.given]];
+  const sum = given.reduce((t,k)=>t+v[k],0);
+  let computed = [];
+  if (given.length === 3) {
+    if (sum >= 360) throw W.sumBad(R(sum));
+    const m = K4.find(k=>v[k]==null); v[m] = 360 - sum; computed=[m];
+    if (v[m] >= 180) throw W.range;
+    rows.push([LRI("∢"+m+" = 360° − "+given.map(k=>"∢"+k).join(" − ")+" = 360 − "+given.map(k=>R(v[k])).join(" − ")+" = "+R(v[m])+"°"), W.quad]);
+  } else if (Math.abs(sum-360) > 1e-9) throw W.sumBad(R(sum));
+  const s1 = v.A+v.D, p1 = Math.abs(s1-180) < 1e-9;
+  rows.push([LRI("∢A + ∢D = "+R(v.A)+" + "+R(v.D)+" = "+R(s1)+"°"+(p1?"":" ≠ 180°")), W.coint]);
+  rows.push([LRI(p1 ? "AB ∥ DC" : "AB ∦ DC"), p1 ? W.par : W.notPar]);
+  const s2 = v.A+v.B, p2 = Math.abs(s2-180) < 1e-9;
+  rows.push([LRI("∢A + ∢B = "+R(v.A)+" + "+R(v.B)+" = "+R(s2)+"°"+(p2?"":" ≠ 180°")), W.coint]);
+  rows.push([LRI(p2 ? "AD ∥ BC" : "AD ∦ BC"), p2 ? W.par : W.notPar]);
+  const verdict = p1 !== p2 ? [W.isTrap, W.defTrap] : (p1 ? [W.isPara, W.twoPairs] : [W.notTrap, W.noPairs]);
+  rows.push(verdict);
+  return { rows, title:W.result, answer:verdict[0], angles:v, computed, par:[p1,p2] };
+}
+
+function trapSVG(ang, par, computed){
+  const [p1,p2] = par;
+  const P = p1 && p2 ? {A:[50,26],B:[190,26],C:[240,124],D:[100,124]}
+          : (p1 || p2) ? {A:[75,26],B:[185,26],C:[245,124],D:[20,124]}
+          : {A:[70,26],B:[200,44],C:[245,124],D:[20,124]};
+  const pts = K4.map(k=>P[k].join(",")).join(" ");
+  const off = {A:[-6,-8],B:[6,-8],C:[8,14],D:[-8,14]};
+  const inner = k => { const cx=(P.A[0]+P.B[0]+P.C[0]+P.D[0])/4, cy=(P.A[1]+P.B[1]+P.C[1]+P.D[1])/4;
+    return [P[k][0]+(cx-P[k][0])*0.22, P[k][1]+(cy-P[k][1])*0.28+5]; };
+  const chev = (a,b,n) => { const mx=(P[a][0]+P[b][0])/2, my=(P[a][1]+P[b][1])/2, ang=Math.atan2(P[b][1]-P[a][1],P[b][0]-P[a][0])*180/Math.PI;
+    let d=""; for (let i=0;i<n;i++){ const x=mx-3+i*7; d+=`M${x-4},${my-5} L${x+2},${my} L${x-4},${my+5} `; }
+    return `<path d="${d}" transform="rotate(${ang} ${mx} ${my})" style="fill:none;stroke:var(--pen);stroke-width:2"/>`; };
+  let svg = `<svg viewBox="0 0 270 150" role="img" aria-label="ABCD"><polygon points="${pts}" style="fill:var(--pen-soft);stroke:var(--pen);stroke-width:2.5;stroke-linejoin:round"/>`;
+  if (p1) svg += chev("A","B",1) + chev("D","C",1);
+  if (p2) svg += chev("A","D",2) + chev("B","C",2);
+  for (const k of K4) {
+    const [x,y]=P[k], [dx,dy]=off[k], [ix,iy]=inner(k);
+    svg += `<text x="${x+dx}" y="${y+dy}" text-anchor="middle" style="fill:var(--ink);font:700 15px var(--sans)">${k}</text>`;
+    const known = ang[k]!=null, isNew = computed.includes(k);
+    svg += `<text x="${ix}" y="${iy}" text-anchor="middle" style="fill:${isNew?"var(--ok)":"var(--muted)"};font:${isNew?700:500} 13px var(--mono)">${known?R(ang[k])+"°":"?"}</text>`;
+  }
+  return svg + "</svg>";
+}
+
+SH.trapAngles = {g:"trap", kind:"proof", noUnit:true, l:["Trapezoid: find missing angles (AB ∥ DC)","טרפז: מציאת זוויות חסרות (AB ∥ DC)"],
+  f:[["A","∢A (°)","∢A (°)"],["B","∢B (°)","∢B (°)"],["C","∢C (°)","∢C (°)"],["D","∢D (°)","∢D (°)"]], ex:{A:110,C:43}, calc:trapMissing};
+SH.trapCheck = {g:"trap", kind:"proof", noUnit:true, l:["Is ABCD a trapezoid? (by angles)","האם ABCD טרפז? (לפי זוויות)"],
+  f:[["A","∢A (°)","∢A (°)"],["B","∢B (°)","∢B (°)"],["C","∢C (°)","∢C (°)"],["D","∢D (°)","∢D (°)"]], ex:{A:30,B:50,D:150}, calc:trapCheck};
+
+
 function fillShapes(){
-  const sel = $("shape"), cur = sel.value || "rect"; sel.innerHTML = "";
-  for (const [k,s] of Object.entries(SH)) { const o=document.createElement("option"); o.value=k; o.textContent=pick(...s.l); sel.append(o); }
+  const sel = $("shape"), cur = sel.value || "trapAngles"; sel.innerHTML = "";
+  for (const [g,label] of [["trap",["Trapezoid: angles & proofs","טרפז: זוויות והוכחות"]],[undefined,["Shapes","צורות"]]]) {
+    const og=document.createElement("optgroup"); og.label=pick(...label);
+    for (const [k,s] of Object.entries(SH)) if (s.g===g) { const o=document.createElement("option"); o.value=k; o.textContent=pick(...s.l); og.append(o); }
+    sel.append(og);
+  }
   sel.value = cur;
   buildFields(true);
 }
@@ -300,12 +432,35 @@ function buildFields(keep){
   box.innerHTML="";
   s.f.forEach(([k,en,he])=>{ const l=el("label",null,pick(en,he)); const i=document.createElement("input");
     i.type="number"; i.inputMode="decimal"; i.id="g_"+k; i.min="0"; i.step="any"; i.dir="ltr";
-    i.value = old["g_"+k] ?? (s.ex && s.ex[k] != null ? s.ex[k] : EX[k]); l.append(i); box.append(l); });
+    if (s.kind==="proof") i.placeholder="?";
+    i.value = old["g_"+k] ?? (s.ex ? (s.ex[k] ?? "") : EX[k]); l.append(i); box.append(l); });
+  const notes=$("geoNotes"); notes.innerHTML="";
+  if (s.g==="trap") { TW().notes.forEach(h=>{ const p=document.createElement("div"); p.innerHTML=h; notes.append(p); }); }
+  notes.hidden = s.g!=="trap";
+  $("unitRow").hidden = !!s.noUnit;
 }
 $("shape").onchange = () => { buildFields(false); $("geoResults").innerHTML=""; $("geoResults").hidden=true; };
 function calcGeo(quiet){
   const s=SH[$("shape").value], v={}, out=$("geoResults"); out.innerHTML="";
   try {
+    if (s.kind==="proof") {
+      const v={};
+      for (const [k] of s.f) { const raw=$("g_"+k).value.trim(); v[k] = raw==="" ? null : parseFloat(raw); if (raw!=="" && isNaN(v[k])) throw TW().nan; }
+      const r = s.calc(v), W=TW();
+      const box=el("div","result");
+      const fig=el("div","fig"); fig.innerHTML = trapSVG(r.angles, r.par, r.computed); box.append(fig);
+      const a=el("div","ans"); a.append(el("small",null,r.title), dirOf(el("div",null,r.answer), r.answer)); box.append(a);
+      const wrap=el("div","proofwrap"), tb=document.createElement("table"); tb.className="proof";
+      const hr=document.createElement("tr"); [ "#", W.claim, W.reason ].forEach(h=>hr.append(el("th",null,h)));
+      const th=document.createElement("thead"); th.append(hr); tb.append(th);
+      const body=document.createElement("tbody");
+      r.rows.forEach(([c,why],i)=>{ const tr=document.createElement("tr");
+        tr.append(el("td","n",String(i+1)), dirOf(el("td","claim",c), c), dirOf(el("td",null,why), why)); body.append(tr); });
+      tb.append(body); wrap.append(tb); box.append(wrap); out.append(box);
+      out.hidden = $("geoPanel").hidden;
+      if (!quiet) out.scrollIntoView({behavior:"smooth",block:"start"});
+      return;
+    }
     for (const [k,en,he] of s.f) { const x=parseFloat($("g_"+k).value); if (!(x>0)) throw T("positive", pick(en,he)); v[k]=x; }
     const uk=$("unit").value, unit = uk ? pick(...UNITS[uk]) : "";
     for (const [name,formula,sub,value,pow,piK] of s.calc(v)) {
