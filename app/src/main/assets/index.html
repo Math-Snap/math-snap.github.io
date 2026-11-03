@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Math Snap</title>
+<style>
+:root{
+  --paper:#f7f9fc; --grid:#e3e9f3; --ink:#1a2233; --muted:#5d6b82;
+  --pen:#2346d6; --on-pen:#ffffff; --pen-soft:#e6ebff; --card:#ffffff; --line:#cfd8e6;
+  --ok:#0f7a4a; --ok-soft:#e3f5ec; --warn:#a33a1c; --warn-soft:#fdebe5;
+  --sans:Roboto,system-ui,sans-serif; --mono:ui-monospace,"Roboto Mono","Droid Sans Mono",monospace;
+}
+@media (prefers-color-scheme:dark){:root{
+  --paper:#11151d; --grid:#1a202c; --ink:#e7ecf5; --muted:#97a3b8;
+  --pen:#8da2ff; --on-pen:#0b0f1a; --pen-soft:#20284a; --card:#171c26; --line:#2b3446;
+  --ok:#5fd39b; --ok-soft:#14302a; --warn:#ff9a7a; --warn-soft:#3a1d16; color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background-color:var(--paper);color:var(--ink);font:16px/1.5 Roboto,system-ui,sans-serif;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px;-webkit-tap-highlight-color:transparent}
+.wrap{max-width:640px;margin:0 auto;padding:18px 16px 40px;display:flex;flex-direction:column;gap:14px}
+h1{margin:0;font-size:32px;line-height:1;font-weight:800;letter-spacing:-.02em}
+h1 span{color:var(--pen)}
+.sub{margin:4px 0 0;color:var(--muted)}
+.tabs{display:grid;grid-template-columns:1fr 1fr;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:4px;gap:4px}
+.tabs button{border:0;background:none;color:var(--muted);font:600 16px/1 var(--sans);padding:12px;border-radius:7px}
+.tabs button[aria-selected="true"]{background:var(--pen);color:var(--on-pen)}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{border:0;border-radius:10px;padding:16px 12px;font:700 16px/1 var(--sans);background:var(--pen);color:var(--on-pen);display:flex;align-items:center;justify-content:center;gap:8px}
+.btn.alt{background:var(--pen-soft);color:var(--pen)}
+.btn:disabled{opacity:.5}
+.btn svg{width:22px;height:22px;flex:none}
+.lbl{font:700 12px/1 var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+textarea,input,select{width:100%;border:1px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);font:17px/1.5 var(--mono);padding:12px}
+textarea{min-height:96px;resize:vertical}
+select{font-family:inherit}
+.status{color:var(--muted);font-style:italic;margin:0}
+.result{display:flex;flex-direction:column;gap:10px}
+.prob{font:600 15px/1.4 var(--mono);color:var(--muted);overflow-wrap:anywhere}
+.ans{background:var(--ok-soft);border:1px solid var(--ok);border-radius:10px;padding:12px 14px}
+.ans small{display:block;font:700 11px/1 var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ok);margin-bottom:6px}
+.ans div{font:700 20px/1.4 var(--mono);overflow-wrap:anywhere}
+.err{background:var(--warn-soft);border:1px solid var(--warn);color:var(--warn);border-radius:10px;padding:12px 14px}
+.steps{margin:0;padding:0;list-style:none;font:15px/1.6 var(--mono);display:flex;flex-direction:column;gap:6px}
+.steps li{overflow-wrap:anywhere;white-space:pre-wrap}
+.ex{font-size:13px;color:var(--muted);margin:0}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fields label{display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--muted)}
+.hint{font-size:14px;color:var(--muted);margin:0}
+button:focus-visible,textarea:focus,input:focus,select:focus{outline:2px solid var(--pen);outline-offset:1px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Math <span>Snap</span></h1>
+    <p class="sub">Snap a math problem or type it. Works offline.</p>
+  </header>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" id="tabSolve" aria-selected="true">Solve</button>
+    <button role="tab" id="tabGeo" aria-selected="false">Geometry</button>
+  </div>
+
+  <!-- SOLVE -->
+  <section id="solvePanel" class="panel">
+    <div class="row">
+      <button class="btn" id="camera" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+        Take photo</button>
+      <button class="btn alt" id="gallery" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 17-5-5-9 8"/></svg>
+        Gallery</button>
+    </div>
+    <p class="status" id="ocrStatus" hidden></p>
+    <label class="lbl" for="problem">Problem (one per line, fix anything misread)</label>
+    <textarea id="problem" spellcheck="false" autocapitalize="off" autocomplete="off">3/4 + 2/3
+2x + 5 = 17</textarea>
+    <p class="ex">Examples: 12 ÷ 4 × 3 · 1 1/2 + 2 3/4 · 3(x − 2) = 2x + 4 · x² − 5x + 6 = 0 · 2x + 3(x − 1) · 20% of 80</p>
+    <button class="btn" id="solve" type="button">Solve it</button>
+  </section>
+
+  <section id="results" class="panel" aria-live="polite"></section>
+
+  <!-- GEOMETRY -->
+  <section id="geoPanel" class="panel" hidden>
+    <label class="lbl" for="shape">Shape</label>
+    <select id="shape"></select>
+    <div class="fields" id="geoFields"></div>
+    <label class="lbl" for="unit">Units</label>
+    <select id="unit"><option>cm</option><option>m</option><option>mm</option><option>km</option><option>in</option><option>ft</option><option value="">no units</option></select>
+    <button class="btn" id="calc" type="button">Calculate</button>
+  </section>
+  <section id="geoResults" class="panel" hidden aria-live="polite"></section>
+</div>
+
+<script src="math.js"></script>
+<script src="solver.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const hasBridge = typeof window.Android !== "undefined";
+
+// ---------- tabs ----------
+function tab(which){
+  const geo = which === "geo";
+  $("tabSolve").setAttribute("aria-selected", String(!geo));
+  $("tabGeo").setAttribute("aria-selected", String(geo));
+  $("solvePanel").hidden = geo; $("results").hidden = geo || !$("results").childElementCount;
+  $("geoPanel").hidden = !geo; $("geoResults").hidden = !geo || !$("geoResults").childElementCount;
+}
+$("tabSolve").onclick = () => tab("solve");
+$("tabGeo").onclick = () => tab("geo");
+
+// ---------- photo ----------
+function setStatus(t, isErr){ const s=$("ocrStatus"); s.hidden=!t; s.textContent=t||""; s.style.color=isErr?"var(--warn)":""; }
+$("camera").onclick = () => { if (hasBridge) Android.takePhoto(); else setStatus("The camera only works in the app.", true); };
+$("gallery").onclick = () => { if (hasBridge) Android.pickPhoto(); else setStatus("The gallery only works in the app.", true); };
+window.onPhotoStart = () => setStatus("Reading the photo…");
+window.onPhotoCancelled = () => setStatus("");
+window.onOcrError = msg => setStatus(msg, true);
+window.onOcr = text => {
+  const lines = String(text).split("\n").map(l => l.trim()).filter(l => /\d|[a-z]\s*=|=/i.test(l));
+  if (!lines.length) { setStatus("I couldn't find any math in that photo. Try again closer, with good light, or type it.", true); return; }
+  $("problem").value = lines.join("\n");
+  setStatus("Check the text below and fix anything that was misread. Then tap Solve it.");
+  solveNow();
+};
+
+// ---------- solve ----------
+function el(tag, cls, text){ const e=document.createElement(tag); if(cls) e.className=cls; if(text!=null) e.textContent=text; return e; }
+function solveNow(){
+  const out = $("results"); out.innerHTML = "";
+  let res;
+  try { res = Solver.solve($("problem").value); } catch(e) { res = [{problem:"", error:"Something went wrong. Check the problem and try again."}]; }
+  if (!res.length) { out.append(el("p","hint","Type a problem or take a photo first.")); out.hidden=false; return; }
+  res.forEach((r, i) => {
+    const box = el("div","result");
+    box.append(el("div","prob",(res.length>1 ? "("+String.fromCharCode(97+i)+")  " : "") + r.problem));
+    if (r.error) box.append(el("div","err",r.error));
+    else {
+      const a = el("div","ans"); a.append(el("small",null,"Answer"), el("div",null,r.answer)); box.append(a);
+      if (r.steps && r.steps.length > 1) { const ol = el("ol","steps"); r.steps.forEach(s => ol.append(el("li",null,s))); box.append(ol); }
+    }
+    if (i) out.append(document.createElement("hr"));
+    out.append(box);
+  });
+  out.hidden = false;
+  out.scrollIntoView({behavior:"smooth", block:"start"});
+}
+$("solve").onclick = solveNow;
+
+// ---------- geometry ----------
+const R = v => { let r = Math.round(v*10000)/10000; return String(Object.is(r,-0)?0:r); };
+const SH = {
+  rect:{label:"Rectangle", f:[["a","Length"],["b","Width"]], calc:v=>[
+    ["Area","length × width",`${v.a} × ${v.b}`,v.a*v.b,2],
+    ["Perimeter","2 × (length + width)",`2 × (${v.a} + ${v.b})`,2*(v.a+v.b),1],
+    ["Diagonal","√(length² + width²)",`√(${v.a}² + ${v.b}²)`,Math.hypot(v.a,v.b),1]]},
+  square:{label:"Square", f:[["a","Side"]], calc:v=>[
+    ["Area","side²",`${v.a}²`,v.a*v.a,2],
+    ["Perimeter","4 × side",`4 × ${v.a}`,4*v.a,1],
+    ["Diagonal","side × √2",`${v.a} × √2`,v.a*Math.SQRT2,1]]},
+  tri:{label:"Triangle (base & height)", f:[["b","Base"],["h","Height"]], calc:v=>[
+    ["Area","base × height ÷ 2",`${v.b} × ${v.h} ÷ 2`,v.b*v.h/2,2]]},
+  tri3:{label:"Triangle (3 sides)", f:[["a","Side a"],["b","Side b"],["c","Side c"]], calc:v=>{
+    if (v.a+v.b<=v.c||v.a+v.c<=v.b||v.b+v.c<=v.a) throw "These three sides can't make a triangle (two sides must add up to more than the third).";
+    const s=(v.a+v.b+v.c)/2; return [
+    ["Perimeter","a + b + c",`${v.a} + ${v.b} + ${v.c}`,v.a+v.b+v.c,1],
+    ["Half perimeter s","(a + b + c) ÷ 2",`${R(v.a+v.b+v.c)} ÷ 2`,s,1],
+    ["Area (Heron)","√(s(s−a)(s−b)(s−c))",`√(${R(s)} × ${R(s-v.a)} × ${R(s-v.b)} × ${R(s-v.c)})`,Math.sqrt(s*(s-v.a)*(s-v.b)*(s-v.c)),2]];}},
+  right:{label:"Right triangle (2 legs)", f:[["a","Leg a"],["b","Leg b"]], calc:v=>{const c=Math.hypot(v.a,v.b); return [
+    ["Hypotenuse (Pythagoras)","√(a² + b²)",`√(${v.a}² + ${v.b}²) = √${R(v.a*v.a+v.b*v.b)}`,c,1],
+    ["Area","a × b ÷ 2",`${v.a} × ${v.b} ÷ 2`,v.a*v.b/2,2],
+    ["Perimeter","a + b + c",`${v.a} + ${v.b} + ${R(c)}`,v.a+v.b+c,1]];}},
+  rightLeg:{label:"Right triangle (find a leg)", f:[["c","Hypotenuse"],["a","Known leg"]], calc:v=>{
+    if (v.a>=v.c) throw "The hypotenuse must be the longest side.";
+    return [["Missing leg (Pythagoras)","√(c² − a²)",`√(${v.c}² − ${v.a}²) = √${R(v.c*v.c-v.a*v.a)}`,Math.sqrt(v.c*v.c-v.a*v.a),1]];}},
+  angles:{label:"Triangle (find 3rd angle)", f:[["A","Angle A (°)"],["B","Angle B (°)"]], noUnit:true, calc:v=>{
+    const C=180-v.A-v.B; if (C<=0) throw "Those two angles add up to 180° or more, so they can't be in one triangle.";
+    return [["Angle C","180° − A − B",`180 − ${v.A} − ${v.B}`,C,"°"]];}},
+  circle:{label:"Circle", f:[["r","Radius"]], calc:v=>[
+    ["Diameter","2 × r",`2 × ${v.r}`,2*v.r,1],
+    ["Area","π × r²",`π × ${v.r}²`,Math.PI*v.r*v.r,2,v.r*v.r],
+    ["Circumference","2 × π × r",`2 × π × ${v.r}`,2*Math.PI*v.r,1,2*v.r]]},
+  trap:{label:"Trapezoid", f:[["a","Top side"],["b","Bottom side"],["h","Height"]], calc:v=>[
+    ["Area","(a + b) × h ÷ 2",`(${v.a} + ${v.b}) × ${v.h} ÷ 2`,(v.a+v.b)*v.h/2,2]]},
+  para:{label:"Parallelogram", f:[["b","Base"],["h","Height"]], calc:v=>[
+    ["Area","base × height",`${v.b} × ${v.h}`,v.b*v.h,2]]},
+  cube:{label:"Cube", f:[["a","Side"]], calc:v=>[
+    ["Volume","side³",`${v.a}³`,v.a**3,3],
+    ["Surface area","6 × side²",`6 × ${v.a}²`,6*v.a*v.a,2]]},
+  box:{label:"Box (cuboid)", f:[["l","Length"],["w","Width"],["h","Height"]], calc:v=>[
+    ["Volume","l × w × h",`${v.l} × ${v.w} × ${v.h}`,v.l*v.w*v.h,3],
+    ["Surface area","2 × (lw + lh + wh)",`2 × (${v.l}×${v.w} + ${v.l}×${v.h} + ${v.w}×${v.h})`,2*(v.l*v.w+v.l*v.h+v.w*v.h),2]]},
+  cyl:{label:"Cylinder", f:[["r","Radius"],["h","Height"]], calc:v=>[
+    ["Volume","π × r² × h",`π × ${v.r}² × ${v.h}`,Math.PI*v.r*v.r*v.h,3,v.r*v.r*v.h],
+    ["Surface area","2πr² + 2πrh",`2 × π × ${v.r}² + 2 × π × ${v.r} × ${v.h}`,2*Math.PI*v.r*(v.r+v.h),2,2*v.r*(v.r+v.h)]]},
+  cone:{label:"Cone", f:[["r","Radius"],["h","Height"]], calc:v=>[
+    ["Volume","π × r² × h ÷ 3",`π × ${v.r}² × ${v.h} ÷ 3`,Math.PI*v.r*v.r*v.h/3,3,v.r*v.r*v.h/3]]},
+  sphere:{label:"Sphere", f:[["r","Radius"]], calc:v=>[
+    ["Volume","4/3 × π × r³",`4/3 × π × ${v.r}³`,4/3*Math.PI*v.r**3,3,4/3*v.r**3],
+    ["Surface area","4 × π × r²",`4 × π × ${v.r}²`,4*Math.PI*v.r*v.r,2,4*v.r*v.r]]},
+};
+const EX = {a:5,b:3,c:4,h:4,r:3,l:5,w:3,A:60,B:45};
+for (const [k,s] of Object.entries(SH)) { const o=document.createElement("option"); o.value=k; o.textContent=s.label; $("shape").append(o); }
+function buildFields(){
+  const s=SH[$("shape").value], box=$("geoFields"); box.innerHTML="";
+  s.f.forEach(([k,name])=>{ const l=el("label",null,name); const i=document.createElement("input");
+    i.type="number"; i.inputMode="decimal"; i.id="g_"+k; i.min="0"; i.step="any"; i.value=EX[k]; l.append(i); box.append(l); });
+  if (k_is_rightLeg()) { $("g_c").value=5; $("g_a").value=3; }
+}
+function k_is_rightLeg(){ return $("shape").value==="rightLeg"; }
+$("shape").onchange = () => { buildFields(); $("geoResults").hidden=true; };
+function calcGeo(){
+  const s=SH[$("shape").value], v={}, out=$("geoResults"); out.innerHTML="";
+  try {
+    for (const [k,name] of s.f) { const x=parseFloat($("g_"+k).value); if (!(x>0)) throw name+" must be a number bigger than 0."; v[k]=x; }
+    const unit=$("unit").value;
+    for (const [name,formula,sub,value,pow,piK] of s.calc(v)) {
+      const u = pow==="°" ? "°" : (!unit||s.noUnit) ? "" : " "+unit+(pow===2?"²":pow===3?"³":"");
+      const box=el("div","result");
+      const a=el("div","ans"); a.append(el("small",null,name), el("div",null,R(value)+u)); box.append(a);
+      const ol=el("ol","steps");
+      ol.append(el("li",null,name+" = "+formula));
+      ol.append(el("li",null,"= "+sub));
+      ol.append(el("li",null,"= "+(piK!=null ? R(piK)+"π ≈ " : "")+R(value)+u));
+      box.append(ol); out.append(box);
+    }
+  } catch(e) { out.append(el("div","err",String(e))); }
+  out.hidden=false; out.scrollIntoView({behavior:"smooth",block:"start"});
+}
+$("calc").onclick = calcGeo;
+buildFields();
+
+// first screen shows a worked example
+solveNow();
+window.scrollTo(0,0);
+</script>
+</body>
+</html>

@@ -11,13 +11,27 @@ android {
         applicationId = "com.mathsnap"
         minSdk = 24
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "2.0"
+    }
+
+    // A fixed signing key, so each new build installs as an update over the last one.
+    signingConfigs {
+        create("stable") {
+            storeFile = file("mathsnap.keystore")
+            storePassword = "mathsnap"
+            keyAlias = "mathsnap"
+            keyPassword = "mathsnap"
+        }
     }
 
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("stable")
+        }
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("stable")
         }
     }
     compileOptions {
@@ -33,5 +47,6 @@ dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")
-    implementation("androidx.exifinterface:exifinterface:1.3.7")
+    // Google's text scanner, runs fully on the phone (no internet)
+    implementation("com.google.mlkit:text-recognition:16.0.1")
 }

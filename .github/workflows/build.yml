@@ -22,6 +22,14 @@ jobs:
         with:
           gradle-version: "8.7"
 
+      - name: Download the math library
+        run: |
+          mkdir -p app/src/main/assets
+          curl -fsSL -o app/src/main/assets/math.js https://cdn.jsdelivr.net/npm/mathjs@12.4.3/lib/browser/math.js
+
+      - name: Test the solver
+        run: node tests/solver.test.js
+
       - name: Build the APK
         run: gradle assembleDebug
 
