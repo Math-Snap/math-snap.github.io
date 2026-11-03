@@ -137,12 +137,73 @@ table.proof{width:100%;border-collapse:collapse;font-size:14px;line-height:1.5}
 
 /* bottom navigation */
 .bottomnav{position:fixed;inset:auto 0 0 0;z-index:10;background:var(--surface);box-shadow:0 -1px 0 var(--line),0 -8px 24px rgba(20,27,45,.06);
-  display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px max(16px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+  display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:8px max(12px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
 .bottomnav button{border:0;background:none;color:var(--muted);font:600 13px/1 var(--sans);display:flex;flex-direction:column;align-items:center;gap:6px;padding:6px 0}
 .bottomnav .pill{width:64px;height:32px;border-radius:999px;display:grid;place-items:center;transition:background .2s ease}
 .bottomnav svg{width:22px;height:22px}
 .bottomnav button[aria-selected="true"]{color:var(--pen)}
 .bottomnav button[aria-selected="true"] .pill{background:var(--pen-soft)}
+/* account */
+.perks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.perks li{display:flex;align-items:center;gap:12px;font-size:15px}
+.perks .ic{width:36px;height:36px;border-radius:12px;background:var(--pen-soft);color:var(--pen);display:grid;place-items:center;flex:none}
+.perks svg{width:20px;height:20px}
+.btn.google{background:var(--surface);color:var(--ink);border:1.5px solid var(--line)}
+.btn.google svg{width:20px;height:20px}
+.btn.quiet{background:var(--pen-soft);color:var(--pen)}
+.btn:disabled{opacity:.55}
+.divider{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
+.authform{display:flex;flex-direction:column;gap:10px}
+.authform input{font-family:var(--sans);font-size:17px;text-align:start}
+.linkbtn{border:0;background:none;color:var(--pen);font:600 14px/1.3 var(--sans);padding:6px 0;text-align:start}
+.linkrow{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.profile{display:flex;align-items:center;gap:12px}
+.avatar{width:48px;height:48px;border-radius:50%;background:var(--pen);color:var(--on-pen);display:grid;place-items:center;font:700 20px/1 var(--sans);flex:none}
+.profile .who{flex:1;min-width:0}
+.profile .who b{display:block;font-size:17px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.profile .who span{display:block;color:var(--muted);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.syncpill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:5px 10px;border-radius:999px;background:var(--ok-soft);color:var(--ok)}
+.syncpill.wait{background:var(--surface-2);color:var(--muted)}
+.syncpill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.setrow{display:flex;align-items:center;gap:12px;background:var(--surface-2);border-radius:16px;padding:12px 14px}
+.setrow .txt{flex:1;min-width:0}
+.setrow b{display:block;font-size:15px;font-weight:600}
+.setrow span{display:block;color:var(--muted);font-size:13px;line-height:1.4}
+.switch{position:relative;width:52px;height:32px;flex:none}
+.switch input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer;z-index:1;width:100%;height:100%;padding:0}
+.switch .track{position:absolute;inset:0;border-radius:999px;background:var(--line);transition:background .2s ease}
+.switch .track::after{content:"";position:absolute;top:4px;inset-inline-start:4px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s ease}
+.switch input:checked + .track{background:var(--pen)}
+.switch input:checked + .track::after{transform:translateX(20px)}
+[dir="rtl"] .switch input:checked + .track::after{transform:translateX(-20px)}
+.switch input:focus-visible + .track{outline:2px solid var(--pen);outline-offset:2px}
+.hlist{display:flex;flex-direction:column;gap:10px}
+.hitem{border:1px solid var(--line);border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.hhead{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;font-weight:500}
+.hhead svg{width:16px;height:16px;color:var(--pen)}
+.hhead .sp{flex:1}
+.star{border:0;background:none;padding:4px;color:var(--muted);display:grid;place-items:center}
+.star svg{width:22px;height:22px}
+.star[aria-pressed="true"]{color:#E5A100}
+.star[aria-pressed="true"] svg{fill:currentColor}
+.hin{font:500 15px/1.5 var(--mono);overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-line}
+.hin.he{font-family:var(--sans)}
+.hans{font:700 15px/1.6 var(--mono);overflow-wrap:anywhere}
+.hans span{background-image:linear-gradient(transparent 58%,var(--mark) 58%,var(--mark) 90%,transparent 90%);-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.hnote{background:var(--surface-2);border-radius:12px;padding:8px 10px;font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
+.hact{display:flex;gap:6px;flex-wrap:wrap}
+.hact button{border:0;background:var(--surface-2);color:var(--ink);border-radius:999px;padding:7px 12px;font:600 13px/1 var(--sans)}
+.hact button.danger{color:var(--warn)}
+.hact button.primary{background:var(--pen-soft);color:var(--pen)}
+.hedit{display:flex;flex-direction:column;gap:8px}
+.hedit textarea{min-height:70px;font-family:var(--sans);font-size:15px}
+.empty{color:var(--muted);text-align:center;padding:18px 8px;font-size:14px}
+.savebar{display:flex;align-items:center;gap:10px;background:var(--ok-soft);color:var(--ok);border-radius:14px;padding:8px 8px 8px 12px;font-size:14px;font-weight:600}
+[dir="rtl"] .savebar{padding:8px 12px 8px 8px}
+.savebar .sp{flex:1}
+.savebar .star{color:var(--ok)}
+.savebar.out{background:var(--surface-2);color:var(--muted);font-weight:500}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -206,11 +267,15 @@ table.proof{width:100%;border-collapse:collapse;font-size:14px;line-height:1.5}
     <button class="btn" id="calc" type="button"><span data-t="calc"></span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
   </section>
   <section id="geoResults" class="panel" hidden aria-live="polite"></section>
+
+  <!-- MINE: account, history, favorites -->
+  <div id="mePanel" hidden style="display:flex;flex-direction:column;gap:16px"></div>
 </div>
 
 <nav class="bottomnav" role="tablist">
   <button role="tab" id="tabSolve" aria-selected="true" type="button"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 7h8M8 12h2M14 12h2M8 16h2M14 16h2"/></svg></span><span data-t="tabSolve"></span></button>
   <button role="tab" id="tabGeo" aria-selected="false" type="button"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18L12 4z"/><path d="M12 20v-5"/></svg></span><span data-t="tabGeo"></span></button>
+  <button role="tab" id="tabMe" aria-selected="false" type="button"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span><span data-t="tabMe"></span></button>
 </nav>
 
 <script src="math.js"></script>
@@ -225,6 +290,23 @@ const FSI = s => "⁨" + s + "⁩", LRI = s => "⁦" + s + "⁩";
 const UI = {
   en: {
     sub:"Snap it, type it, solved step by step",
+    tabMe:"Mine",
+    meTitle:"My account", meSub:"Sign in to save your problems and sync them between phones",
+    perkHistory:"Every problem you solve is saved", perkSync:"The same history on every phone", perkFav:"Star important problems and add notes",
+    google:"Continue with Google", orEmail:"or with email", name:"Name (optional)", email:"Email", password:"Password",
+    signIn:"Sign in", signUp:"Create account", toUp:"No account yet? Create one", toIn:"Already have an account? Sign in", forgot:"Forgot password?",
+    appOnlyAcc:"Signing in works in the Math Snap app.", signOut:"Sign out",
+    synced:"Synced", pendingN:n=>"Waiting to sync ("+n+")", offlineSync:"Offline, will sync later", pausedSync:"Sync paused until Wi-Fi",
+    wifiTitle:"Sync on Wi-Fi only", wifiSub:"Saves mobile data. Your problems wait on the phone and sync when you're on Wi-Fi.",
+    myProblems:"My problems", all:"All", favs:"Favorites", emptyAll:"No saved problems yet. Every problem you solve will be saved here.",
+    emptyFav:"Tap the star on a problem to add it to your favorites.", open:"Open", note:"Note", addNote:"Add note", del:"Delete", sure:"Delete?", yes:"Yes", no:"No",
+    save:"Save", cancel:"Cancel", notePh:"For example: remember to flip the sign!", today:"Today", yesterday:"Yesterday", waiting:"waiting to sync",
+    savedBar:"Saved to your history", addFav:"Add to favorites", favOn:"In favorites", signInToSave:"Sign in to save your problems",
+    kindSolve:"Problem", kindGeo:"Geometry",
+    err_bad_email:"That email address isn't valid.", err_bad_password:"The email or password is wrong.", err_no_user:"There's no account with this email. You can create one.",
+    err_email_in_use:"There's already an account with this email. Try signing in.", err_weak_password:"The password is too short. Use at least 6 characters.",
+    err_network:"No internet connection. Try again when you're online.", err_google:"Google sign-in didn't work. Try again.", err_other:"Something went wrong. Try again.",
+    info_reset_sent:"We sent you an email with a link to reset your password.", needEmail:"Enter your email and password.", needEmailOnly:"Enter your email first.",
     solveTitle:"New problem", solveSub:"Take a photo, pick one from the gallery, or type it", tryOne:"Try one:",
     geoTitle:"Geometry", geoSub:"Write the givens and get a proof with claims and reasons", reminder:"Reminder: definitions and theorems", tabSolve:"Solve", tabGeo:"Geometry",
     camera:"Take photo", gallery:"Gallery", problemLbl:"Problem (one per line, fix anything misread)",
@@ -247,6 +329,23 @@ const UI = {
   },
   he: {
     sub:"מצלמים, מקלידים, ומקבלים פתרון שלב אחרי שלב",
+    tabMe:"שלי",
+    meTitle:"החשבון שלי", meSub:"התחברו כדי לשמור את התרגילים ולסנכרן אותם בין טלפונים",
+    perkHistory:"כל תרגיל שפותרים נשמר", perkSync:"אותה היסטוריה בכל טלפון", perkFav:"כוכב לתרגילים חשובים, והערות",
+    google:"המשך עם Google", orEmail:"או עם אימייל", name:"שם (לא חובה)", email:"אימייל", password:"סיסמה",
+    signIn:"התחברות", signUp:"יצירת חשבון", toUp:"אין לך חשבון? ליצירת חשבון", toIn:"כבר יש לך חשבון? להתחברות", forgot:"שכחתי סיסמה",
+    appOnlyAcc:"ההתחברות עובדת באפליקציה Math Snap.", signOut:"התנתקות",
+    synced:"מסונכרן", pendingN:n=>"ממתין לסנכרון ("+n+")", offlineSync:"אין חיבור, יסונכרן אחר כך", pausedSync:"הסנכרון מחכה ל-Wi-Fi",
+    wifiTitle:"סנכרון רק ב-Wi-Fi", wifiSub:"חוסך גלישה. התרגילים נשמרים בטלפון ומסתנכרנים כשיש Wi-Fi.",
+    myProblems:"התרגילים שלי", all:"הכול", favs:"מועדפים", emptyAll:"עוד אין תרגילים שמורים. כל תרגיל שתפתרו יישמר כאן אוטומטית.",
+    emptyFav:"לחצו על הכוכב ליד תרגיל כדי להוסיף אותו למועדפים.", open:"פתח", note:"הערה", addNote:"הוסף הערה", del:"מחק", sure:"למחוק?", yes:"כן", no:"לא",
+    save:"שמור", cancel:"ביטול", notePh:"למשל: לזכור להפוך את הסימן!", today:"היום", yesterday:"אתמול", waiting:"ממתין לסנכרון",
+    savedBar:"נשמר בהיסטוריה", addFav:"הוסף למועדפים", favOn:"במועדפים", signInToSave:"התחברו כדי לשמור את התרגילים",
+    kindSolve:"תרגיל", kindGeo:"גאומטריה",
+    err_bad_email:"כתובת האימייל לא תקינה.", err_bad_password:"האימייל או הסיסמה לא נכונים.", err_no_user:"אין חשבון עם האימייל הזה. אפשר ליצור חשבון חדש.",
+    err_email_in_use:"כבר יש חשבון עם האימייל הזה. נסו להתחבר.", err_weak_password:"הסיסמה קצרה מדי. צריך לפחות 6 תווים.",
+    err_network:"אין חיבור לאינטרנט. נסו שוב כשיש חיבור.", err_google:"ההתחברות עם Google לא הצליחה. נסו שוב.", err_other:"משהו השתבש. נסו שוב.",
+    info_reset_sent:"שלחנו לאימייל קישור לאיפוס הסיסמה.", needEmail:"כתבו אימייל וסיסמה.", needEmailOnly:"כתבו קודם את האימייל.",
     solveTitle:"תרגיל חדש", solveSub:"צלמו, בחרו מהגלריה או הקלידו", tryOne:"נסו דוגמה:",
     geoTitle:"גאומטריה", geoSub:"כתבו את הנתונים וקבלו הוכחה עם טענה ונימוק", reminder:"תזכורת: הגדרות ומשפטים", tabSolve:"פתרון", tabGeo:"גאומטריה",
     camera:"צילום", gallery:"גלריה", problemLbl:"התרגיל (אחד בכל שורה, תקנו מה שנקרא לא נכון)",
@@ -285,6 +384,8 @@ function setLang(l){
   document.querySelectorAll("[data-t]").forEach(e => e.textContent = T(e.dataset.t));
   $("geoText").placeholder = T("givensPh");
   fillShapes(); fillUnits(); fillFormulas(); renderExamples(); renderToolChips();
+  if (typeof renderMe === "function" && !$("mePanel").hidden) renderMe();
+  if (typeof refreshSaveBars === "function") refreshSaveBars();
   if (statusKey) { const f=photoFor; photoFor="solve"; setStatus(statusKey, statusBad); photoFor=f; }
   if (geoKey) setGeoStatus(geoKey, geoBad);
   if (!$("geoDetected").hidden && lastDetected) showDetected(lastDetected);
@@ -296,15 +397,18 @@ $("langHe").onclick = () => setLang("he");
 
 // ---------- tabs ----------
 function tab(which){
-  const geo = which === "geo";
-  $("tabSolve").setAttribute("aria-selected", String(!geo));
+  const geo = which === "geo", me = which === "me", sol = which === "solve";
+  $("tabSolve").setAttribute("aria-selected", String(sol));
   $("tabGeo").setAttribute("aria-selected", String(geo));
-  $("solvePanel").hidden = geo; $("results").hidden = geo || !$("results").childElementCount;
+  $("tabMe").setAttribute("aria-selected", String(me));
+  $("solvePanel").hidden = !sol; $("results").hidden = !sol || !$("results").childElementCount;
   $("geoPanel").hidden = !geo; $("toolPanel").hidden = !geo; $("geoResults").hidden = !geo || !$("geoResults").childElementCount;
+  $("mePanel").hidden = !me; if (me) renderMe();
   window.scrollTo({top:0, behavior:"smooth"});
 }
 $("tabSolve").onclick = () => tab("solve");
 $("tabGeo").onclick = () => tab("geo");
+$("tabMe").onclick = () => tab("me");
 
 // ---------- photo ----------
 let statusKey = "", statusBad = false, photoFor = "solve", geoKey = "", geoBad = false;
@@ -363,9 +467,9 @@ function chip(text, cls, onClick, pressed){
 }
 function renderExamples(){
   const sc = $("solveChips"); sc.innerHTML = "";
-  SOLVE_EX.forEach(x => { const c = chip(x, "math", () => { $("problem").value = x; solveNow(); }); c.dir = "ltr"; sc.append(c); });
+  SOLVE_EX.forEach(x => { const c = chip(x, "math", () => { $("problem").value = x; solveNow(false, true); }); c.dir = "ltr"; sc.append(c); });
   const gc = $("geoChips"); gc.innerHTML = "";
-  T("givensExList").split("\n").forEach(x => gc.append(chip(x, "", () => { $("geoText").value = x; readGivens(); }, null)));
+  T("givensExList").split("\n").forEach(x => gc.append(chip(x, "", () => { $("geoText").value = x; skipSave = true; readGivens(); }, null)));
 }
 function renderToolChips(){
   const cur = $("shape").value, curG = SH[cur] ? SH[cur].g : undefined;
@@ -391,7 +495,7 @@ function proofTable(rows){
     const nc = el("td","n"); nc.dataset.n = String(i+1); tr.append(nc, dirOf(el("td", HEB.test(c) ? "claim he" : "claim", c), c), dirOf(el("td",null,why), why)); body.append(tr); });
   tb.append(body); wrap.append(tb); return wrap;
 }
-function solveNow(quiet){
+function solveNow(quiet, noSave){
   const out = $("results"); out.innerHTML = "";
   let res;
   try { res = Solver.solve($("problem").value, lang); } catch(e) { res = [{problem:"", error:T("crash")}]; }
@@ -415,6 +519,12 @@ function solveNow(quiet){
     }
     out.append(box);
   });
+  if (!quiet) {
+    const ok = res.filter(r => !r.error);
+    let id = null;
+    if (ok.length && !noSave) id = saveProblem({kind:"solve", input:$("problem").value.trim(), answer: ok.map(r => plain(r.answer)).join("   ;   ")});
+    if (ok.length) out.prepend(saveBar(id));
+  }
   out.hidden = $("solvePanel").hidden;
   if (!quiet) out.scrollIntoView({behavior:"smooth", block:"start"});
 }
@@ -914,6 +1024,7 @@ function calcGeo(quiet){
       const fig=el("div","fig"); fig.innerHTML = r.svg !== undefined ? r.svg : trapSVG(r.angles, r.par, r.computed); box.append(fig);
       const a=el("div","ans"); a.append(el("small",null,r.title), dirOf(el("div",null,r.answer), r.answer)); box.append(a);
       box.append(proofTable(r.rows)); out.append(box);
+      afterGeo(quiet, plain(r.answer));
       out.hidden = $("geoPanel").hidden;
       if (!quiet) out.scrollIntoView({behavior:"smooth",block:"start"});
       return;
@@ -933,7 +1044,8 @@ function calcGeo(quiet){
       ol.append(dirOf(el("li",null,l3), u));
       box.append(ol); out.append(box);
     }
-  } catch(e) { out.append(dirOf(el("div","err",String(e)), String(e))); }
+    afterGeo(quiet, [...out.querySelectorAll(".ans")].map(a => a.querySelector("small").textContent + ": " + plain(a.querySelector("div").textContent)).join("   ;   "));
+  } catch(e) { skipSave = false; out.append(dirOf(el("div","err",String(e)), String(e))); }
   out.hidden = $("geoPanel").hidden;
   if (!quiet) out.scrollIntoView({behavior:"smooth",block:"start"});
 }
@@ -1138,9 +1250,214 @@ function onGeoOcr(text, items){
 }
 
 
+// ---------- account: sign in, synced history, favorites, notes ----------
+// Sign-in and syncing live in the Android app (Account.kt). The page only shows them.
+const ACC = hasBridge && typeof Android.authState === "function";
+let account = null, history = [], sync = {}, meView = "all", authMode = "in", authMsg = null, busy = false, openNote = null, confirmDel = null, skipSave = false;
+const plain = x => String(x).replace(/[⁦-⁩]/g, "");
+const ICON = {
+  calc:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 7h8M8 12h2M14 12h2M8 16h2M14 16h2"/></svg>',
+  tri:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18L12 4z"/></svg>',
+  star:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg>',
+  hist:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 3"/></svg>',
+  sync:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>',
+  google:'<svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.5 12.2c0-.8-.1-1.5-.2-2.2H12v4.2h5.9a5 5 0 0 1-2.2 3.3v2.7h3.5c2.1-1.9 3.3-4.7 3.3-8z"/><path fill="#34A853" d="M12 23c3 0 5.5-1 7.3-2.7l-3.5-2.7c-1 .7-2.3 1.1-3.8 1.1-2.9 0-5.4-2-6.3-4.6H2.1v2.8A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.7 14.1a6.6 6.6 0 0 1 0-4.2V7.1H2.1a11 11 0 0 0 0 9.8z"/><path fill="#EA4335" d="M12 5.4c1.6 0 3.1.6 4.2 1.7l3.2-3.2A11 11 0 0 0 2.1 7.1l3.6 2.8C6.6 7.4 9.1 5.4 12 5.4z"/></svg>',
+};
+const svgEl = html => { const t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstChild; };
+
+window.onAuth = st => { account = st && st.signedIn ? st : null; busy = false; if (account) authMsg = null; renderMe(); refreshSaveBars(); };
+window.onAuthError = (code) => { busy = false; authMsg = { bad:true, key:"err_" + (UI.en["err_"+code] ? code : "other") }; renderMe(); };
+window.onAuthInfo = code => { busy = false; authMsg = code === "cancelled" ? null : { bad:false, key:"info_" + code }; renderMe(); };
+window.onHistory = list => { history = Array.isArray(list) ? list : []; if (!$("mePanel").hidden) renderMe(); refreshSaveBars(); };
+window.onSync = st => { Object.assign(sync, st || {}); const p = $("syncPill"); if (p) fillSyncPill(p); };
+
+function saveProblem(rec){
+  if (skipSave) { skipSave = false; return null; }
+  if (!ACC || !account) return null;
+  const last = history[0];
+  if (last && last.kind === rec.kind && last.input === rec.input) return last.id;   // same problem again: don't save twice
+  try { return Android.saveProblem(JSON.stringify(rec)) || null; } catch (e) { return null; }
+}
+function afterGeo(quiet, answer){
+  if (quiet) { skipSave = false; return; }
+  const key = $("shape").value, sh = SH[key], vals = {};
+  for (const [k] of sh.f) { const i = $("g_"+k); if (i && i.value !== "") vals[k] = i.value; }
+  const typed = $("geoText").value.trim();
+  const input = lastDetected && typed ? typed : pick(...sh.l) + "\n" + Object.entries(vals).map(([k,v]) => k + " = " + v).join(",  ");
+  const id = saveProblem({kind:"geo", input, answer, tool:key, vals:JSON.stringify(vals)});
+  $("geoResults").prepend(saveBar(id));
+}
+function setFav(id, on){ if (!ACC || !id) return; try { Android.updateProblem(id, JSON.stringify({fav:on})); } catch(e) {} const h = history.find(x => x.id === id); if (h) h.fav = on; refreshSaveBars(); }
+
+function saveBar(id){
+  const bar = el("div", "savebar"); bar.dataset.id = id || "";
+  fillSaveBar(bar); return bar;
+}
+function fillSaveBar(bar){
+  bar.innerHTML = ""; const id = bar.dataset.id;
+  if (!ACC) { bar.hidden = true; return; }
+  bar.hidden = false;
+  if (!account || !id) {
+    bar.className = "savebar out";
+    const b = el("button", "linkbtn", T("signInToSave")); b.type = "button"; b.onclick = () => tab("me");
+    bar.append(b); return;
+  }
+  bar.className = "savebar";
+  const h = history.find(x => x.id === id), fav = !!(h && h.fav);
+  bar.append(el("span", null, "✓ " + T("savedBar")), el("span", "sp"));
+  const st = el("button", "star"); st.type = "button"; st.setAttribute("aria-pressed", String(fav)); st.setAttribute("aria-label", fav ? T("favOn") : T("addFav"));
+  st.append(svgEl(ICON.star)); st.onclick = () => setFav(id, !fav);
+  bar.append(el("span", null, fav ? T("favOn") : T("addFav")), st);
+}
+function refreshSaveBars(){ document.querySelectorAll(".savebar").forEach(fillSaveBar); }
+
+function fillSyncPill(p){
+  let txt = T("synced"), wait = false;
+  if (sync.paused) { txt = T("pausedSync"); wait = true; }
+  else if (sync.pending > 0) { txt = T("pendingN", sync.pending); wait = true; }
+  else if (sync.offline) { txt = T("offlineSync"); wait = true; }
+  p.textContent = txt; p.className = "syncpill" + (wait ? " wait" : "");
+}
+function when(ms){
+  if (!ms) return "";
+  const d = new Date(ms), now = new Date(), day = 864e5;
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const hm = d.toLocaleTimeString(lang === "he" ? "he-IL" : "en-GB", {hour:"2-digit", minute:"2-digit"});
+  if (ms >= start) return T("today") + " " + hm;
+  if (ms >= start - day) return T("yesterday") + " " + hm;
+  return d.toLocaleDateString(lang === "he" ? "he-IL" : "en-GB", {day:"numeric", month:"short"});
+}
+function reopen(h){
+  if (h.kind === "geo" && h.tool && SH[h.tool]) {
+    tab("geo");
+    $("shape").value = h.tool; buildFields(false);
+    let vals = {}; try { vals = JSON.parse(h.vals || "{}"); } catch(e) {}
+    for (const [k] of SH[h.tool].f) { const i = $("g_"+k); if (i) i.value = vals[k] ?? ""; }
+    $("geoText").value = h.input.includes("\n") ? "" : h.input; lastDetected = null; $("geoDetected").hidden = true;
+    skipSave = true; calcGeo();
+  } else {
+    tab("solve"); $("problem").value = h.input; solveNow(false, true);
+  }
+}
+
+function renderMe(){
+  const box = $("mePanel"); if (!box) return;
+  box.innerHTML = "";
+  if (!account) return renderSignIn(box);
+  // profile
+  const prof = el("section", "panel");
+  const row = el("div", "profile");
+  const nm = account.name || account.email || "";
+  row.append(el("div", "avatar", (nm.trim()[0] || "?").toUpperCase()));
+  const who = el("div", "who"); who.append(el("b", null, account.name || account.email), el("span", null, account.name ? account.email : ""));
+  row.append(who);
+  const out = el("button", "linkbtn", T("signOut")); out.type = "button"; out.onclick = () => { try { Android.signOut(); } catch(e) {} };
+  row.append(out);
+  const pill = el("span"); pill.id = "syncPill"; fillSyncPill(pill);
+  prof.append(row, pill);
+  // Wi-Fi only
+  const set = el("label", "setrow");
+  const txt = el("div", "txt"); txt.append(el("b", null, T("wifiTitle")), el("span", null, T("wifiSub")));
+  const sw = el("span", "switch"); const inp = document.createElement("input"); inp.type = "checkbox"; inp.id = "wifiOnly";
+  try { inp.checked = !!Android.wifiOnly(); } catch(e) {}
+  inp.onchange = () => { try { Android.setWifiOnly(inp.checked); } catch(e) {} };
+  sw.append(inp, el("span", "track")); set.append(txt, sw);
+  prof.append(set);
+  box.append(prof);
+  // history
+  const hp = el("section", "panel");
+  const head = el("div", "phead"); head.append(el("h2", null, T("myProblems"))); hp.append(head);
+  const favN = history.filter(x => x.fav).length;
+  const seg = el("div", "chips");
+  seg.append(chip(T("all") + " · " + history.length, "", () => { meView = "all"; renderMe(); }, meView === "all"),
+             chip(T("favs") + " · " + favN, "", () => { meView = "fav"; renderMe(); }, meView === "fav"));
+  hp.append(seg);
+  const list = el("div", "hlist");
+  const items = meView === "fav" ? history.filter(x => x.fav) : history;
+  if (!items.length) list.append(el("p", "empty", meView === "fav" ? T("emptyFav") : T("emptyAll")));
+  for (const h of items) list.append(historyItem(h));
+  hp.append(list);
+  box.append(hp);
+}
+function historyItem(h){
+  const it = el("div", "hitem");
+  const hd = el("div", "hhead");
+  hd.append(svgEl(h.kind === "geo" ? ICON.tri : ICON.calc), el("span", null, (h.kind === "geo" ? T("kindGeo") : T("kindSolve")) + " · " + when(h.created) + (h.pending ? " · " + T("waiting") : "")), el("span", "sp"));
+  const st = el("button", "star"); st.type = "button"; st.setAttribute("aria-pressed", String(!!h.fav)); st.setAttribute("aria-label", h.fav ? T("favOn") : T("addFav"));
+  st.append(svgEl(ICON.star)); st.onclick = () => { setFav(h.id, !h.fav); renderMe(); };
+  hd.append(st); it.append(hd);
+  const inp = el("div", "hin" + (HEB.test(h.input) ? " he" : ""), h.input); dirOf(inp, h.input); it.append(inp);
+  if (h.answer) { const a = el("div", "hans"); dirOf(a, h.answer); a.append(el("span", null, h.answer)); it.append(a); }
+  if (openNote === h.id) {
+    const ed = el("div", "hedit"); const ta = document.createElement("textarea"); ta.value = h.note || ""; ta.placeholder = T("notePh"); ta.dir = "auto";
+    const acts = el("div", "hact");
+    const sv = el("button", "primary", T("save")); sv.type = "button"; sv.onclick = () => { try { Android.updateProblem(h.id, JSON.stringify({note: ta.value.trim()})); } catch(e) {} h.note = ta.value.trim(); openNote = null; renderMe(); };
+    const cc = el("button", null, T("cancel")); cc.type = "button"; cc.onclick = () => { openNote = null; renderMe(); };
+    acts.append(sv, cc); ed.append(ta, acts); it.append(ed);
+    setTimeout(() => ta.focus(), 50);
+  } else if (h.note) { const n = el("div", "hnote", h.note); n.dir = "auto"; it.append(n); }
+  const acts = el("div", "hact");
+  if (confirmDel === h.id) {
+    acts.append(el("span", "hhead", T("sure")));
+    const y = el("button", "danger", T("yes")); y.type = "button"; y.onclick = () => { try { Android.deleteProblem(h.id); } catch(e) {} confirmDel = null; history = history.filter(x => x.id !== h.id); renderMe(); };
+    const n = el("button", null, T("no")); n.type = "button"; n.onclick = () => { confirmDel = null; renderMe(); };
+    acts.append(y, n);
+  } else {
+    const o = el("button", "primary", T("open")); o.type = "button"; o.onclick = () => reopen(h);
+    const nt = el("button", null, h.note ? T("note") : T("addNote")); nt.type = "button"; nt.onclick = () => { openNote = h.id; renderMe(); };
+    const d = el("button", "danger", T("del")); d.type = "button"; d.onclick = () => { confirmDel = h.id; renderMe(); };
+    acts.append(o, nt, d);
+  }
+  it.append(acts);
+  return it;
+}
+function renderSignIn(box){
+  const p = el("section", "panel");
+  const head = el("div", "phead"); head.append(el("h2", null, T("meTitle")), el("p", null, T("meSub"))); p.append(head);
+  const perks = el("ul", "perks");
+  for (const [ic, key] of [["hist","perkHistory"],["sync","perkSync"],["star","perkFav"]]) {
+    const li = el("li"); const c = el("span", "ic"); c.append(svgEl(ICON[ic])); li.append(c, el("span", null, T(key))); perks.append(li);
+  }
+  p.append(perks);
+  if (!ACC) { p.append(el("p", "status", T("appOnlyAcc"))); box.append(p); return; }
+  const g = el("button", "btn google"); g.type = "button"; g.disabled = busy;
+  g.append(svgEl(ICON.google), el("span", null, T("google")));
+  g.onclick = () => { busy = true; authMsg = null; renderMe(); try { Android.signInGoogle(); } catch(e) { busy = false; } };
+  p.append(g, el("div", "divider", T("orEmail")));
+  const f = el("form", "authform"); f.noValidate = true;
+  const mk = (id, type, ph, ac) => { const i = document.createElement("input"); i.id = id; i.type = type; i.placeholder = ph; i.autocomplete = ac; i.dir = "ltr"; return i; };
+  let nameI = null;
+  if (authMode === "up") { nameI = mk("accName", "text", T("name"), "name"); nameI.dir = "auto"; f.append(nameI); }
+  const em = mk("accEmail", "email", T("email"), "email"), pw = mk("accPass", "password", T("password"), authMode === "up" ? "new-password" : "current-password");
+  em.inputMode = "email"; f.append(em, pw);
+  const go = el("button", "btn", authMode === "up" ? T("signUp") : T("signIn")); go.type = "submit"; go.disabled = busy;
+  f.append(go);
+  if (authMsg) f.append(el("p", "status" + (authMsg.bad ? " bad" : ""), T(authMsg.key)));
+  f.onsubmit = ev => {
+    ev.preventDefault();
+    if (!em.value.trim() || !pw.value) { authMsg = {bad:true, key:"needEmail"}; renderMe(); return; }
+    busy = true; authMsg = null;
+    try { authMode === "up" ? Android.signUpEmail(em.value, pw.value, nameI ? nameI.value : "") : Android.signInEmail(em.value, pw.value); } catch(e) { busy = false; }
+    go.disabled = true; g.disabled = true;
+  };
+  p.append(f);
+  const links = el("div", "linkrow");
+  const sw = el("button", "linkbtn", authMode === "up" ? T("toIn") : T("toUp")); sw.type = "button";
+  sw.onclick = () => { authMode = authMode === "up" ? "in" : "up"; authMsg = null; renderMe(); };
+  links.append(sw);
+  if (authMode === "in") {
+    const fg = el("button", "linkbtn", T("forgot")); fg.type = "button";
+    fg.onclick = () => { if (!em.value.trim()) { authMsg = {bad:true, key:"needEmailOnly"}; renderMe(); return; } try { Android.resetPassword(em.value); } catch(e) {} };
+    links.append(fg);
+  }
+  p.append(links);
+  box.append(p);
+}
+
 // start
 setLang(lang);
 solveNow(true);
+if (ACC) { try { const st = JSON.parse(Android.authState()); account = st.signedIn ? st : null; } catch(e) {} try { Android.ready(); } catch(e) {} }
 </script>
 </body>
 </html>
