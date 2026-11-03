@@ -1,0 +1,11 @@
+<resources>
+    <color name="pen">#2346D6</color>
+    <color name="paper">#F7F9FC</color>
+    <color name="card">#FFFFFF</color>
+    <color name="ink">#1A2233</color>
+    <color name="muted">#5D6B82</color>
+    <color name="line">#CFD8E6</color>
+    <color name="ok">#0F7A4A</color>
+    <color name="ok_soft">#E3F5EC</color>
+    <color name="warn">#A33A1C</color>
+</resources>
