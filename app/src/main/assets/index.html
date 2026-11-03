@@ -120,6 +120,21 @@ button:focus-visible,textarea:focus,input:focus,select:focus{outline:2px solid v
 
   <!-- GEOMETRY -->
   <section id="geoPanel" class="panel" hidden>
+    <div class="row">
+      <button class="btn" id="geoCamera" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+        <span data-t="camera"></span></button>
+      <button class="btn alt" id="geoGallery" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 17-5-5-9 8"/></svg>
+        <span data-t="gallery"></span></button>
+    </div>
+    <p class="status" id="geoStatus" hidden></p>
+    <label class="lbl" for="geoText" data-t="givensLbl"></label>
+    <textarea id="geoText" dir="ltr" spellcheck="false" autocapitalize="off" autocomplete="off" style="min-height:64px"></textarea>
+    <p class="ex"><span data-t="givensEx"></span> <span dir="ltr">∢A = 110°, ∢C = 43°, AB ∥ DC · AB = AC, ∢A = 40° · AB = AC = 13, BC = 10 · AB = AD, CB = CD, AC = 12, BD = 8</span></p>
+    <button class="btn alt" id="geoRead" type="button" data-t="givensGo"></button>
+    <p class="hint" id="geoDetected" hidden></p>
+    <hr>
     <label class="lbl" for="shape" data-t="shape"></label>
     <select id="shape"></select>
     <div class="notes" id="geoNotes" hidden></div>
@@ -146,6 +161,9 @@ const UI = {
   en: {
     sub:"Snap a math problem or type it. Works offline.", tabSolve:"Solve", tabGeo:"Geometry",
     camera:"Take photo", gallery:"Gallery", problemLbl:"Problem (one per line, fix anything misread)",
+    geoCheck:"Check the givens below and fix anything misread, then tap Read givens and solve.",
+    givensLbl:"Givens (photo or type, fix anything misread)", givensEx:"Examples:", givensGo:"Read givens and solve",
+    detected:(tool,list)=>"Found: "+tool+(list?"  ·  "+list:""), noGivens:"I couldn't find givens like ∢A = 110° or AB = AC. Fix the text or type them.",
     examples:"Examples:", solve:"Solve it", formulas:"Formulas: power laws & extended distributive law", answer:"Answer", shape:"Shape", units:"Units", calc:"Calculate", noUnits:"no units",
     reading:"Reading the photo…", noMath:"I couldn't find any math in that photo. Try again closer, with good light, or type it.",
     checkText:"Check the text below and fix anything that was misread. Then tap Solve it.",
@@ -161,6 +179,9 @@ const UI = {
   he: {
     sub:"צלמו תרגיל או הקלידו אותו. עובד בלי אינטרנט.", tabSolve:"פתרון", tabGeo:"גאומטריה",
     camera:"צילום", gallery:"גלריה", problemLbl:"התרגיל (אחד בכל שורה, תקנו מה שנקרא לא נכון)",
+    geoCheck:"בדקו את הנתונים ותקנו מה שנקרא לא נכון, ואז לחצו קרא נתונים ופתור.",
+    givensLbl:"הנתונים (צלמו או הקלידו, ותקנו מה שנקרא לא נכון)", givensEx:"דוגמאות:", givensGo:"קרא נתונים ופתור",
+    detected:(tool,list)=>"זיהיתי: "+tool+(list?"  ·  "+list:""), noGivens:"לא מצאתי נתונים כמו ∢A = 110° או AB = AC. תקנו את הטקסט או הקלידו אותם.",
     examples:"דוגמאות:", solve:"פתור", formulas:"נוסחאות: חוקי חזקות וחוק הפילוג המורחב", answer:"תשובה", shape:"צורה", units:"יחידות", calc:"חשב", noUnits:"ללא יחידות",
     reading:"קורא את התמונה…", noMath:"לא מצאתי תרגיל בתמונה. נסו שוב מקרוב ובתאורה טובה, או הקלידו אותו.",
     checkText:"בדקו את הטקסט ותקנו מה שנקרא לא נכון. אחר כך לחצו פתור.",
@@ -190,7 +211,9 @@ function setLang(l){
   $("langHe").setAttribute("aria-pressed", String(l === "he"));
   document.querySelectorAll("[data-t]").forEach(e => e.textContent = T(e.dataset.t));
   fillShapes(); fillUnits(); fillFormulas();
-  if (statusKey) setStatus(statusKey, statusBad);
+  if (statusKey) { const f=photoFor; photoFor="solve"; setStatus(statusKey, statusBad); photoFor=f; }
+  if (geoKey) setGeoStatus(geoKey, geoBad);
+  if (!$("geoDetected").hidden && lastDetected) showDetected(lastDetected);
   if ($("results").childElementCount) solveNow(true);
   if ($("geoResults").childElementCount) calcGeo(true);
 }
@@ -209,17 +232,26 @@ $("tabSolve").onclick = () => tab("solve");
 $("tabGeo").onclick = () => tab("geo");
 
 // ---------- photo ----------
-let statusKey = "", statusBad = false;
+let statusKey = "", statusBad = false, photoFor = "solve", geoKey = "", geoBad = false;
 function setStatus(key, bad){
+  if (photoFor === "geo") return setGeoStatus(key, bad);
   statusKey = key; statusBad = !!bad;
   const s = $("ocrStatus"); s.hidden = !key; s.textContent = key ? T(key) : ""; s.classList.toggle("bad", !!bad);
 }
-$("camera").onclick = () => hasBridge ? Android.takePhoto() : setStatus("appOnly", true);
-$("gallery").onclick = () => hasBridge ? Android.pickPhoto() : setStatus("appOnly", true);
+function setGeoStatus(key, bad){
+  geoKey = key; geoBad = !!bad;
+  const s = $("geoStatus"); s.hidden = !key; s.textContent = key ? T(key) : ""; s.classList.toggle("bad", !!bad);
+}
+const photo = (target, gallery) => { photoFor = target; if (!hasBridge) return setStatus("appOnly", true); gallery ? Android.pickPhoto() : Android.takePhoto(); };
+$("camera").onclick = () => photo("solve", false);
+$("gallery").onclick = () => photo("solve", true);
+$("geoCamera").onclick = () => photo("geo", false);
+$("geoGallery").onclick = () => photo("geo", true);
 window.onPhotoStart = () => setStatus("reading");
 window.onPhotoCancelled = () => setStatus("");
 window.onOcrError = key => setStatus("ocr_" + key, true);
 window.onOcr = text => {
+  if (photoFor === "geo") return onGeoOcr(text);
   const lines = String(text).split("\n").map(l => l.trim()).filter(l => /\d|=/.test(l));
   if (!lines.length) { setStatus("noMath", true); return; }
   $("problem").value = lines.join("\n");
@@ -730,6 +762,99 @@ function calcGeo(quiet){
   if (!quiet) out.scrollIntoView({behavior:"smooth",block:"start"});
 }
 $("calc").onclick = () => calcGeo();
+
+// ---------- reading givens from a photo or typed text ----------
+function parseGivens(raw){
+  let t = String(raw)
+    .replace(/[֐-׿"'״׳]+/g, " ")          // Hebrew words: the phone scanner can't read them anyway
+    .replace(/[∠≮<]/g, "∢").replace(/\b[4K](?=[A-D]\s*=)/g, "∢")   // the angle sign is often read as < or 4
+    .replace(/(\|\||II|ll|\/\/|‖)/g, "∥").replace(/[−–—]/g, "-")
+    .replace(/[׳']/g, "").replace(/(\d)\s*[oº˚]/g, "$1°");
+  const G = { ang:{}, len:{}, eq:[], par:[], letters:new Set() };
+  // angles: ∢A = 110°   or   A = 110°
+  const ANG = /(?:∢\s*)?(?<![A-Z])([A-D])\s*=\s*(\d+(?:\.\d+)?)\s*(°)?/g;
+  for (const m of t.matchAll(ANG)) {
+    let v = parseFloat(m[2]);
+    if (!m[3] && v >= 180 && /0$/.test(m[2]) && v/10 < 180) v = v/10;   // "1100" = 110° with the degree sign read as 0
+    G.ang[m[1]] = v; G.letters.add(m[1]);
+  }
+  // chains like AB = AC = 13 or AB = AD
+  const TOK = "(?:(?<![A-Z])[A-D]{2}(?![A-Z])|\\d+(?:\\.\\d+)?)";
+  const CHAIN = new RegExp(TOK + "(?:\\s*=\\s*" + TOK + ")+", "g");
+  for (const m of t.replace(ANG, " , ").matchAll(CHAIN)) {
+    const parts = m[0].split("=").map(x => x.trim());
+    const segs = parts.filter(x => /^[A-D]{2}$/.test(x));
+    const nums = parts.filter(x => /^\d+(?:\.\d+)?$/.test(x)).map(Number);
+    if (!segs.length) continue;
+    for (let k = 1; k < segs.length; k++) G.eq.push([segs[0], segs[k]]);
+    if (nums.length) for (const sgm of segs) G.len[sgm] = nums[nums.length-1];
+    segs.forEach(x => [...x].forEach(c => G.letters.add(c)));
+  }
+  const area = t.match(/\bS\s*=\s*(\d+(?:\.\d+)?)/); if (area) G.S = parseFloat(area[1]);
+  for (const m of t.matchAll(/([A-D]{2})\s*∥\s*([A-D]{2})/g)) { G.par.push([m[1], m[2]]); [...m[1]+m[2]].forEach(c => G.letters.add(c)); }
+  return G;
+}
+const sameSeg = (a, b) => a === b || a === b.split("").reverse().join("");
+const hasEq = (G, a, b) => G.eq.some(([x, y]) => (sameSeg(x, a) && sameSeg(y, b)) || (sameSeg(x, b) && sameSeg(y, a)));
+const lenOf = (G, seg) => { for (const k in G.len) if (sameSeg(k, seg)) return G.len[k]; return null; };
+
+function pickTool(G){
+  const four = G.letters.has("D") || G.par.length || lenOf(G,"BD") != null || hasEq(G,"AB","AD");
+  if (four) {
+    const kite = hasEq(G,"AB","AD") || hasEq(G,"CB","CD") || lenOf(G,"AC") != null || lenOf(G,"BD") != null || G.S != null;
+    if (kite) return (lenOf(G,"AC") != null || lenOf(G,"BD") != null || G.S != null) ? "kiteArea" : "kiteAngles";
+    if (G.par.length) return "trapAngles";
+    if (Object.keys(G.ang).length >= 3) return "trapCheck";
+    return SH[$("shape").value]?.f?.length === 4 ? $("shape").value : "trapAngles";
+  }
+  const iso = hasEq(G,"AB","AC");
+  if (iso && (lenOf(G,"AB") != null || lenOf(G,"AC") != null) && lenOf(G,"BC") != null) return "isoHeight";
+  if (iso) return "isoAngles";
+  if (Object.keys(G.ang).length >= 2) return "isoCheck";
+  if (lenOf(G,"BC") != null && (lenOf(G,"AB") != null || lenOf(G,"AC") != null)) return "isoHeight";
+  return null;
+}
+function fillFor(tool, G){
+  const vals = {};
+  const a = G.ang;
+  if (tool === "isoAngles") { vals.A = a.A; vals.B = a.B ?? a.C; }
+  else if (tool === "isoHeight") { vals.L = lenOf(G,"AB") ?? lenOf(G,"AC"); vals.b = lenOf(G,"BC"); }
+  else if (tool === "kiteArea") { vals.d1 = lenOf(G,"AC"); vals.d2 = lenOf(G,"BD"); vals.S = G.S; }
+  else for (const k of ["A","B","C","D"]) vals[k] = a[k];
+  for (const [k] of SH[tool].f) { const i = $("g_"+k); if (i) i.value = vals[k] != null ? vals[k] : ""; }
+}
+let lastDetected = null;
+function clearGeo(){ lastDetected = null; $("geoDetected").hidden = true; $("geoResults").innerHTML = ""; $("geoResults").hidden = true; }
+function showDetected(d){
+  const box = $("geoDetected");
+  const list = [
+    ...Object.entries(d.G.ang).map(([k,v]) => "∢"+k+" = "+R(v)+"°"),
+    ...d.G.eq.map(([x,y]) => x+" = "+y),
+    ...Object.entries(d.G.len).map(([k,v]) => k+" = "+R(v)),
+    ...d.G.par.map(([x,y]) => x+" ∥ "+y),
+    ...(d.G.S != null ? ["S = "+R(d.G.S)] : []),
+  ].join(" ,  ");
+  const txt = T("detected", pick(...SH[d.tool].l), LRI(list));
+  box.textContent = txt; dirOf(box, txt); box.hidden = false;
+}
+function readGivens(){
+  const G = parseGivens($("geoText").value);
+  const tool = pickTool(G);
+  if (!tool) { setGeoStatus("noGivens", true); clearGeo(); return; }
+  setGeoStatus("");
+  $("shape").value = tool; buildFields(false); fillFor(tool, G);
+  lastDetected = { G, tool }; showDetected(lastDetected);
+  calcGeo();
+}
+$("geoRead").onclick = readGivens;
+function onGeoOcr(text){
+  const t = String(text).trim();
+  if (!/[A-D0-9]/.test(t)) { setGeoStatus("noMath", true); clearGeo(); return; }
+  $("geoText").value = t;
+  setGeoStatus("geoCheck");
+  readGivens();
+}
+
 
 // start
 setLang(lang);
