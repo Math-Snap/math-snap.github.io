@@ -1741,6 +1741,7 @@ solveNow(true);
 if (ACC) { try { const st = JSON.parse(Android.authState()); account = st.signedIn ? st : null; } catch(e) {} try { Android.ready(); } catch(e) {} }
 if (ACC && !account && !seenWelcome()) showWelcome();
 </script>
+<script src="install-gate.js"></script>
 <script>
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});
 </script>

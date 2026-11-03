@@ -4,7 +4,7 @@
    Account traffic (sign-in, saving) is never cached. */
 const CACHE = "mathsnap-__VERSION__";
 const LIBS = "mathsnap-libs";
-const SHELL = ["./", "index.html", "solver.js", "math.js", "web-bridge.js", "firebase-config.js", "manifest.webmanifest",
+const SHELL = ["./", "index.html", "solver.js", "math.js", "web-bridge.js", "install-gate.js", "firebase-config.js", "manifest.webmanifest",
   "fonts/Rubik.ttf", "fonts/JetBrainsMono.ttf", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
 
 self.addEventListener("install", e => {

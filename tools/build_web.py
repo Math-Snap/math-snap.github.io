@@ -22,7 +22,7 @@ for name in ["solver.js", "math.js"]:
     shutil.copy(ASSETS / name, OUT / name)
 for f in (ASSETS / "fonts").iterdir():
     shutil.copy(f, OUT / "fonts" / f.name)
-for name in ["web-bridge.js", "manifest.webmanifest"]:
+for name in ["web-bridge.js", "install-gate.js", "manifest.webmanifest"]:
     shutil.copy(WEB / name, OUT / name)
 if not (OUT / "firebase-config.js").exists():
     shutil.copy(WEB / "firebase-config.js", OUT / "firebase-config.js")
@@ -44,7 +44,8 @@ head_tags = """
 html = html.replace("<title>Math Snap</title>", "<title>Math Snap</title>" + head_tags, 1)
 html = html.replace('<script src="math.js"></script>',
                     '<script src="firebase-config.js"></script>\n<script src="web-bridge.js"></script>\n<script src="math.js"></script>', 1)
-html = html.replace("</body>", """<script>
+html = html.replace("</body>", """<script src="install-gate.js"></script>
+<script>
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});
 </script>
 </body>""", 1)
@@ -52,7 +53,7 @@ if ("serviceWorker" in navigator && location.protocol.startsWith("http")) naviga
 
 # offline cache name changes whenever the app changes, so phones pick up updates
 h = hashlib.sha1()
-for name in ["index.html", "solver.js", "web-bridge.js", "manifest.webmanifest"]:
+for name in ["index.html", "solver.js", "web-bridge.js", "install-gate.js", "manifest.webmanifest"]:
     h.update((OUT / name).read_bytes())
 sw = (WEB / "sw.js").read_text(encoding="utf-8").replace("__VERSION__", h.hexdigest()[:10])
 (OUT / "sw.js").write_text(sw, encoding="utf-8")
