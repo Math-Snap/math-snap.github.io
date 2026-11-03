@@ -60,6 +60,14 @@
       rDist: "Distributive law",
       rExtDist: "Extended distributive law: multiply every term in the first bracket by every term in the second",
       rSquare: "Short multiplication formula: (a ± b)² = a² ± 2ab + b²",
+      lcdMul: (d) => "Common denominator " + d + ": multiply every term by " + d,
+      ratDomain: "Domain: a denominator can't be 0",
+      ratMul: "Multiply both sides by the common denominator",
+      ratBad: x => x + " is rejected: it makes a denominator 0",
+      ratOk: "Check: the denominator isn't 0 ✓",
+      fracFactor: "Take out the common factor in the numerator and the denominator",
+      fracCancel: x => "Cancel the common factor (" + x + ")",
+      fracCommon: "Common denominator: write as one fraction",
       sysNL: "Substitute and solve the equation with one unknown",
       sysPairs: "The solutions (each pair)",
       rMinus: " (a minus before the brackets flips every sign inside)",
@@ -129,6 +137,14 @@
       rDist: "חוק הפילוג",
       rExtDist: "חוק הפילוג המורחב: כופלים כל איבר בסוגריים הראשונים בכל איבר בסוגריים השניים",
       rSquare: "נוסחת הכפל המקוצר: ⁦(a ± b)² = a² ± 2ab + b²⁩",
+      lcdMul: (d) => "מכנה משותף " + d + ": כופלים כל איבר ב-" + d,
+      ratDomain: "תחום הצבה: מכנה לא יכול להיות 0",
+      ratMul: "נכפול את שני האגפים במכנה המשותף",
+      ratBad: x => x + " נפסל: הוא מאפס מכנה",
+      ratOk: "בדיקה: המכנה לא מתאפס ✓",
+      fracFactor: "נוציא גורם משותף במונה ובמכנה",
+      fracCancel: x => "נצמצם את הגורם המשותף (" + x + ")",
+      fracCommon: "מכנה משותף: כותבים כשבר אחד",
       sysNL: "מציבים ופותרים משוואה עם נעלם אחד",
       sysPairs: "הפתרונות (כל זוג)",
       rMinus: " (מינוס לפני הסוגריים הופך את כל הסימנים בפנים)",
@@ -815,12 +831,12 @@
     if (!keys.length) return "0";
     return keys.map((m, i) => {
       const c = approxRat(P[m]), neg_ = val(c) < 0, ac = abs(c), cs = fmt(ac).replace("−", "");
-      const body = m === "" ? cs : (isInt(ac) && ac.n === 1 ? "" : (ac.exact && ac.d !== 1 ? "(" + cs + ")*" : cs + "*")) + m;
+      const body = m === "" ? cs : ac.exact && ac.d !== 1 ? (ac.n === 1 ? "" : ac.n + "*") + m + "/" + ac.d : (isInt(ac) && ac.n === 1 ? "" : cs + "*") + m;
       return (i === 0 ? (neg_ ? "-" : "") : neg_ ? " - " : " + ") + body;
     }).join("");
   }
   function simplifyStr(str) {
-    try { const node = M().parse(str); if (symbols(node).length > 1) return polyStr(polyOf(node)); } catch (e) { /* not a polynomial */ }
+    try { const node = M().parse(str); if (symbols(node).length >= 1) return polyStr(polyOf(node)); } catch (e) { /* not a polynomial */ }
     try { return M().rationalize(str).toString(); } catch (e) { return M().simplify(str).toString(); }
   }
   // Returns steps to simplify one expression (expand brackets, then combine like terms)
@@ -988,6 +1004,8 @@
     if (hasTrig(lhs, v) || hasTrig(rhs, v)) { const r = trigEquation(lhs, rhs, v); if (r) return r; }
     const ex = expEquation(lhs, rhs, v); if (ex) return ex;
     const lg = logEquation(lhs, rhs, v); if (lg) return lg;
+    try { const fr = lcdEquation(ls, rs, lhs, rhs, v); if (fr) return fr; } catch (e) { /* the usual way */ }
+    try { const ra = rationalEquation(ls, rs, lhs, rhs, v); if (ra) return ra; } catch (e) { /* the usual way */ }
     const steps = [];
     // simplify each side first (brackets, like terms)
     let sl = { steps: [] }, sr = { steps: [] };
@@ -1010,6 +1028,7 @@
 
   // ---------- algebra ----------
   function algebra(expr) {
+    try { const fa = fracAlgebra(expr); if (fa) return fa; } catch (e) { /* the usual way */ }
     const p = powers(expr);
     if (p) return p;
     const r = simplifySteps(expr);
@@ -1268,6 +1287,131 @@
     const chk = E.map(e => fmt(ops.add(m(e.a, X), m(e.b, Y))) + " = " + fmt(e.c) + " ✓").join("   ,   ");
     steps.push([chk, t("sysCheck")]);
     return { answer: iso(x + " = " + fmtShort(X)) + " ,  " + iso(y + " = " + fmtShort(Y)), steps };
+  }
+
+  // ---------- fractions with letters ----------
+  const lcm = (a, b) => a / gcd(a, b) * b;
+  function numDens(node) {                  // whole-number denominators in an expression
+    const out = [];
+    node.traverse(n => {
+      if (n.type === "OperatorNode" && n.fn === "divide" && !symbols(n.args[1]).length) { const d = constOf(n.args[1]); if (d && Number.isInteger(d) && Math.abs(d) > 1) out.push(Math.abs(d)); }
+    });
+    return out;
+  }
+  function varDens(node, v) {
+    const out = [];
+    node.traverse(n => { if (n.type === "OperatorNode" && n.fn === "divide" && hasVar(n.args[1], v)) out.push(unparen(n.args[1])); });
+    return out;
+  }
+  // multiply every term of a side by L:  (x+1)/2 · 6 → 3(x + 1)
+  function timesL(str, L) {
+    const terms = []; topTerms(M().parse(str), 1, terms);
+    return terms.map((tm, i) => {
+      let n = unparen(tm.node), body;
+      if (n.type === "OperatorNode" && n.fn === "divide" && !symbols(n.args[1]).length) {
+        const k = L / constOf(n.args[1]), a = unparen(n.args[0]).toString();
+        body = k === 1 ? a : isSum(n.args[0]) ? k + "*(" + a + ")" : polyStr(polyOf(M().parse(k + "*(" + a + ")")));
+      } else body = isSum(n) ? L + "*(" + n.toString() + ")" : polyStr(polyOf(M().parse(L + "*(" + n.toString() + ")")));
+      if (tm.sign < 0 && body.startsWith("-")) return (i ? " + " : "") + body.slice(1);
+      return (tm.sign < 0 ? " - " : i ? " + " : "") + body;
+    }).join("");
+  }
+  function lcdEquation(ls, rs, lhs, rhs, v) {
+    const dens = numDens(lhs).concat(numDens(rhs));
+    if (!dens.length || varDens(lhs, v).length || varDens(rhs, v).length) return null;
+    const cl = lhs.compile(), cr = rhs.compile();
+    if (!linCoef(cl, v) || !linCoef(cr, v)) return null;
+    const L = dens.reduce(lcm, 1);
+    const nl = timesL(ls, L), nr = timesL(rs, L);
+    const steps = [[pretty(nl) + " = " + pretty(nr), t("lcdMul", L)]];
+    const r = equation(nl, nr);
+    return { answer: r.answer, steps: steps.concat(r.steps) };
+  }
+  // polynomials in one letter as coefficient arrays (lowest power first)
+  const ptrim = a => { a = a.slice(); while (a.length > 1 && Math.abs(a[a.length - 1]) < 1e-10) a.pop(); return a.length ? a : [0]; };
+  function pcoefs(str) { const r = M().rationalize(str, {}, true); if (r.variables.length > 1) throw new Error("vars"); return ptrim((r.coefficients || [constOf(M().parse(str))]).map(Number)); }
+  function pdiv(a, b) {
+    a = ptrim(a); b = ptrim(b); const q = new Array(Math.max(1, a.length - b.length + 1)).fill(0); let r = a.slice();
+    for (let guard = 0; guard < 60 && r.length >= b.length && !(r.length === 1 && Math.abs(r[0]) < 1e-10); guard++) {
+      const k = r[r.length - 1] / b[b.length - 1], sh = r.length - b.length;
+      q[sh] = k; for (let i = 0; i < b.length; i++) r[i + sh] -= k * b[i];
+      r.pop(); r = ptrim(r); if (r.length < b.length) break;
+    }
+    return { q: ptrim(q), r };
+  }
+  function pgcd(a, b) {
+    a = ptrim(a); b = ptrim(b);
+    for (let i = 0; i < 20 && !(b.length === 1 && Math.abs(b[0]) < 1e-9); i++) { const r = pdiv(a, b).r.map(x => (Math.abs(x) < 1e-9 ? 0 : x)); a = b; b = ptrim(r); }
+    const lead = a[a.length - 1]; return a.map(x => x / lead);
+  }
+  const pstr = (a, v) => { const P = {}; a.forEach((c, i) => { if (Math.abs(c) > 1e-12) P[i === 0 ? "" : i === 1 ? v : v + "^" + i] = val(approxRat(c)); }); return polyStr(P); };
+  const wrapP = x => (/[+\-]/.test(x.replace(/^-/, "")) ? "(" + x + ")" : x);
+  function rationalEquation(ls, rs, lhs, rhs, v) {
+    const dens = varDens(lhs, v).concat(varDens(rhs, v));
+    if (!dens.length) return null;
+    const steps = [];
+    let holes = [];
+    for (const d of dens) { try { holes = holes.concat(rootsOf(compileF(d.toString(), v), -100, 100)); } catch (e) { /* skip */ } }
+    holes = [...new Set(holes.map(cleanRoot))].sort((a, b) => a - b);
+    if (holes.length) steps.push([holes.map(h => v + " ≠ " + NS(h)).join("  ,  "), t("ratDomain")]);
+    let R;
+    try { R = M().rationalize("(" + ls + ")-(" + rs + ")", {}, true); } catch (e) { return null; }
+    if (!R.numerator || R.variables.length !== 1) return null;
+    const numS = R.numerator.toString();
+    steps.push([pretty(numS) + " = 0", t("ratMul")]);
+    const r = equation(numS, "0");
+    steps.push(...r.steps.filter(x => x[1] !== t("check")));
+    const xs = [...String(r.answer).replace(/[⁦-⁩]/g, "").matchAll(new RegExp(v + "\\s*[=≈]\\s*(−?[\\d./]+)", "g"))].map(m => { try { return M().evaluate(m[1].replace("−", "-")); } catch (e) { return null; } }).filter(x => x !== null);
+    if (!xs.length) return { answer: r.answer, steps };
+    const good = xs.filter(x => !holes.some(h => close(h, x))), bad = xs.filter(x => holes.some(h => close(h, x)));
+    bad.forEach(x => steps.push([v + " = " + NS(x), t("ratBad", iso(v + " = " + NS(x)))]));
+    if (good.length) steps.push([good.map(x => v + " = " + NS(x)).join("  ,  "), t("ratOk")]);
+    return { answer: good.length ? good.map(x => iso(v + " = " + NS(x))).join(t("or")) : t("noSolution"), steps };
+  }
+  // simplifying an algebraic fraction: (x² − 1)/(x − 1) = x + 1, 1/x + 1/(x+1) = (2x + 1)/(x² + x)
+  function fracAlgebra(expr) {
+    const node = M().parse(expr), vars = symbols(node);
+    let hasDen = false;
+    node.traverse(n => { if (n.type === "OperatorNode" && n.fn === "divide" && symbols(n.args[1]).length) hasDen = true; });
+    if (!hasDen) return null;
+    const steps = [], orig = pretty(expr);
+    const R = M().rationalize(expr, {}, true);
+    let numS = R.numerator.toString(), denS = R.denominator ? R.denominator.toString() : "1";
+    const terms = []; topTerms(node, 1, terms);
+    if (terms.length > 1) steps.push([orig + " = " + wrapP(pretty(simplifyStr(numS))) + "/" + wrapP(pretty(simplifyStr(denS))), t("fracCommon")]);
+    if (vars.length === 1) {
+      const v = vars[0], N = pcoefs(numS), D = pcoefs(denS), G = pgcd(N, D);
+      if (G.length > 1) {
+        const q1 = pdiv(N, G).q, q2 = pdiv(D, G).q, g = pstr(G, v);
+        const part = q => (q.length === 1 && Math.abs(q[0] - 1) < 1e-12 ? "" : "·" + wrapP(pretty(pstr(q, v))));
+        steps.push(["(" + pretty(g) + ")" + part(q1) + "  /  (" + pretty(g) + ")" + part(q2), t("fracFactor")]);
+        const den1 = q2.length === 1 ? q2[0] : null;
+        const res = den1 !== null ? pstr(q1.map(c => c / den1), v) : wrapP(pstr(q1, v)) + "/" + wrapP(pstr(q2, v));
+        const zs = rootsOf(compileF(g, v), -100, 100);
+        steps.push(["= " + pretty(res) + (zs.length ? "   (" + zs.map(z => v + " ≠ " + NS(z)).join(", ") + ")" : ""), t("fracCancel", iso(pretty(g)))]);
+        return { answer: pretty(res), steps };
+      }
+      const res = wrapP(pstr(N, v)) + "/" + wrapP(pstr(D, v));
+      if (!steps.length) steps.push([orig, t("already")]);
+      return { answer: pretty(res), steps };
+    }
+    // several letters: cancel a common letter or number from every term
+    try {
+      const Np = polyOf(M().parse(numS)), Dp = polyOf(M().parse(denS));
+      const mons = Object.keys(Np).concat(Object.keys(Dp));
+      const pw = m => { const o = {}; if (m) m.split("*").forEach(f => { const [x, e] = f.split("^"); o[x] = +e || 1; }); return o; };
+      const common = {};
+      for (const x of vars) common[x] = Math.min(...mons.map(m => pw(m)[x] || 0));
+      const cs = Object.values(Np).concat(Object.values(Dp)).map(c => approxRat(c));
+      let gnum = cs.every(isInt) ? cs.reduce((g, c) => gcd(g, c.n), 0) : 1; if (!gnum) gnum = 1;
+      const cut = P => { const o = {}; for (const m in P) { const p = pw(m); const k = Object.keys(p).sort().map(x => { const e = p[x] - (common[x] || 0); return e ? (e === 1 ? x : x + "^" + e) : ""; }).filter(Boolean).join("*"); o[k] = P[m] / gnum; } return o; };
+      const n2 = polyStr(cut(Np)), d2 = polyStr(cut(Dp));
+      const res = d2 === "1" ? n2 : wrapP(n2) + "/" + wrapP(d2);
+      const cf = Object.entries(common).filter(([, e]) => e > 0).map(([x, e]) => e === 1 ? x : x + "^" + e).join("*");
+      if (cf || gnum !== 1) steps.push(["= " + pretty(res), t("fracCancel", iso(pretty((gnum !== 1 ? gnum + (cf ? "*" : "") : "") + cf)))]);
+      if (!steps.length) steps.push([orig, t("already")]);
+      return { answer: pretty(res), steps };
+    } catch (e) { return null; }
   }
 
   // ---------- two equations where one is not linear: substitution ----------
