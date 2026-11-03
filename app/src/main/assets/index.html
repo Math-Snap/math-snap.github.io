@@ -92,6 +92,10 @@ select{font:16px/1.3 var(--sans)}
 .result{display:flex;flex-direction:column;gap:14px}
 .prob{font:600 15px/1.4 var(--mono);color:var(--muted);overflow-wrap:anywhere}
 .ans{background:var(--surface-2);border-radius:16px;padding:14px 16px}
+.askbox{background:var(--pen-soft);border-radius:16px;padding:12px 16px;display:flex;flex-direction:column;gap:2px}
+.askbox small{font:700 13px/1.4 var(--sans);color:var(--pen)}
+.askbox div{font:700 20px/1.6 var(--mono);overflow-wrap:anywhere}
+.askbox p{margin:0;color:var(--muted);font-size:14px}
 .ans small{display:block;font:600 12px/1 var(--sans);color:var(--ok);margin-bottom:8px}
 .ans div{display:inline;font:700 22px/1.7 var(--mono);white-space:pre-line;overflow-wrap:anywhere;
   background-image:linear-gradient(transparent 58%,var(--mark) 58%,var(--mark) 90%,transparent 90%);-webkit-box-decoration-break:clone;box-decoration-break:clone;padding:0 2px}
@@ -295,6 +299,9 @@ body[data-bg="plain"]{background-image:none}
     <div class="phead"><h2 data-t="geoTitle"></h2><p data-t="geoSub"></p></div>
     <label class="lbl" for="geoText" data-t="givensLbl"></label>
     <textarea id="geoText" dir="auto" spellcheck="false" autocomplete="off" style="min-height:120px;font-family:var(--sans);font-size:17px"></textarea>
+    <p class="hint" data-t="givensTip" style="margin-top:-4px"></p>
+    <label class="lbl" for="geoAsk" data-t="askLbl"></label>
+    <textarea id="geoAsk" dir="auto" spellcheck="false" autocomplete="off" style="min-height:64px;font-family:var(--sans);font-size:17px"></textarea>
     <div><p class="exlabel" data-t="tryOne"></p><div class="chips wrapchips" id="geoChips"></div></div>
     <button class="btn" id="geoRead" type="button"><span data-t="givensGo"></span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
     <p class="status" id="geoStatus" hidden></p>
@@ -378,8 +385,11 @@ const UI = {
     geoTitle:"Geometry", geoSub:"Write the givens and get a proof with claims and reasons", reminder:"Reminder: definitions and theorems", tabSolve:"Solve", tabGeo:"Geometry",
     camera:"Take photo", gallery:"Gallery", problemLbl:"Problem (one per line, fix anything misread)",
     geoCheck:"Check the givens above and fix anything misread, then tap Solve.",
-    givensLbl:"Write the givens in words or symbols", givensEx:"Examples:", givensGo:"Solve",
-    givensExList:"trapezoid ABCD, AB parallel to DC, angle A = 110 degrees, angle C = 43\nisosceles triangle, vertex angle 40\nisosceles triangle, leg 13, base 10\nkite ABCD, angle BAC 35, angle CBD 70\nkite, main diagonal 12, other diagonal 8",
+    givensLbl:"Describe the problem: the givens, in words, numbers or symbols", givensEx:"Examples:", givensGo:"Solve",
+    givensTip:"I understand: triangle, right triangle, isosceles, trapezoid, kite, circle, similar · angle A = 40 · AB = 5 · parallel · radius, central angle, hypotenuse, area",
+    askLbl:"What do you need to find? (optional)", askPh:"e.g. find BC and angle B, or the area",
+    askAns:"Answer to your question", askMiss:t=>"Not in this solution: "+t,
+    givensExList:"trapezoid ABCD, AB parallel to DC, angle A = 110 degrees, angle C = 43\nisosceles triangle, vertex angle 40\nisosceles triangle, leg 13, base 10\nkite ABCD, angle BAC 35, angle CBD 70\nkite, main diagonal 12, other diagonal 8\nright triangle ABC, angle C 90, AB 10, angle A 30 | find BC and AC\ntriangle ABC, AB = 7, AC = 5, angle A = 60 | find BC and the area\ncircle, radius 6, central angle 60 | arc length",
     givensPh:"e.g. trapezoid ABCD, AB parallel to DC, angle A = 110, angle C = 43",
     detected:(tool,list)=>"Found: "+tool+(list?"  ·  "+list:""), noGivens:"I couldn't find givens. Write them like: angle A = 110, AB parallel to DC, leg 13.",
     examples:"Examples:", solve:"Solve it", formulas:"Formulas: power laws & extended distributive law", answer:"Answer", shape:"Shape", units:"Units", calc:"Calculate", noUnits:"no units",
@@ -424,8 +434,11 @@ const UI = {
     geoTitle:"גאומטריה", geoSub:"כתבו את הנתונים וקבלו הוכחה עם טענה ונימוק", reminder:"תזכורת: הגדרות ומשפטים", tabSolve:"פתרון", tabGeo:"גאומטריה",
     camera:"צילום", gallery:"גלריה", problemLbl:"התרגיל (אחד בכל שורה, תקנו מה שנקרא לא נכון)",
     geoCheck:"בדקו את הנתונים למעלה ותקנו מה שנקרא לא נכון, ואז לחצו פתור.",
-    givensLbl:"כתבו את הנתונים במילים או בסימנים", givensEx:"דוגמאות:", givensGo:"פתור",
-    givensExList:"טרפז ABCD, AB מקביל ל-DC, זווית A שווה 110 מעלות, זווית C שווה 43\nמשולש שווה שוקיים, זווית הראש 40\nמשולש שווה שוקיים, שוק 13, בסיס 10\nדלתון ABCD, זווית BAC שווה 35, זווית CBD שווה 70\nדלתון, אלכסון ראשי 12, אלכסון משני 8\nהאם ABCD טרפז? זווית A 30, זווית B 50, זווית D 150",
+    givensLbl:"תארו את התרגיל: הנתונים במילים, במספרים או בסימנים", givensEx:"דוגמאות:", givensGo:"פתור",
+    givensTip:"אני מבין: משולש, ישר זווית, שווה שוקיים, טרפז, דלתון, מעגל, דומים · זווית A שווה 40 · AB שווה 5 · מקביל · רדיוס, זווית מרכזית, יתר, שטח",
+    askLbl:"מה צריך למצוא? (לא חובה)", askPh:"למשל: מצאו את BC ואת זווית B, או את השטח",
+    askAns:"התשובה לשאלה", askMiss:t=>"לא מופיע בפתרון: "+t,
+    givensExList:"טרפז ABCD, AB מקביל ל-DC, זווית A שווה 110 מעלות, זווית C שווה 43\nמשולש שווה שוקיים, זווית הראש 40\nמשולש שווה שוקיים, שוק 13, בסיס 10\nדלתון ABCD, זווית BAC שווה 35, זווית CBD שווה 70\nדלתון, אלכסון ראשי 12, אלכסון משני 8\nהאם ABCD טרפז? זווית A 30, זווית B 50, זווית D 150\nמשולש ישר זווית ABC, זווית C שווה 90, AB שווה 10, זווית A שווה 30 | מצאו את BC ואת AC\nמשולש ABC, AB שווה 7, AC שווה 5, זווית A שווה 60 | מצאו את BC ואת השטח\nמעגל, רדיוס 6, זווית מרכזית 60 | אורך הקשת",
     givensPh:"למשל: טרפז ABCD, AB מקביל ל-DC, זווית A שווה 110 מעלות, זווית C שווה 43",
     detected:(tool,list)=>"זיהיתי: "+tool+(list?"  ·  "+list:""), noGivens:"לא מצאתי נתונים. כתבו למשל: זווית A שווה 110, AB מקביל ל-DC, שוק 13.",
     examples:"דוגמאות:", solve:"פתור", formulas:"נוסחאות: חוקי חזקות וחוק הפילוג המורחב", answer:"תשובה", shape:"צורה", units:"יחידות", calc:"חשב", noUnits:"ללא יחידות",
@@ -458,6 +471,7 @@ function setLang(l){
   document.querySelectorAll("[data-t]").forEach(e => e.textContent = T(e.dataset.t));
   document.querySelectorAll("[data-tlabel]").forEach(e => e.setAttribute("aria-label", T(e.dataset.tlabel)));
   $("geoText").placeholder = T("givensPh");
+  $("geoAsk").placeholder = T("askPh");
   fillShapes(); fillUnits(); fillFormulas(); renderExamples(); renderToolChips();
   if (typeof renderBank === "function" && $("bankList")) renderBank();
   if (typeof renderMe === "function" && !$("mePanel").hidden) renderMe();
@@ -521,10 +535,18 @@ function dirOf(e, s){ e.dir = HEB.test(s) ? "rtl" : "ltr"; return e; }
 const FORMULAS = {
   en:[["Product of powers, same base","aˣ · aʸ = aˣ⁺ʸ"],["Quotient of powers, same base","aˣ : aʸ = aˣ⁻ʸ  (a ≠ 0)"],["Power of a power","(aˣ)ʸ = aˣ·ʸ"],
       ["Exponent 0","a⁰ = 1  (a ≠ 0)"],["Negative exponent","a⁻ⁿ = 1/aⁿ"],["Extended distributive law","(a + c)(b + d) = ab + ad + cb + cd"],
-      ["Watch out","A minus or a multiplier before the brackets multiplies every term inside"],["Prime factorization","Type a whole number, e.g. 360"]],
+      ["Watch out","A minus or a multiplier before the brackets multiplies every term inside"],["Prime factorization","Type a whole number, e.g. 360"],
+      ["Quadratic formula","x = (−b ± √(b² − 4ac)) ÷ 2a"],["Logarithm","log_b(a) = c  ⇔  bᶜ = a"],["Log laws","log(xy) = log x + log y ,  log(xⁿ) = n·log x"],
+      ["Derivatives","(xⁿ)' = n·xⁿ⁻¹ ,  (sin x)' = cos x ,  (eˣ)' = eˣ ,  (ln x)' = 1/x"],["Integral","∫xⁿ dx = xⁿ⁺¹/(n+1) + C"],
+      ["Sequences","aₙ = a₁ + (n−1)d ,  Sₙ = n(a₁ + aₙ)/2 ;  aₙ = a₁·qⁿ⁻¹"],["Line and distance","m = (y₂ − y₁)/(x₂ − x₁) ,  d = √((x₂−x₁)² + (y₂−y₁)²)"],
+      ["Circle","(x − a)² + (y − b)² = R²"],["Trig","sin²x + cos²x = 1 ,  tan x = sin x / cos x"],["Topics","Inequalities, systems (two lines), 2^x = 8, sin(x) = 0.5, f(x) = …, derivative, ∫, sequences, points, C(n,k), mean"]],
   he:[["מכפלת חזקות בעלות אותו בסיס","aˣ · aʸ = aˣ⁺ʸ"],["מנה של חזקות בעלות אותו בסיס","aˣ : aʸ = aˣ⁻ʸ  (a ≠ 0)"],["חזקה של חזקה","(aˣ)ʸ = aˣ·ʸ"],
       ["חזקה בעלת מעריך 0","a⁰ = 1  (a ≠ 0)"],["חזקה בעלת מעריך שלילי","a⁻ⁿ = 1/aⁿ"],["חוק הפילוג המורחב","(a + c)(b + d) = ab + ad + cb + cd"],
-      ["שימו לב","כופל או מינוס לפני הסוגריים כופל כל איבר בפנים"],["פירוק לגורמים ראשוניים","מקלידים מספר שלם, למשל 360"]],
+      ["שימו לב","כופל או מינוס לפני הסוגריים כופל כל איבר בפנים"],["פירוק לגורמים ראשוניים","מקלידים מספר שלם, למשל 360"],
+      ["נוסחת השורשים","x = (−b ± √(b² − 4ac)) ÷ 2a"],["לוגריתם","log_b(a) = c  ⇔  bᶜ = a"],["חוקי לוגריתמים","log(xy) = log x + log y ,  log(xⁿ) = n·log x"],
+      ["נגזרות","(xⁿ)' = n·xⁿ⁻¹ ,  (sin x)' = cos x ,  (eˣ)' = eˣ ,  (ln x)' = 1/x"],["אינטגרל","∫xⁿ dx = xⁿ⁺¹/(n+1) + C"],
+      ["סדרות","aₙ = a₁ + (n−1)d ,  Sₙ = n(a₁ + aₙ)/2 ;  aₙ = a₁·qⁿ⁻¹"],["ישר ומרחק","m = (y₂ − y₁)/(x₂ − x₁) ,  d = √((x₂−x₁)² + (y₂−y₁)²)"],
+      ["מעגל","(x − a)² + (y − b)² = R²"],["טריגונומטריה","sin²x + cos²x = 1 ,  tan x = sin x / cos x"],["מה אפשר לכתוב","אי-שוויונים, שתי משוואות (שורה לכל אחת), ⁦2^x = 8⁩, ⁦sin(x) = 0.5⁩, ⁦f(x) = …⁩, נגזרת, אינטגרל, סדרות, נקודות, ⁦C(n,k)⁩, ממוצע"]],
 };
 function fillFormulas(){
   const box=$("formulaBody"); box.innerHTML="";
@@ -534,8 +556,9 @@ function fillFormulas(){
 }
 
 // ---------- chips: examples and tool picker ----------
-const SOLVE_EX = ["3/4 + 2/3", "2x + 5 = 17", "(x + 2)(x − 3)", "2³ · 2⁵", "(x²)³ : x⁴", "360", "x² − 5x + 6 = 0", "(x+2)(x+3) = x² + 10", "20% of 80"];
-const GROUPS = [["trap",["Trapezoid","טרפז"]],["iso",["Isosceles","שווה שוקיים"]],["kite",["Kite","דלתון"]],[undefined,["Shapes","צורות"]]];
+const SOLVE_EX = ["3/4 + 2/3", "2x + 5 = 17", "(x + 2)(x − 3)", "2³ · 2⁵", "360", "x² − 5x + 6 = 0", "x² − 5x + 6 < 0", "x + y = 5 ; x − y = 1",
+  "2^x = 8", "log₂(32)", "sin(x) = 0.5", "f(x) = x³ − 3x", "f'(x) of x³ + 2x", "∫ 3x² dx", "(1,2) (3,6)", "x² + y² − 4x + 2y − 4 = 0", "3, 7, 11, 15", "C(10,3)", "20% of 80"];
+const GROUPS = [["trap",["Trapezoid","טרפז"]],["iso",["Isosceles","שווה שוקיים"]],["kite",["Kite","דלתון"]],["trig",["Trig & circle","טריגו ומעגל"]],[undefined,["Shapes","צורות"]]];
 function chip(text, cls, onClick, pressed){
   const b = el("button", "chip" + (cls ? " " + cls : ""), text); b.type = "button";
   if (pressed != null) b.setAttribute("aria-pressed", String(pressed));
@@ -545,7 +568,8 @@ function renderExamples(){
   const sc = $("solveChips"); sc.innerHTML = "";
   SOLVE_EX.forEach(x => { const c = chip(x, "math", () => { $("problem").value = x; solveNow(false, true); }); c.dir = "ltr"; sc.append(c); });
   const gc = $("geoChips"); gc.innerHTML = "";
-  T("givensExList").split("\n").forEach(x => gc.append(chip(x, "", () => { $("geoText").value = x; skipSave = true; readGivens(); }, null)));
+  T("givensExList").split("\n").forEach(x => { const [g, a] = x.split(" | ");
+    gc.append(chip(a ? g + "  →  " + a : g, "", () => { $("geoText").value = g; $("geoAsk").value = a || ""; skipSave = true; readGivens(); }, null)); });
 }
 function renderToolChips(){
   const cur = $("shape").value, curG = SH[cur] ? SH[cur].g : undefined;
@@ -779,7 +803,7 @@ SH.trapCheck = {g:"trap", kind:"proof", noUnit:true, l:["Is ABCD a trapezoid? (b
 const g2 = pick;
 const GV = () => g2("Given","נתון");
 const eqOrApprox = x => (Math.abs(x-Math.round(x))<1e-9 ? " = " : " ≈ ") + R(x);
-const usuf = p => { const uk=$("unit").value; return uk ? " " + pick(...UNITS[uk]) + (p===2?"²":"") : ""; };
+const usuf = p => { const uk=$("unit").value; if (!uk) return ""; const u = pick(...UNITS[uk]) + (p===2?"²":p===3?"³":""); return " " + (lang==="he" ? "\u2067" + u + "\u2069" : u); };
 function angRange(v, keys){ for (const k of keys) if (v[k]!=null && !(v[k]>0 && v[k]<180)) throw TW().range; }
 function lenPos(v, keys){ for (const k of keys) if (v[k]!=null && !(v[k]>0)) throw g2("Lengths must be bigger than 0.","אורכים צריכים להיות גדולים מ-0."); }
 const isoGiven = () => g2("ΔABC is isosceles (AB = AC)", LRI("ΔABC")+" שווה שוקיים "+LRI("(AB = AC)"));
@@ -1058,9 +1082,221 @@ SH.kiteArea = {g:"kite", kind:"proof", l:["Kite: area and diagonals","דלתון
   f:[["d1","Main diagonal AC","אלכסון ראשי AC"],["d2","Other diagonal BD","אלכסון משני BD"],["S","Area S","שטח S"]], ex:{d1:12,d2:8}, calc:kiteArea};
 
 
+// ---------- grades 10–12: trigonometry in triangles, circles, similar triangles ----------
+const DEGR = Math.PI / 180;
+const sinD = x => Math.sin(x * DEGR), cosD = x => Math.cos(x * DEGR), tanD = x => Math.tan(x * DEGR);
+const asinD = x => Math.asin(Math.max(-1, Math.min(1, x))) / DEGR, acosD = x => Math.acos(Math.max(-1, Math.min(1, x))) / DEGR, atanD = x => Math.atan(x) / DEGR;
+const AE = x => eqOrApprox(x);                                   // " = 5" or " ≈ 4.4721"
+const TRI_SIDE = { a: "BC", b: "AC", c: "AB" }, TRI_OPP = { a: "A", b: "B", c: "C", A: "a", B: "b", C: "c" };
+const R_PYTH = () => g2("Pythagoras: hypotenuse² = leg² + leg²", "משפט פיתגורס: יתר² = ניצב² + ניצב²");
+const R_SIN = () => g2("Right triangle: sin = opposite leg ÷ hypotenuse", "במשולש ישר-זווית: sin = הניצב שמול הזווית ÷ היתר");
+const R_COS = () => g2("Right triangle: cos = adjacent leg ÷ hypotenuse", "במשולש ישר-זווית: cos = הניצב שליד הזווית ÷ היתר");
+const R_TAN = () => g2("Right triangle: tan = opposite leg ÷ adjacent leg", "במשולש ישר-זווית: tan = הניצב שמול הזווית ÷ הניצב שליד הזווית");
+const R_ACUTE = () => g2("In a right triangle the two acute angles add up to 90°", "במשולש ישר-זווית סכום הזוויות החדות 90°");
+const R_LOC = () => g2("Law of cosines: c² = a² + b² − 2ab·cos C", "משפט הקוסינוסים: " + LRI("c² = a² + b² − 2ab·cos C"));
+const R_LOS = () => g2("Law of sines: a ÷ sin A = b ÷ sin B = c ÷ sin C = 2R", "משפט הסינוסים: " + LRI("a ÷ sin A = b ÷ sin B = c ÷ sin C = 2R"));
+
+function triSVG(S, An, computed){
+  const a = S.a, b = S.b, c = S.c;
+  let pB = [0, 0], pC = [a, 0], pA = [c * cosD(An.B), c * sinD(An.B)];
+  const xs = [pA[0], pB[0], pC[0]], ys = [pA[1], pB[1], pC[1]];
+  const minX = Math.min(...xs), maxX = Math.max(...xs), maxY = Math.max(...ys);
+  const k = Math.min(220 / (maxX - minX || 1), 120 / (maxY || 1));
+  const T = p => [30 + (p[0] - minX) * k + (220 - (maxX - minX) * k) / 2, 145 - p[1] * k];
+  const P = { A: T(pA), B: T(pB), C: T(pC) }, cen = [(P.A[0] + P.B[0] + P.C[0]) / 3, (P.A[1] + P.B[1] + P.C[1]) / 3];
+  const f = n => n.toFixed(1);
+  let s = `<svg viewBox="0 0 280 170" role="img" aria-label="ABC"><polygon points="${P.A.map(f)} ${P.B.map(f)} ${P.C.map(f)}" style="fill:var(--pen-soft);stroke:var(--pen);stroke-width:2.5;stroke-linejoin:round"/>`;
+  for (const V of ["A", "B", "C"]) {
+    const d = [P[V][0] - cen[0], P[V][1] - cen[1]], L = Math.hypot(...d) || 1;
+    s += svgText(f(P[V][0] + d[0] / L * 13), f(P[V][1] + d[1] / L * 13 + 5), V, LBL);
+    if (Math.abs(An[V] - 90) < 1e-6) {
+      const o = { A: ["B", "C"], B: ["A", "C"], C: ["A", "B"] }[V], u = o.map(W => { const dx = P[W][0] - P[V][0], dy = P[W][1] - P[V][1], l = Math.hypot(dx, dy); return [dx / l * 10, dy / l * 10]; });
+      s += `<path d="M${f(P[V][0] + u[0][0])},${f(P[V][1] + u[0][1])} l${f(u[1][0])},${f(u[1][1])} l${f(-u[0][0])},${f(-u[0][1])}" style="fill:none;stroke:var(--ink);stroke-width:1.2"/>`;
+    } else s += svgText(f(P[V][0] + (cen[0] - P[V][0]) * 0.32), f(P[V][1] + (cen[1] - P[V][1]) * 0.32 + 5), R(Math.round(An[V] * 10) / 10) + "°", angStyle(computed.includes(V)));
+  }
+  for (const [side, [U, W]] of [["a", ["B", "C"]], ["b", ["A", "C"]], ["c", ["A", "B"]]]) {
+    const m = [(P[U][0] + P[W][0]) / 2, (P[U][1] + P[W][1]) / 2], d = [m[0] - cen[0], m[1] - cen[1]], L = Math.hypot(...d) || 1;
+    s += svgText(f(m[0] + d[0] / L * 14), f(m[1] + d[1] / L * 14 + 5), R(Math.round(S[side] * 100) / 100), angStyle(computed.includes(side)));
+  }
+  return s + "</svg>";
+}
+
+function triSolve(v){
+  angRange(v, ["A", "B", "C"]); lenPos(v, ["a", "b", "c"]);
+  const S = { a: v.a, b: v.b, c: v.c }, An = { A: v.A, B: v.B, C: v.C }, u = usuf;
+  const known = () => ["a", "b", "c"].filter(k => S[k] != null).length + ["A", "B", "C"].filter(k => An[k] != null).length;
+  if (known() < 3 || !["a", "b", "c"].some(k => S[k] != null)) throw g2("Enter 3 givens, at least one of them a side.", "הכניסו 3 נתונים, ולפחות אחד מהם צלע.");
+  const rows = [[g2("Triangle ABC:  a = BC ,  b = AC ,  c = AB", "משולש " + LRI("ABC") + ":  " + LRI("a = BC ,  b = AC ,  c = AB")), GV()]];
+  rows.push([LRI([...["a", "b", "c"].filter(k => S[k] != null).map(k => TRI_SIDE[k] + " = " + R(S[k])), ...["A", "B", "C"].filter(k => An[k] != null).map(k => "∢" + k + " = " + R(An[k]) + "°")].join(" ,  ")), GV()]);
+  const computed = [];
+  const setA = (k, x, claim, why) => { if (!(x > 0 && x < 180)) throw g2("These givens don't make a triangle.", "הנתונים האלה לא יוצרים משולש."); An[k] = x; computed.push(k); rows.push([LRI(claim), why]); };
+  const setS = (k, x, claim, why) => { if (!(x > 0) || !isFinite(x)) throw g2("These givens don't make a triangle.", "הנתונים האלה לא יוצרים משולש."); S[k] = x; computed.push(k); rows.push([LRI(claim), why]); };
+  const angs = () => ["A", "B", "C"].filter(k => An[k] != null);
+  const sumAngles = () => { if (angs().length === 2) { const m = ["A", "B", "C"].find(k => An[k] == null), o = angs(); const x = 180 - An[o[0]] - An[o[1]];
+    setA(m, x, "∢" + m + " = 180° − ∢" + o[0] + " − ∢" + o[1] + " = 180 − " + R(An[o[0]]) + " − " + R(An[o[1]]) + " = " + R(x) + "°", R_SUM180()); } };
+  if (angs().length === 3 && Math.abs(An.A + An.B + An.C - 180) > 1e-6) throw g2("The angles must add up to 180°.", "סכום הזוויות חייב להיות 180°.");
+  sumAngles();
+  const rightV = ["A", "B", "C"].find(k => An[k] != null && Math.abs(An[k] - 90) < 1e-9);
+  let second = null;
+  if (rightV) {
+    // ---- right triangle: Pythagoras and sin / cos / tan ----
+    const h = TRI_OPP[rightV], legs = ["a", "b", "c"].filter(k => k !== h);
+    const acute = legs.map(k => TRI_OPP[k]);                       // the angle opposite each leg
+    const adjOf = X => legs.find(k => TRI_OPP[k] !== X), oppOf = X => TRI_OPP[X];
+    for (let guard = 0; guard < 6; guard++) {
+      const nS = ["a", "b", "c"].filter(k => S[k] != null);
+      if (nS.length === 2 && S[h] != null && S[h] <= Math.max(S[legs[0]] ?? 0, S[legs[1]] ?? 0)) throw g2("The hypotenuse must be the longest side.", "היתר חייב להיות הצלע הארוכה ביותר.");
+      if (nS.length === 2) {
+        const m = ["a", "b", "c"].find(k => S[k] == null);
+        if (m === h) { const x = Math.hypot(S[legs[0]], S[legs[1]]); setS(m, x, TRI_SIDE[h] + "² = " + TRI_SIDE[legs[0]] + "² + " + TRI_SIDE[legs[1]] + "² = " + R(S[legs[0]]) + "² + " + R(S[legs[1]]) + "² = " + R(S[legs[0]] ** 2 + S[legs[1]] ** 2) + "  ⇒  " + TRI_SIDE[h] + AE(x) + u(1), R_PYTH()); }
+        else { const o = legs.find(k => k !== m), x = Math.sqrt(S[h] ** 2 - S[o] ** 2); setS(m, x, TRI_SIDE[m] + "² = " + TRI_SIDE[h] + "² − " + TRI_SIDE[o] + "² = " + R(S[h]) + "² − " + R(S[o]) + "² = " + R(S[h] ** 2 - S[o] ** 2) + "  ⇒  " + TRI_SIDE[m] + AE(x) + u(1), R_PYTH()); }
+        continue;
+      }
+      const X = acute.find(k => An[k] != null);
+      if (nS.length === 3) {
+        if (X) break;
+        const Y = acute[0], o = oppOf(Y);
+        const x = asinD(S[o] / S[h]);
+        setA(Y, x, "sin " + Y + " = " + TRI_SIDE[o] + " ÷ " + TRI_SIDE[h] + " = " + R(S[o]) + " ÷ " + R(S[h]) + AE(S[o] / S[h]) + "  ⇒  ∢" + Y + AE(x) + "°", R_SIN());
+        sumAngles(); continue;
+      }
+      if (nS.length === 1 && X) {
+        const k = nS[0], o = oppOf(X), a_ = adjOf(X);
+        const SX = "∢" + X;
+        if (k === h) {
+          setS(o, S[h] * sinD(An[X]), "sin " + SX.slice(1) + " = " + TRI_SIDE[o] + " ÷ " + TRI_SIDE[h] + "  ⇒  " + TRI_SIDE[o] + " = " + R(S[h]) + " · sin " + R(An[X]) + "°" + AE(S[h] * sinD(An[X])) + u(1), R_SIN());
+          setS(a_, S[h] * cosD(An[X]), "cos " + X + " = " + TRI_SIDE[a_] + " ÷ " + TRI_SIDE[h] + "  ⇒  " + TRI_SIDE[a_] + " = " + R(S[h]) + " · cos " + R(An[X]) + "°" + AE(S[h] * cosD(An[X])) + u(1), R_COS());
+        } else if (k === o) {
+          setS(h, S[o] / sinD(An[X]), "sin " + X + " = " + TRI_SIDE[o] + " ÷ " + TRI_SIDE[h] + "  ⇒  " + TRI_SIDE[h] + " = " + R(S[o]) + " ÷ sin " + R(An[X]) + "°" + AE(S[o] / sinD(An[X])) + u(1), R_SIN());
+          setS(a_, S[o] / tanD(An[X]), "tan " + X + " = " + TRI_SIDE[o] + " ÷ " + TRI_SIDE[a_] + "  ⇒  " + TRI_SIDE[a_] + " = " + R(S[o]) + " ÷ tan " + R(An[X]) + "°" + AE(S[o] / tanD(An[X])) + u(1), R_TAN());
+        } else {
+          setS(o, S[a_] * tanD(An[X]), "tan " + X + " = " + TRI_SIDE[o] + " ÷ " + TRI_SIDE[a_] + "  ⇒  " + TRI_SIDE[o] + " = " + R(S[a_]) + " · tan " + R(An[X]) + "°" + AE(S[a_] * tanD(An[X])) + u(1), R_TAN());
+          setS(h, S[a_] / cosD(An[X]), "cos " + X + " = " + TRI_SIDE[a_] + " ÷ " + TRI_SIDE[h] + "  ⇒  " + TRI_SIDE[h] + " = " + R(S[a_]) + " ÷ cos " + R(An[X]) + "°" + AE(S[a_] / cosD(An[X])) + u(1), R_COS());
+        }
+        continue;
+      }
+      break;
+    }
+    const Y = acute.find(k => An[k] == null);
+    if (Y) { const o = acute.find(k => k !== Y); setA(Y, 90 - An[o], "∢" + Y + " = 90° − ∢" + o + " = 90 − " + R(An[o]) + AE(90 - An[o]) + "°", R_ACUTE()); }
+  } else {
+    // ---- any triangle: law of sines and law of cosines ----
+    for (let guard = 0; guard < 8 && (["a", "b", "c"].some(k => S[k] == null) || angs().length < 3); guard++) {
+      const nS = ["a", "b", "c"].filter(k => S[k] != null);
+      if (nS.length === 3 && angs().length < 3) {
+        const [x, y, z] = [S.a, S.b, S.c];
+        if (x + y <= z || x + z <= y || y + z <= x) throw T("triIneq");
+        const X = ["A", "B", "C"].find(k => An[k] == null), s = TRI_OPP[X], o = ["a", "b", "c"].filter(k => k !== s);
+        const cv = (S[o[0]] ** 2 + S[o[1]] ** 2 - S[s] ** 2) / (2 * S[o[0]] * S[o[1]]);
+        setA(X, acosD(cv), "cos " + X + " = (" + R(S[o[0]]) + "² + " + R(S[o[1]]) + "² − " + R(S[s]) + "²) ÷ (2 · " + R(S[o[0]]) + " · " + R(S[o[1]]) + ")" + AE(cv) + "  ⇒  ∢" + X + AE(acosD(cv)) + "°", R_LOC());
+        sumAngles(); continue;
+      }
+      if (nS.length === 2) {
+        const m = ["a", "b", "c"].find(k => S[k] == null), M = TRI_OPP[m];
+        if (An[M] != null) {               // two sides and the angle between them
+          const [p, q] = nS, x2 = S[p] ** 2 + S[q] ** 2 - 2 * S[p] * S[q] * cosD(An[M]), x = Math.sqrt(x2);
+          setS(m, x, TRI_SIDE[m] + "² = " + R(S[p]) + "² + " + R(S[q]) + "² − 2 · " + R(S[p]) + " · " + R(S[q]) + " · cos " + R(An[M]) + "°" + AE(x2) + "  ⇒  " + TRI_SIDE[m] + AE(x) + u(1), R_LOC());
+          continue;
+        }
+      }
+      // a known side with its opposite angle: law of sines
+      const pair = ["a", "b", "c"].find(k => S[k] != null && An[TRI_OPP[k]] != null);
+      if (!pair) break;
+      const ratio = S[pair] / sinD(An[TRI_OPP[pair]]);
+      const sideTodo = ["a", "b", "c"].find(k => S[k] == null && An[TRI_OPP[k]] != null);
+      if (sideTodo) { const x = ratio * sinD(An[TRI_OPP[sideTodo]]); setS(sideTodo, x, TRI_SIDE[sideTodo] + " ÷ sin " + TRI_OPP[sideTodo] + " = " + TRI_SIDE[pair] + " ÷ sin " + TRI_OPP[pair] + "  ⇒  " + TRI_SIDE[sideTodo] + " = " + R(S[pair]) + " · sin " + R(An[TRI_OPP[sideTodo]]) + "° ÷ sin " + R(An[TRI_OPP[pair]]) + "°" + AE(x) + u(1), R_LOS()); continue; }
+      const angTodo = ["a", "b", "c"].find(k => S[k] != null && An[TRI_OPP[k]] == null);
+      if (angTodo) {
+        const Y = TRI_OPP[angTodo], sv = S[angTodo] / ratio;
+        if (sv > 1 + 1e-9) throw g2("No triangle fits these givens (sin would be more than 1).", "אין משולש שמתאים לנתונים (sin יוצא גדול מ-1).");
+        const th = asinD(sv), alt = 180 - th, K = An[TRI_OPP[pair]];
+        setA(Y, th, "sin " + Y + " = " + R(S[angTodo]) + " · sin " + R(K) + "° ÷ " + R(S[pair]) + AE(sv) + "  ⇒  ∢" + Y + AE(th) + "°", R_LOS());
+        if (Math.abs(alt - th) > 1e-6 && alt + K < 180 - 1e-6) second = { Y, alt };
+        sumAngles(); continue;
+      }
+      break;
+    }
+  }
+  if (["a", "b", "c"].some(k => S[k] == null) || ["A", "B", "C"].some(k => An[k] == null)) throw g2("I need 3 givens that fix the triangle (at least one side).", "צריך 3 נתונים שקובעים את המשולש (לפחות צלע אחת).");
+  if (second) rows.push([LRI("∢" + second.Y + " = 180° − " + R(An[second.Y]) + "° = " + R(second.alt) + "°"), g2("sin is positive for an acute and an obtuse angle: this second triangle also fits", "sin חיובי גם לזווית חדה וגם לזווית קהה: גם המשולש השני הזה מתאים")]);
+  const area = S.a * S.b * sinD(An.C) / 2, per = S.a + S.b + S.c, Rc = S.a / (2 * sinD(An.A));
+  rows.push([LRI("S = ½ · BC · AC · sin C = ½ · " + R(S.a) + " · " + R(S.b) + " · sin " + R(An.C) + "°" + AE(area) + u(2)), g2("Triangle area = ½ · side · side · sin of the angle between them", "שטח משולש = ½ · צלע · צלע · sin הזווית שביניהן")]);
+  rows.push([LRI("P = " + R(S.a) + " + " + R(S.b) + " + " + R(S.c) + AE(per) + u(1)), g2("Perimeter = sum of the sides", "היקף = סכום הצלעות")]);
+  rows.push([LRI("2R = BC ÷ sin A = " + R(S.a) + " ÷ sin " + R(An.A) + "°  ⇒  R" + AE(Rc) + u(1)), g2("Law of sines: a ÷ sin A = 2R (R = radius of the circumscribed circle)", "משפט הסינוסים: " + LRI("a ÷ sin A = 2R") + " (R רדיוס המעגל החוסם)")]);
+  const found = computed.map(k => TRI_SIDE[k] ? LRI(TRI_SIDE[k] + AE(S[k]) + u(1)) : LRI("∢" + k + AE(An[k]) + "°"));
+  found.push(LRI("S" + AE(area) + u(2)));
+  return { rows, title: g2("Triangle", "משולש"), answer: found.join("\n"), svg: triSVG(S, An, computed) };
+}
+
+function circSVG(al){
+  const cx = 140, cy = 84, r = 66, a0 = -90 - al / 2, a1 = -90 + al / 2;
+  const p = a => [cx + r * Math.cos(a * DEGR), cy + r * Math.sin(a * DEGR)].map(n => n.toFixed(1));
+  const [A, B] = [p(a0), p(a1)], big = al > 180 ? 1 : 0, f = n => n.toFixed(1);
+  const ins = p(90);
+  return `<svg viewBox="0 0 280 170" role="img" aria-label="circle"><circle cx="${cx}" cy="${cy}" r="${r}" style="fill:none;stroke:var(--line);stroke-width:2"/>`
+    + `<path d="M${cx},${cy} L${A} A${r},${r} 0 ${big} 1 ${B} Z" style="fill:var(--pen-soft);stroke:var(--pen);stroke-width:2.5;stroke-linejoin:round"/>`
+    + `<line x1="${A[0]}" y1="${A[1]}" x2="${B[0]}" y2="${B[1]}" style="stroke:var(--pen);stroke-width:1.5;stroke-dasharray:5 4"/>`
+    + `<polyline points="${A} ${ins} ${B}" style="fill:none;stroke:var(--muted);stroke-width:1.5"/>`
+    + svgText(cx, cy + 16, "O", LBL) + svgText(f(+A[0] - 10), f(+A[1] - 4), "A", LBL) + svgText(f(+B[0] + 10), f(+B[1] - 4), "B", LBL) + svgText(ins[0], f(+ins[1] + 16), "C", LBL)
+    + svgText(cx, cy - 10, R(al) + "°", angStyle(false)) + `</svg>`;
+}
+function circArc(v){
+  lenPos(v, ["r"]);
+  if (v.r == null || v.al == null) throw g2("Enter the radius and the central angle.", "הכניסו את הרדיוס ואת הזווית המרכזית.");
+  if (!(v.al > 0 && v.al < 360)) throw g2("A central angle is between 0° and 360°.", "זווית מרכזית היא בין 0° ל-360°.");
+  const r = v.r, al = v.al, u = usuf, L = 2 * Math.PI * r * al / 360, Sec = Math.PI * r * r * al / 360, ch = 2 * r * sinD(al / 2), k = al / 360;
+  const pi = x => { const q = Math.round(x * 1e6) / 1e6; return (Math.abs(q - Math.round(q)) < 1e-9 ? R(q) : R(q)) + "π"; };
+  const rows = [
+    [LRI("r = OA = OB = " + R(r) + " ,  ∢AOB = " + R(al) + "°"), GV()],
+    [LRI("L = 2πr · α ÷ 360 = 2π · " + R(r) + " · " + R(al) + " ÷ 360 = " + pi(2 * r * k) + " ≈ " + R(L) + u(1)), g2("Arc length = circumference × α ÷ 360°", "אורך קשת = היקף המעגל × α ÷ 360°")],
+    [LRI("S = πr² · α ÷ 360 = π · " + R(r) + "² · " + R(al) + " ÷ 360 = " + pi(r * r * k) + " ≈ " + R(Sec) + u(2)), g2("Sector area = circle area × α ÷ 360°", "שטח גזרה = שטח העיגול × α ÷ 360°")],
+    [LRI("AB = 2r · sin(α ÷ 2) = 2 · " + R(r) + " · sin " + R(al / 2) + "°" + AE(ch) + u(1)), g2("Triangle OAB is isosceles (OA = OB): the height from O bisects the chord and the central angle", "המשולש " + LRI("OAB") + " שווה שוקיים " + LRI("(OA = OB)") + ": הגובה מ-O חוצה את המיתר ואת הזווית המרכזית")],
+    [LRI("∢ACB = ∢AOB ÷ 2 = " + R(al) + "° ÷ 2 = " + R(al / 2) + "°"), g2("An inscribed angle is half the central angle on the same arc", "זווית היקפית שווה למחצית הזווית המרכזית הנשענת על אותה קשת")],
+  ];
+  return { rows, title: g2("Circle", "מעגל"), answer: [LRI("L ≈ " + R(L) + u(1)), LRI("S ≈ " + R(Sec) + u(2)), LRI("AB" + AE(ch) + u(1)), LRI("∢ACB = " + R(al / 2) + "°")].join("\n"), svg: circSVG(al) };
+}
+
+function simSVG(){
+  return `<svg viewBox="0 0 280 150" role="img" aria-label="similar"><polygon points="20,120 100,120 40,62" style="fill:var(--pen-soft);stroke:var(--pen);stroke-width:2.5;stroke-linejoin:round"/>`
+    + `<polygon points="130,135 260,135 162,40" style="fill:var(--pen-soft);stroke:var(--pen);stroke-width:2.5;stroke-linejoin:round"/>`
+    + svgText(40, 54, "A", LBL) + svgText(12, 136, "B", LBL) + svgText(108, 136, "C", LBL)
+    + svgText(162, 32, "D", LBL) + svgText(122, 150, "E", LBL) + svgText(268, 150, "F", LBL) + `</svg>`;
+}
+function simTri(v){
+  lenPos(v, ["s1", "s2", "x", "S1"]);
+  if (v.s1 == null || v.s2 == null) throw g2("Enter a pair of matching sides (BC and EF).", "הכניסו זוג צלעות מתאימות (BC ו-EF).");
+  const k = v.s2 / v.s1, u = usuf;
+  const rows = [
+    [g2("ΔABC ~ ΔDEF", LRI("ΔABC ~ ΔDEF")), GV()],
+    [LRI("BC = " + R(v.s1) + " ,  EF = " + R(v.s2)), GV()],
+    [LRI("k = EF ÷ BC = " + R(v.s2) + " ÷ " + R(v.s1) + AE(k)), g2("Similar triangles: matching sides are in the same ratio (the ratio of similarity k)", "במשולשים דומים היחס בין צלעות מתאימות קבוע (יחס הדמיון k)")],
+    [LRI("P(DEF) ÷ P(ABC) = k" + AE(k)), g2("The ratio of the perimeters equals the ratio of similarity", "יחס ההיקפים שווה ליחס הדמיון")],
+    [LRI("S(DEF) ÷ S(ABC) = k² = " + R(k) + "²" + AE(k * k)), g2("The ratio of the areas equals the ratio of similarity squared", "יחס השטחים שווה לריבוע יחס הדמיון")],
+  ];
+  const ans = [LRI("k" + AE(k))];
+  if (v.x != null) { rows.push([LRI("DE = k · AB = " + R(k) + " · " + R(v.x) + AE(k * v.x) + u(1)), g2("A matching side: multiply by k", "צלע מתאימה: כופלים ב-k")]); ans.push(LRI("DE" + AE(k * v.x) + u(1))); }
+  if (v.S1 != null) { rows.push([LRI("S(DEF) = k² · S(ABC) = " + R(k * k) + " · " + R(v.S1) + AE(k * k * v.S1) + u(2)), g2("Area: multiply by k²", "שטח: כופלים ב-⁦k²⁩")]); ans.push(LRI("S(DEF)" + AE(k * k * v.S1) + u(2))); }
+  return { rows, title: g2("Similar triangles", "משולשים דומים"), answer: ans.join("\n"), svg: simSVG() };
+}
+
+SH.triSolve = {g:"trig", kind:"proof", l:["Any triangle: sides and angles (sin, cos, laws of sines and cosines)","משולש: צלעות וזוויות (sin, cos, משפט הסינוסים והקוסינוסים)"],
+  f:[["a","BC (a)","BC (a)"],["b","AC (b)","AC (b)"],["c","AB (c)","AB (c)"],["A","∢A (°)","∢A (°)"],["B","∢B (°)","∢B (°)"],["C","∢C (°)","∢C (°)"]], ex:{a:6,b:8,C:90}, calc:triSolve};
+SH.circArc = {g:"trig", kind:"proof", l:["Circle: arc, sector, chord, inscribed angle","מעגל: קשת, גזרה, מיתר וזווית היקפית"],
+  f:[["r","Radius r","רדיוס r"],["al","Central angle α (°)","זווית מרכזית α (°)"]], ex:{r:6,al:60}, calc:circArc};
+SH.simTri = {g:"trig", kind:"proof", l:["Similar triangles: ratio, sides, area","משולשים דומים: יחס דמיון, צלעות ושטח"],
+  f:[["s1","BC (in ΔABC)","BC (במשולש ABC)"],["s2","EF (in ΔDEF)","EF (במשולש DEF)"],["x","AB (optional)","AB (לא חובה)"],["S1","Area of ΔABC (optional)","שטח ABC (לא חובה)"]], ex:{s1:4,s2:6,x:5}, calc:simTri};
+NOTES.trig = {
+  en:["<b>Right triangle:</b> sin α = opposite ÷ hypotenuse, cos α = adjacent ÷ hypotenuse, tan α = opposite ÷ adjacent. Pythagoras: c² = a² + b².",
+      "<b>Law of sines:</b> a ÷ sin A = b ÷ sin B = c ÷ sin C = 2R. <b>Law of cosines:</b> c² = a² + b² − 2ab·cos C.",
+      "<b>Area:</b> S = ½·a·b·sin C. <b>Circle:</b> arc = 2πr·α/360, sector = πr²·α/360. An inscribed angle is half the central angle on the same arc."],
+  he:["<b>משולש ישר-זווית:</b> ⁦sin α⁩ = ניצב מול ÷ יתר, ⁦cos α⁩ = ניצב ליד ÷ יתר, ⁦tan α⁩ = ניצב מול ÷ ניצב ליד. פיתגורס: ⁦c² = a² + b²⁩.",
+      "<b>משפט הסינוסים:</b> ⁦a ÷ sin A = b ÷ sin B = c ÷ sin C = 2R⁩. <b>משפט הקוסינוסים:</b> ⁦c² = a² + b² − 2ab·cos C⁩.",
+      "<b>שטח:</b> ⁦S = ½·a·b·sin C⁩. <b>מעגל:</b> קשת ⁦= 2πr·α/360⁩, גזרה ⁦= πr²·α/360⁩. זווית היקפית שווה למחצית הזווית המרכזית הנשענת על אותה קשת."],
+};
+
 function fillShapes(){
   const sel = $("shape"), cur = sel.value || "trapAngles"; sel.innerHTML = "";
-  for (const [g,label] of [["trap",["Trapezoid: angles & proofs","טרפז: זוויות והוכחות"]],["iso",["Isosceles triangle","משולש שווה שוקיים"]],["kite",["Kite","דלתון"]],[undefined,["Shapes","צורות"]]]) {
+  for (const [g,label] of [["trap",["Trapezoid: angles & proofs","טרפז: זוויות והוכחות"]],["iso",["Isosceles triangle","משולש שווה שוקיים"]],["kite",["Kite","דלתון"]],["trig",["Trigonometry, circle, similarity","טריגונומטריה, מעגל ודמיון"]],[undefined,["Shapes","צורות"]]]) {
     const og=document.createElement("optgroup"); og.label=pick(...label);
     for (const [k,s] of Object.entries(SH)) if (s.g===g) { const o=document.createElement("option"); o.value=k; o.textContent=pick(...s.l); og.append(o); }
     sel.append(og);
@@ -1099,7 +1335,9 @@ function calcGeo(quiet){
       const box=el("div","result");
       const fig=el("div","fig"); fig.innerHTML = r.svg !== undefined ? r.svg : trapSVG(r.angles, r.par, r.computed); box.append(fig);
       const a=el("div","ans"); a.append(el("small",null,r.title), dirOf(el("div",null,r.answer), r.answer)); box.append(a);
-      box.append(proofTable(r.rows)); out.append(box);
+      box.append(proofTable(r.rows));
+      const tg = askTargets(); if (tg.length) { const ab = askBox(r, tg); if (ab) box.prepend(ab); }
+      out.append(box);
       afterGeo(quiet, plain(r.answer));
       out.hidden = $("geoPanel").hidden;
       if (!quiet) out.scrollIntoView({behavior:"smooth",block:"start"});
@@ -1127,16 +1365,63 @@ function calcGeo(quiet){
 }
 $("calc").onclick = () => calcGeo();
 
+// ---------- the question: what to find ----------
+function askTargets(){
+  const extra = ($("geoText").value.match(/(?:מצא|חשב|הוכח|find|calculate|what is|מהו|מהי|כמה)[^\n]*/gi) || []).join(" ");
+  const t = " " + $("geoAsk").value + " " + extra + " ";
+  if (!t.trim()) return [];
+  const out = [];
+  const ANGW = /(?:∢|∠|(?:ה|את\s+)?זווית\s*|angle\s*)([A-DOa-do]{1,3})(?![A-Za-z])/gi;
+  for (const m of t.matchAll(ANGW)) out.push("∢" + m[1].toUpperCase());
+  for (const m of t.replace(ANGW, " ").matchAll(/(?<![A-Za-z∢])([A-DOa-do]{2})(?![A-Za-z])/g)) out.push(m[1].toUpperCase());
+  if (/שטח|area/i.test(t)) out.push("S");
+  if (/היקף|perimeter/i.test(t)) out.push("P");
+  if (/קשת|arc/i.test(t)) out.push("L");
+  if (/רדיוס|radius/i.test(t)) out.push("R");
+  if (/גובה|height/i.test(t)) out.push("AD");
+  if (/מיתר|chord/i.test(t)) out.push("AB");
+  if (/יחס|ratio/i.test(t)) out.push("k");
+  return [...new Set(out)];
+}
+function askBox(r, targets){
+  const texts = [...plain(r.answer).split("\n"), ...r.rows.slice().reverse().map(x => plain(x[0]))].map(x => x.replace(/\s+/g, " "));
+  const esc = x => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const box = el("div", "askbox"); box.append(el("small", null, T("askAns")));
+  const miss = [];
+  for (const tg of targets) {
+    const names = /^[A-D]{2}$/.test(tg) ? [tg, tg[1] + tg[0]] : [tg];
+    let hit = null;
+    for (const x of texts) {
+      for (const nm of names) {
+        const m = x.match(new RegExp("(?:^|[\\s,(⇒])" + esc(nm) + "(?![A-Za-z²³])\\s*([=≈][^,⇒;]*)"));
+        if (!m) continue;
+        const parts = m[1].split(/(?=[=≈])/).map(p => p.trim()).filter(p => /^[=≈]\s*[−-]?\d/.test(p));
+        if (parts.length) { hit = nm + " " + parts[parts.length - 1]; break; }
+      }
+      if (hit) break;
+    }
+    if (hit) box.append(dirOf(el("div", null, LRI(hit)), "")); else miss.push(tg);
+  }
+  if (miss.length) box.append(dirOf(el("p", null, T("askMiss", LRI(miss.join(", ")))), T("askMiss", "")));
+  return box.childElementCount > 1 ? box : null;
+}
+
 // ---------- reading givens from a photo or typed text ----------
 
 // ---------- understanding givens written in words ----------
 function givensFromWords(raw){
   let t = " " + String(raw).replace(/\n/g, " , ") + " ";
-  const shape = /דלתון|\bkite/i.test(t) ? "kite" : /טרפז|trapez/i.test(t) ? "trap" : /שווה[\s-]*שוקיים|isosceles/i.test(t) ? "iso" : null;
+  const shape = /דלתון|\bkite/i.test(t) ? "kite" : /טרפז|trapez/i.test(t) ? "trap" : /שווה[\s-]*שוקיים|isosceles/i.test(t) ? "iso"
+    : /ישר[\s-]*זווית|right[\s-]*(?:angled\s+)?triangle|\bright\b|יתר|hypotenuse/i.test(t) ? "right" : /מעגל|circle|רדיוס|radius|מרכזית|central/i.test(t) ? "circle"
+    : /דומים|similar/i.test(t) ? "sim" : /משולש|triangle/i.test(t) ? "tri" : null;
   const ask = /האם|\bis\s+(it|abcd|abc)\b/i.test(t);
   const NUM = "(\\d+(?:\\.\\d+)?)";
   const IS = "\\s*(?:=|:|שוו(?:ה|ים|ות)?\\s*(?:ל-?\\s*)?|הוא|היא|is|equals?)?\\s*";
   t = t.replace(/שוו(?:ה|י)[\s-]*(?:שוקיים|צלעות)|isosceles|equilateral/gi, " ");
+  t = t.replace(/ישר[\s-]*זווית|right[\s-]*(?:angled\s+)?(?=triangle)/gi, " ");
+  t = t.replace(new RegExp("(?:ו|ה|וה)?רדיוס" + IS + NUM, "g"), " r = $1 ").replace(new RegExp("\\bradius" + IS + NUM, "gi"), " r = $1 ");
+  t = t.replace(new RegExp("(?:ו|ה|וה)?זווית\\s+(?:ה)?מרכזית" + IS + NUM, "g"), " α = $1 ").replace(new RegExp("central\\s+angle" + IS + NUM, "gi"), " α = $1 ");
+  t = t.replace(new RegExp("(?:ו|ה|וה)?יתר" + IS + NUM, "g"), " AB = $1 ").replace(new RegExp("\\bhypotenuse" + IS + NUM, "gi"), " AB = $1 ");
   // iso / kite words with a number
   t = t.replace(new RegExp("(?:ו|ה|וה)?זווית\\s+ה?ראש" + IS + NUM, "g"), " ∢A = $1 ").replace(new RegExp("vertex\\s+angle" + IS + NUM, "gi"), " ∢A = $1 ");
   t = t.replace(new RegExp("(?:ו|ה|וה)?זווי(?:ת|ות)\\s+ה?בסיס" + IS + NUM, "g"), " ∢B = $1 ").replace(new RegExp("base\\s+angles?" + IS + NUM, "gi"), " ∢B = $1 ");
@@ -1195,6 +1480,8 @@ function parseGivens(raw){
     segs.forEach(x => [...x].forEach(c => G.letters.add(c)));
   }
   const area = t.match(/\bS\s*=\s*(\d+(?:\.\d+)?)/); if (area) G.S = parseFloat(area[1]);
+  const rr = t.match(/(?<![A-Za-z])r\s*=\s*(\d+(?:\.\d+)?)/); if (rr) G.r = parseFloat(rr[1]);
+  const al = t.match(/α\s*=\s*(\d+(?:\.\d+)?)/); if (al) G.al = parseFloat(al[1]);
   for (const m of t.matchAll(/([A-D]{2})\s*∥\s*([A-D]{2})/g)) { G.par.push([m[1], m[2]]); [...m[1]+m[2]].forEach(c => G.letters.add(c)); }
   return G;
 }
@@ -1204,6 +1491,10 @@ const lenOf = (G, seg) => { for (const k in G.len) if (sameSeg(k, seg)) return G
 
 function pickTool(G){
   const hasLen = (...k) => k.some(x => lenOf(G,x) != null);
+  if (G.shape === "circle" || G.r != null || G.al != null) return "circArc";
+  if (G.shape === "sim") return "simTri";
+  const triN = ["A","B","C"].filter(k => G.ang[k] != null).length, triL = ["AB","BC","AC"].filter(k => lenOf(G,k) != null).length;
+  if ((G.shape === "right" || G.shape === "tri") && !G.letters.has("D") && !hasEq(G,"AB","AC") && triL >= 1) return "triSolve";
   if (G.shape === "kite") return Object.keys(G.ang3).length ? "kiteDiag" : (hasLen("AC","BD") || G.S != null) ? "kiteArea" : "kiteAngles";
   if (G.shape === "trap") return G.ask ? "trapCheck" : "trapAngles";
   if (G.shape === "iso") return G.ask ? "isoCheck" : (hasLen("AB","AC") && hasLen("BC")) ? "isoHeight" : "isoAngles";
@@ -1218,6 +1509,7 @@ function pickTool(G){
     return SH[$("shape").value]?.f?.length === 4 ? $("shape").value : "trapAngles";
   }
   const iso = hasEq(G,"AB","AC");
+  if (!iso && G.shape !== "iso" && triN + triL >= 3 && triL >= 1) return "triSolve";
   if (iso && (lenOf(G,"AB") != null || lenOf(G,"AC") != null) && lenOf(G,"BC") != null) return "isoHeight";
   if (iso) return "isoAngles";
   if (Object.keys(G.ang).length >= 2) return "isoCheck";
@@ -1230,6 +1522,8 @@ function fillFor(tool, G){
   if (tool === "isoAngles") { vals.A = a.A; vals.B = a.B ?? a.C; }
   else if (tool === "isoHeight") { vals.L = lenOf(G,"AB") ?? lenOf(G,"AC"); vals.b = lenOf(G,"BC"); }
   else if (tool === "kiteArea") { vals.d1 = lenOf(G,"AC"); vals.d2 = lenOf(G,"BD"); vals.S = G.S; }
+  else if (tool === "triSolve") { vals.a = lenOf(G,"BC"); vals.b = lenOf(G,"AC"); vals.c = lenOf(G,"AB"); vals.A = a.A; vals.B = a.B; vals.C = a.C; }
+  else if (tool === "circArc") { vals.r = G.r; vals.al = G.al; }
   else if (tool === "kiteDiag") { vals.A = a.A; vals.B = a.B ?? a.D; vals.C = a.C; Object.assign(vals, G.ang3); }
   else for (const k of ["A","B","C","D"]) vals[k] = a[k];
   for (const [k] of SH[tool].f) { const i = $("g_"+k); if (i) i.value = vals[k] != null ? vals[k] : ""; }
@@ -1298,12 +1592,15 @@ function showDetected(d){
     ...Object.entries(d.G.len).map(([k,v]) => k+" = "+R(v)),
     ...d.G.par.map(([x,y]) => x+" ∥ "+y),
     ...(d.G.S != null ? ["S = "+R(d.G.S)] : []),
+    ...(d.G.r != null ? ["r = "+R(d.G.r)] : []),
+    ...(d.G.al != null ? ["α = "+R(d.G.al)+"°"] : []),
   ].join(" ,  ");
   const txt = T("detected", pick(...SH[d.tool].l), LRI(list));
   box.textContent = txt; dirOf(box, txt); box.hidden = false;
 }
 function readGivens(){
   const G = parseGivens($("geoText").value);
+  if (G.shape === "right" && !Object.values(G.ang).some(x => Math.abs(x - 90) < 1e-9)) { const k = ["C","B","A"].find(k => G.ang[k] == null); if (k) G.ang[k] = 90; }
   const tool = pickTool(G);
   if (!tool) { setGeoStatus("noGivens", true); clearGeo(); return; }
   setGeoStatus("");
@@ -1359,7 +1656,8 @@ function afterGeo(quiet, answer){
   const key = $("shape").value, sh = SH[key], vals = {};
   for (const [k] of sh.f) { const i = $("g_"+k); if (i && i.value !== "") vals[k] = i.value; }
   const typed = $("geoText").value.trim();
-  const input = lastDetected && typed ? typed : pick(...sh.l) + "\n" + Object.entries(vals).map(([k,v]) => k + " = " + v).join(",  ");
+  const askT = $("geoAsk").value.trim();
+  const input = (lastDetected && typed ? typed : pick(...sh.l) + "\n" + Object.entries(vals).map(([k,v]) => k + " = " + v).join(",  ")) + (askT ? "\n? " + askT : "");
   const id = saveProblem({kind:"geo", input, answer, tool:key, vals:JSON.stringify(vals)});
   $("geoResults").prepend(saveBar(id));
 }
@@ -1409,7 +1707,8 @@ function reopen(h){
     $("shape").value = h.tool; buildFields(false);
     let vals = {}; try { vals = JSON.parse(h.vals || "{}"); } catch(e) {}
     for (const [k] of SH[h.tool].f) { const i = $("g_"+k); if (i) i.value = vals[k] ?? ""; }
-    $("geoText").value = h.input.includes("\n") ? "" : h.input; lastDetected = null; $("geoDetected").hidden = true;
+    { const [g, a] = h.input.split("\n? "); $("geoText").value = g.includes("\n") ? "" : g; $("geoAsk").value = a || ""; }
+    lastDetected = null; $("geoDetected").hidden = true;
     skipSave = true; calcGeo();
   } else {
     tab("solve"); $("problem").value = h.input; solveNow(false, true);
@@ -1540,9 +1839,24 @@ const BANK_CATS = [
   ["iso",["Isosceles triangle","משולש שווה שוקיים"]],
   ["trap",["Trapezoid","טרפז"]],
   ["kite",["Kite","דלתון"]],
+  ["hs",["Trig, circle, similarity","טריגו, מעגל ודמיון"]],
 ];
 // [category, English, Hebrew]
 const BANK = [
+  ["hs","Pythagoras: in a right triangle, hypotenuse² = leg² + leg².","משפט פיתגורס: במשולש ישר-זווית סכום ריבועי הניצבים שווה לריבוע היתר."],
+  ["hs","In a right triangle: sin α = opposite ÷ hypotenuse, cos α = adjacent ÷ hypotenuse, tan α = opposite ÷ adjacent.","במשולש ישר-זווית: sin α = ניצב מול ÷ יתר, cos α = ניצב ליד ÷ יתר, tan α = ניצב מול ÷ ניצב ליד."],
+  ["hs","Law of sines: a ÷ sin A = b ÷ sin B = c ÷ sin C = 2R.","משפט הסינוסים: a ÷ sin A = b ÷ sin B = c ÷ sin C = 2R."],
+  ["hs","Law of cosines: c² = a² + b² − 2ab·cos C.","משפט הקוסינוסים: c² = a² + b² − 2ab·cos C."],
+  ["hs","Triangle area = ½ · a · b · sin of the angle between them.","שטח משולש = ½ · צלע · צלע · סינוס הזווית שביניהן."],
+  ["hs","An inscribed angle is half the central angle on the same arc.","זווית היקפית שווה למחצית הזווית המרכזית הנשענת על אותה קשת."],
+  ["hs","Inscribed angles on the same arc are equal.","זוויות היקפיות הנשענות על אותה קשת שוות זו לזו."],
+  ["hs","An inscribed angle on a diameter is 90°.","זווית היקפית הנשענת על קוטר היא זווית ישרה."],
+  ["hs","A tangent is perpendicular to the radius at the point of tangency.","המשיק למעגל מאונך לרדיוס בנקודת ההשקה."],
+  ["hs","Two tangents from the same point to a circle are equal.","שני משיקים למעגל היוצאים מאותה נקודה שווים זה לזה."],
+  ["hs","In a cyclic quadrilateral, opposite angles add up to 180°.","במרובע החסום במעגל סכום זוויות נגדיות הוא 180°."],
+  ["hs","Triangles are similar by AA, SAS (ratio) or SSS (ratio).","משולשים דומים לפי ז.ז, צ.ז.צ (ביחס) או צ.צ.צ (ביחס)."],
+  ["hs","In similar triangles, the ratio of areas is the ratio of similarity squared.","במשולשים דומים יחס השטחים שווה לריבוע יחס הדמיון."],
+  ["hs","A midsegment of a triangle is parallel to the third side and half its length.","קטע אמצעים במשולש מקביל לצלע השלישית ושווה למחציתה."],
   ["angles","The sum of adjacent angles is 180°.","סכום זוויות צמודות הוא 180°."],
   ["angles","The sum of the angles on a straight line is 180°.","סכום הזוויות על ישר הוא 180°."],
   ["angles","The angles around a point (a full angle) add up to 360°.","סכום הזוויות בזווית מלאה הוא 360°."],
