@@ -56,6 +56,7 @@ select{font-family:var(--sans)}
 .steps .why{font:13px/1.4 var(--sans);color:var(--muted)}
 [dir="rtl"] [dir="ltr"]{text-align:right}
 .ex{font-size:13px;color:var(--muted);margin:0}
+[data-t="givensExList"]{display:block;white-space:pre-line;margin-top:2px}
 .fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .fields label{display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--muted)}
 .hint{font-size:14px;color:var(--muted);margin:0}
@@ -120,20 +121,20 @@ button:focus-visible,textarea:focus,input:focus,select:focus{outline:2px solid v
 
   <!-- GEOMETRY -->
   <section id="geoPanel" class="panel" hidden>
+    <label class="lbl" for="geoText" data-t="givensLbl"></label>
+    <textarea id="geoText" dir="auto" spellcheck="false" autocomplete="off" style="min-height:110px;font-family:var(--sans)"></textarea>
+    <p class="ex"><span data-t="givensEx"></span> <span data-t="givensExList"></span></p>
+    <button class="btn" id="geoRead" type="button" data-t="givensGo"></button>
+    <p class="status" id="geoStatus" hidden></p>
+    <p class="hint" id="geoDetected" hidden></p>
     <div class="row">
-      <button class="btn" id="geoCamera" type="button">
+      <button class="btn alt" id="geoCamera" type="button">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
         <span data-t="camera"></span></button>
       <button class="btn alt" id="geoGallery" type="button">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 17-5-5-9 8"/></svg>
         <span data-t="gallery"></span></button>
     </div>
-    <p class="status" id="geoStatus" hidden></p>
-    <label class="lbl" for="geoText" data-t="givensLbl"></label>
-    <textarea id="geoText" dir="ltr" spellcheck="false" autocapitalize="off" autocomplete="off" style="min-height:64px"></textarea>
-    <p class="ex"><span data-t="givensEx"></span> <span dir="ltr">∢A = 110°, ∢C = 43°, AB ∥ DC · AB = AC, ∢A = 40° · AB = AC = 13, BC = 10 · AB = AD, CB = CD, AC = 12, BD = 8 · ∢BAC = 35°, ∢CBD = 70°</span></p>
-    <button class="btn alt" id="geoRead" type="button" data-t="givensGo"></button>
-    <p class="hint" id="geoDetected" hidden></p>
     <hr>
     <label class="lbl" for="shape" data-t="shape"></label>
     <select id="shape"></select>
@@ -161,9 +162,11 @@ const UI = {
   en: {
     sub:"Snap a math problem or type it. Works offline.", tabSolve:"Solve", tabGeo:"Geometry",
     camera:"Take photo", gallery:"Gallery", problemLbl:"Problem (one per line, fix anything misread)",
-    geoCheck:"Check the givens below and fix anything misread, then tap Read givens and solve.",
-    givensLbl:"Givens (photo or type, fix anything misread)", givensEx:"Examples:", givensGo:"Read givens and solve",
-    detected:(tool,list)=>"Found: "+tool+(list?"  ·  "+list:""), noGivens:"I couldn't find givens like ∢A = 110° or AB = AC. Fix the text or type them.",
+    geoCheck:"Check the givens above and fix anything misread, then tap Solve.",
+    givensLbl:"Write the givens in words or symbols", givensEx:"Examples:", givensGo:"Solve",
+    givensExList:"trapezoid ABCD, AB parallel to DC, angle A = 110 degrees, angle C = 43\nisosceles triangle, vertex angle 40\nisosceles triangle, leg 13, base 10\nkite ABCD, angle BAC 35, angle CBD 70\nkite, main diagonal 12, other diagonal 8",
+    givensPh:"e.g. trapezoid ABCD, AB parallel to DC, angle A = 110, angle C = 43",
+    detected:(tool,list)=>"Found: "+tool+(list?"  ·  "+list:""), noGivens:"I couldn't find givens. Write them like: angle A = 110, AB parallel to DC, leg 13.",
     examples:"Examples:", solve:"Solve it", formulas:"Formulas: power laws & extended distributive law", answer:"Answer", shape:"Shape", units:"Units", calc:"Calculate", noUnits:"no units",
     reading:"Reading the photo…", noMath:"I couldn't find any math in that photo. Try again closer, with good light, or type it.",
     checkText:"Check the text below and fix anything that was misread. Then tap Solve it.",
@@ -179,9 +182,11 @@ const UI = {
   he: {
     sub:"צלמו תרגיל או הקלידו אותו. עובד בלי אינטרנט.", tabSolve:"פתרון", tabGeo:"גאומטריה",
     camera:"צילום", gallery:"גלריה", problemLbl:"התרגיל (אחד בכל שורה, תקנו מה שנקרא לא נכון)",
-    geoCheck:"בדקו את הנתונים ותקנו מה שנקרא לא נכון, ואז לחצו קרא נתונים ופתור.",
-    givensLbl:"הנתונים (צלמו או הקלידו, ותקנו מה שנקרא לא נכון)", givensEx:"דוגמאות:", givensGo:"קרא נתונים ופתור",
-    detected:(tool,list)=>"זיהיתי: "+tool+(list?"  ·  "+list:""), noGivens:"לא מצאתי נתונים כמו ∢A = 110° או AB = AC. תקנו את הטקסט או הקלידו אותם.",
+    geoCheck:"בדקו את הנתונים למעלה ותקנו מה שנקרא לא נכון, ואז לחצו פתור.",
+    givensLbl:"כתבו את הנתונים במילים או בסימנים", givensEx:"דוגמאות:", givensGo:"פתור",
+    givensExList:"טרפז ABCD, AB מקביל ל-DC, זווית A שווה 110 מעלות, זווית C שווה 43\nמשולש שווה שוקיים, זווית הראש 40\nמשולש שווה שוקיים, שוק 13, בסיס 10\nדלתון ABCD, זווית BAC שווה 35, זווית CBD שווה 70\nדלתון, אלכסון ראשי 12, אלכסון משני 8\nהאם ABCD טרפז? זווית A 30, זווית B 50, זווית D 150",
+    givensPh:"למשל: טרפז ABCD, AB מקביל ל-DC, זווית A שווה 110 מעלות, זווית C שווה 43",
+    detected:(tool,list)=>"זיהיתי: "+tool+(list?"  ·  "+list:""), noGivens:"לא מצאתי נתונים. כתבו למשל: זווית A שווה 110, AB מקביל ל-DC, שוק 13.",
     examples:"דוגמאות:", solve:"פתור", formulas:"נוסחאות: חוקי חזקות וחוק הפילוג המורחב", answer:"תשובה", shape:"צורה", units:"יחידות", calc:"חשב", noUnits:"ללא יחידות",
     reading:"קורא את התמונה…", noMath:"לא מצאתי תרגיל בתמונה. נסו שוב מקרוב ובתאורה טובה, או הקלידו אותו.",
     checkText:"בדקו את הטקסט ותקנו מה שנקרא לא נכון. אחר כך לחצו פתור.",
@@ -210,6 +215,7 @@ function setLang(l){
   $("langEn").setAttribute("aria-pressed", String(l === "en"));
   $("langHe").setAttribute("aria-pressed", String(l === "he"));
   document.querySelectorAll("[data-t]").forEach(e => e.textContent = T(e.dataset.t));
+  $("geoText").placeholder = T("givensPh");
   fillShapes(); fillUnits(); fillFormulas();
   if (statusKey) { const f=photoFor; photoFor="solve"; setStatus(statusKey, statusBad); photoFor=f; }
   if (geoKey) setGeoStatus(geoKey, geoBad);
@@ -834,13 +840,46 @@ function calcGeo(quiet){
 $("calc").onclick = () => calcGeo();
 
 // ---------- reading givens from a photo or typed text ----------
+
+// ---------- understanding givens written in words ----------
+function givensFromWords(raw){
+  let t = " " + String(raw).replace(/\n/g, " , ") + " ";
+  const shape = /דלתון|\bkite/i.test(t) ? "kite" : /טרפז|trapez/i.test(t) ? "trap" : /שווה[\s-]*שוקיים|isosceles/i.test(t) ? "iso" : null;
+  const ask = /האם|\bis\s+(it|abcd|abc)\b/i.test(t);
+  const NUM = "(\\d+(?:\\.\\d+)?)";
+  const IS = "\\s*(?:=|:|שוו(?:ה|ים|ות)?\\s*(?:ל-?\\s*)?|הוא|היא|is|equals?)?\\s*";
+  t = t.replace(/שוו(?:ה|י)[\s-]*(?:שוקיים|צלעות)|isosceles|equilateral/gi, " ");
+  // iso / kite words with a number
+  t = t.replace(new RegExp("(?:ו|ה|וה)?זווית\\s+ה?ראש" + IS + NUM, "g"), " ∢A = $1 ").replace(new RegExp("vertex\\s+angle" + IS + NUM, "gi"), " ∢A = $1 ");
+  t = t.replace(new RegExp("(?:ו|ה|וה)?זווי(?:ת|ות)\\s+ה?בסיס" + IS + NUM, "g"), " ∢B = $1 ").replace(new RegExp("base\\s+angles?" + IS + NUM, "gi"), " ∢B = $1 ");
+  t = t.replace(new RegExp("(?:ו|ה|וה)?אלכסון\\s+ה?ראשי(?:\\s+[A-Da-d]{2})?" + IS + NUM, "g"), " AC = $1 ").replace(new RegExp("main\\s+diagonal(?:\\s+[A-Da-d]{2})?" + IS + NUM, "gi"), " AC = $1 ");
+  t = t.replace(new RegExp("(?:ו|ה|וה)?אלכסון\\s+ה?משני(?:\\s+[A-Da-d]{2})?" + IS + NUM, "g"), " BD = $1 ").replace(new RegExp("(?:other|secondary)\\s+diagonal(?:\\s+[A-Da-d]{2})?" + IS + NUM, "gi"), " BD = $1 ");
+  if (shape === "iso" || !shape) {
+    t = t.replace(new RegExp("(?:ו|ה|וה)?שוק(?:יים|ים)?" + IS + NUM, "g"), " AB = AC = $1 ").replace(new RegExp("\\blegs?" + IS + NUM, "gi"), " AB = AC = $1 ");
+    t = t.replace(new RegExp("(?:ו|ה|וה)?בסיס" + IS + NUM, "g"), " BC = $1 ").replace(new RegExp("\\bbase" + IS + NUM, "gi"), " BC = $1 ");
+  }
+  t = t.replace(new RegExp("(?:ו|ה|וה)?שטח(?:ו|ה|ם)?(?:\\s+ה?[\\u0590-\\u05FF]+)?" + IS + NUM, "g"), " S = $1 ").replace(new RegExp("\\barea(?:\\s+of\\s+\\w+)?" + IS + NUM, "gi"), " S = $1 ");
+  // general words
+  t = t.replace(/(?:ו)?(?:לא\s+|אינו\s+|אינה\s+)מקביל\S*\s*(?:ל-?\s*)?/g, " ∦ ");
+  t = t.replace(/(?:ו)?מקביל(?:ה|ים|ות)?\s*(?:ל-?\s*)?/g, " ∥ ").replace(/\bparallel(?:\s+to)?\b/gi, " ∥ ");
+  t = t.replace(/(?:ו|ה|וה)?זווי(?:ת|ות)\s*/g, " ∢").replace(/\bangles?\s*/gi, " ∢");
+  t = t.replace(/מעלות|מעלה|\bdegrees?\b/gi, "°");
+  t = t.replace(/שוו(?:ה|ים|ות)?\s*(?:ל-?\s*)?/g, " = ").replace(/\s(?:הוא|היא|הם|הן)\s/g, " = ").replace(/\b(?:is|equals?)\b/gi, " = ");
+  t = t.replace(/\b(?:the|to|of|and|triangle|trapezoid|kite|quadrilateral|find|is)\b/gi, " ");
+  t = t.replace(/(?<![a-zA-Z])[a-do]{1,3}(?![a-zA-Z])/g, m => m.toUpperCase());
+  t = t.replace(/[֐-׿"'״׳]+/g, " ");
+  // "∢A 110" or "AB 13" without "=": add it
+  t = t.replace(/(∢\s*[A-DO]{1,3}|(?<![A-Z])[A-D]{2}(?![A-Z])|(?<![A-Z])S(?![A-Z]))\s+(?=\d)/g, "$1 = ");
+  return { t, shape, ask };
+}
 function parseGivens(raw){
-  let t = String(raw)
+  const W = givensFromWords(raw);
+  let t = W.t
     .replace(/[֐-׿"'״׳]+/g, " ")          // Hebrew words: the phone scanner can't read them anyway
     .replace(/[∠≮<]/g, "∢").replace(/\b[4K](?=[A-D]{1,3}\s*=)/g, "∢")   // the angle sign is often read as < or 4
     .replace(/(\|\||II|ll|\/\/|‖)/g, "∥").replace(/[−–—]/g, "-")
     .replace(/[׳']/g, "").replace(/(\d)\s*[oº˚]/g, "$1°");
-  const G = { ang:{}, ang3:{}, len:{}, eq:[], par:[], letters:new Set() };
+  const G = { ang:{}, ang3:{}, len:{}, eq:[], par:[], letters:new Set(), shape:W.shape, ask:W.ask };
   const CANON = {BAC:"BAC",CAB:"BAC",DAC:"BAC",CAD:"BAC",BCA:"BCA",ACB:"BCA",DCA:"BCA",ACD:"BCA",ABD:"ABD",DBA:"ABD",ADB:"ABD",BDA:"ABD",CBD:"CBD",DBC:"CBD",CDB:"CBD",BDC:"CBD"};
   const ANG3 = /∢\s*([A-DO]{3})\s*=\s*(\d+(?:\.\d+)?)\s*(°)?/g;
   for (const m of t.matchAll(ANG3)) {
@@ -876,6 +915,11 @@ const hasEq = (G, a, b) => G.eq.some(([x, y]) => (sameSeg(x, a) && sameSeg(y, b)
 const lenOf = (G, seg) => { for (const k in G.len) if (sameSeg(k, seg)) return G.len[k]; return null; };
 
 function pickTool(G){
+  const hasLen = (...k) => k.some(x => lenOf(G,x) != null);
+  if (G.shape === "kite") return Object.keys(G.ang3).length ? "kiteDiag" : (hasLen("AC","BD") || G.S != null) ? "kiteArea" : "kiteAngles";
+  if (G.shape === "trap") return G.ask ? "trapCheck" : "trapAngles";
+  if (G.shape === "iso") return G.ask ? "isoCheck" : (hasLen("AB","AC") && hasLen("BC")) ? "isoHeight" : "isoAngles";
+  if (G.ask && G.letters.has("D")) return "trapCheck";
   const four = G.letters.has("D") || G.par.length || lenOf(G,"BD") != null || hasEq(G,"AB","AD");
   if (Object.keys(G.ang3).length) return "kiteDiag";
   if (four) {
