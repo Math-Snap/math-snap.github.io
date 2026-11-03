@@ -14,6 +14,8 @@ jobs:
           curl -fsSL -o vendor/math.js https://cdn.jsdelivr.net/npm/mathjs@12.4.3/lib/browser/math.js
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
-          git add -f vendor/math.js
-          git commit -m "Add math.js for local testing"
+          curl -fsSL -o vendor/Rubik.ttf "https://github.com/google/fonts/raw/main/ofl/rubik/Rubik%5Bwght%5D.ttf"
+          curl -fsSL -o vendor/JetBrainsMono.ttf "https://github.com/google/fonts/raw/main/ofl/jetbrainsmono/JetBrainsMono%5Bwght%5D.ttf"
+          git add -f vendor/math.js vendor/Rubik.ttf vendor/JetBrainsMono.ttf
+          git commit -m "Add math.js and fonts for local testing"
           git push
