@@ -42,6 +42,7 @@ class MainActivity : AppCompatActivity() {
         web.setBackgroundColor(getColor(R.color.paper))
         web.settings.javaScriptEnabled = true
         web.settings.allowFileAccess = false
+        web.settings.domStorageEnabled = true
         web.addJavascriptInterface(Bridge(), "Android")
         setContentView(web)
         cameraUri = savedInstanceState?.getString("cameraUri")?.let { Uri.parse(it) }
@@ -70,7 +71,7 @@ class MainActivity : AppCompatActivity() {
             cameraUri = uri
             takePicture.launch(uri)
         } catch (e: Exception) {
-            js("onOcrError(" + JSONObject.quote("Couldn't open the camera. Try Gallery instead.") + ")")
+            js("onOcrError('camera')")
         }
     }
 
@@ -79,13 +80,13 @@ class MainActivity : AppCompatActivity() {
         val image = try {
             InputImage.fromFilePath(this, uri)
         } catch (e: Exception) {
-            js("onOcrError(" + JSONObject.quote("Couldn't open that photo. Try another one.") + ")")
+            js("onOcrError('open')")
             return
         }
         recognizer.process(image)
             .addOnSuccessListener { result -> js("onOcr(" + JSONObject.quote(result.text) + ")") }
             .addOnFailureListener {
-                js("onOcrError(" + JSONObject.quote("Couldn't read the photo. Try again with better light.") + ")")
+                js("onOcrError('read')")
             }
     }
 

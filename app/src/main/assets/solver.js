@@ -3,6 +3,97 @@
   "use strict";
   const M = () => root.math || globalThis.math;
 
+
+  // ---------- language ----------
+  let LANG = "en";
+  const iso = x => (LANG === "en" ? x : "⁦" + x + "⁩"); // keep math left-to-right inside Hebrew
+  const MSG = {
+    en: {
+      divZero: "You can't divide by zero.",
+      tooBig: "The answer is too big or undefined.",
+      powNoReal: "That power has no real answer.",
+      undefinedTrig: "That has no answer (it's undefined).",
+      negSqrt: "A negative number has no real square root.",
+      noNumber: "I couldn't read a number in this problem.",
+      unknownSym: n => "I don't know what \"" + n + "\" means here.",
+      cantOp: o => "I can't do \"" + o + "\" yet.",
+      unknownFn: n => "I don't know the function \"" + n + "\".",
+      fnOne: n => n + " needs one number.",
+      notUnderstood: "I couldn't understand this problem.",
+      tooLong: "This problem is too long for me.",
+      commonDen: (L, e) => "    (common denominator " + L + ": " + e + ")",
+      alwaysEqual: "Both sides are always equal.",
+      cancel: v => "The " + v + " terms cancel and the numbers don't match.",
+      everyValue: v => "Every value of " + v + " works",
+      noSolution: "No solution",
+      subFrom: x => "Subtract " + x + " from both sides:",
+      addTo: x => "Add " + x + " to both sides:",
+      divide: x => "Divide both sides by " + x + ":",
+      check: (v, x, l, r) => "Check: put " + v + " = " + x + " back in. Left side = " + l + ", right side = " + r + " ✓",
+      oneSide: "Move everything to one side:",
+      disc: "Discriminant:",
+      discNeg: "The discriminant is negative, so there is no real solution.",
+      noReal: "No real solution",
+      discZero: "The discriminant is 0, so there is one solution:",
+      quadFormula: "Quadratic formula:",
+      or: "  or  ",
+      noFound: "I couldn't find a solution to this equation.",
+      numeric: v => "I can't solve this kind of equation step by step, so I found the answer by trying values of " + v + " until both sides matched.",
+      matches: x => "That matches the right side (" + x + ") ✓",
+      mismatch: (x, y) => "The right side says " + x + ", but the correct answer is " + y + ".",
+      multiVars: l => "This has more than one unknown (" + l + "). I can only solve for one.",
+      already: "This is already as simple as it gets.",
+      expand: "Expand the brackets and combine like terms:",
+      multiEq: "This has more than one = sign.",
+      emptySide: "One side of the = is empty.",
+      generic: "I couldn't understand this one. Check the text and fix anything the camera misread.",
+    },
+    he: {
+      divZero: "אי אפשר לחלק באפס.",
+      tooBig: "התשובה גדולה מדי או לא מוגדרת.",
+      powNoReal: "לחזקה הזו אין תשובה ממשית.",
+      undefinedTrig: "אין לזה תשובה (הערך לא מוגדר).",
+      negSqrt: "למספר שלילי אין שורש ריבועי ממשי.",
+      noNumber: "לא הצלחתי לקרוא מספר בתרגיל.",
+      unknownSym: n => "לא ברור לי מה זה \"" + n + "\" כאן.",
+      cantOp: o => "עוד לא יודע לחשב \"" + o + "\".",
+      unknownFn: n => "לא מכיר את הפונקציה \"" + n + "\".",
+      fnOne: n => n + " צריך מספר אחד.",
+      notUnderstood: "לא הצלחתי להבין את התרגיל.",
+      tooLong: "התרגיל ארוך מדי בשבילי.",
+      commonDen: (L, e) => "    (מכנה משותף " + L + ": " + e + ")",
+      alwaysEqual: "שני האגפים תמיד שווים.",
+      cancel: v => "האיברים עם " + v + " מתבטלים, והמספרים לא שווים.",
+      everyValue: v => "כל ערך של " + v + " מתאים",
+      noSolution: "אין פתרון",
+      subFrom: x => "נחסר " + x + " משני האגפים:",
+      addTo: x => "נוסיף " + x + " לשני האגפים:",
+      divide: x => "נחלק את שני האגפים ב-" + x + ":",
+      check: (v, x, l, r) => "בדיקה: נציב " + iso(v + " = " + x) + ". אגף שמאל = " + l + ", אגף ימין = " + r + " ✓",
+      oneSide: "נעביר הכול לאגף אחד:",
+      disc: "דיסקרימיננטה:",
+      discNeg: "הדיסקרימיננטה שלילית, ולכן אין פתרון ממשי.",
+      noReal: "אין פתרון ממשי",
+      discZero: "הדיסקרימיננטה היא 0, ולכן יש פתרון אחד:",
+      quadFormula: "נוסחת השורשים:",
+      or: "  או  ",
+      noFound: "לא מצאתי פתרון למשוואה הזו.",
+      numeric: v => "את המשוואה הזו אי אפשר לפתור שלב אחרי שלב, אז מצאתי את התשובה בניסוי ערכים של " + v + " עד ששני האגפים שווים.",
+      matches: x => "זה מתאים לאגף ימין (" + x + ") ✓",
+      mismatch: (x, y) => "באגף ימין כתוב " + x + ", אבל התשובה הנכונה היא " + y + ".",
+      multiVars: l => "יש כאן יותר מנעלם אחד (" + l + "). אני יודע לפתור רק עם נעלם אחד.",
+      already: "התרגיל כבר מפושט עד הסוף.",
+      expand: "נפתח סוגריים ונכנס איברים דומים:",
+      multiEq: "יש כאן יותר מסימן = אחד.",
+      emptySide: "אחד האגפים של ה-= ריק.",
+      generic: "לא הצלחתי להבין את התרגיל הזה. בדקו את הטקסט ותקנו מה שהמצלמה קראה לא נכון.",
+    },
+  };
+  function t(k) {
+    const m = (MSG[LANG] && MSG[LANG][k]) || MSG.en[k];
+    return typeof m === "function" ? m.apply(null, [].slice.call(arguments, 1)) : m;
+  }
+
   function fail(msg) { const e = new Error(msg); e.friendly = true; throw e; }
 
   // ---------- exact numbers (fractions) with float fallback ----------
@@ -10,13 +101,13 @@
   const SAFE = 1e15;
   function rat(n, d) {
     if (d === undefined) d = 1;
-    if (d === 0) fail("You can't divide by zero.");
+    if (d === 0) fail(t("divZero"));
     if (d < 0) { n = -n; d = -d; }
     const g = gcd(n, d) || 1; n /= g; d /= g;
     if (Math.abs(n) > SAFE || d > SAFE) return flt(n / d);
     return { exact: true, n: n === 0 ? 0 : n, d };
   }
-  function flt(v) { if (!isFinite(v)) fail("The answer is too big or undefined."); return { exact: false, v }; }
+  function flt(v) { if (!isFinite(v)) fail(t("tooBig")); return { exact: false, v }; }
   function val(a) { return a.exact ? a.n / a.d : a.v; }
   function fromNumber(x) {
     if (Number.isInteger(x)) return rat(x, 1);
@@ -49,24 +140,24 @@
     subtract: (a, b) => (a.exact && b.exact ? rat(a.n * b.d - b.n * a.d, a.d * b.d) : flt(val(a) - val(b))),
     multiply: (a, b) => (a.exact && b.exact ? rat(a.n * b.n, a.d * b.d) : flt(val(a) * val(b))),
     divide: (a, b) => {
-      if (val(b) === 0) fail("You can't divide by zero.");
+      if (val(b) === 0) fail(t("divZero"));
       return a.exact && b.exact ? rat(a.n * b.d, a.d * b.n) : flt(val(a) / val(b));
     },
     pow: (a, b) => {
       if (a.exact && b.exact && b.d === 1 && Math.abs(b.n) <= 30) {
         const k = Math.abs(b.n); let n = Math.pow(a.n, k), d = Math.pow(a.d, k);
-        if (b.n < 0) { if (n === 0) fail("You can't divide by zero."); [n, d] = [d, n]; }
+        if (b.n < 0) { if (n === 0) fail(t("divZero")); [n, d] = [d, n]; }
         return rat(n, d);
       }
-      if (val(a) < 0 && !(b.exact && b.d === 1)) fail("That power has no real answer.");
+      if (val(a) < 0 && !(b.exact && b.d === 1)) fail(t("powNoReal"));
       return flt(Math.pow(val(a), val(b)));
     },
   };
   const DEG = Math.PI / 180;
-  function trig(f) { return a => { const r = f(val(a) * DEG); if (Math.abs(r) > 1e10) fail("That has no answer (it's undefined)."); return approxRat(r); }; }
+  function trig(f) { return a => { const r = f(val(a) * DEG); if (Math.abs(r) > 1e10) fail(t("undefinedTrig")); return approxRat(r); }; }
   const fns = {
     sqrt: a => {
-      if (val(a) < 0) fail("A negative number has no real square root.");
+      if (val(a) < 0) fail(t("negSqrt"));
       if (a.exact) { const n = Math.round(Math.sqrt(a.n)), d = Math.round(Math.sqrt(a.d)); if (n * n === a.n && d * d === a.d) return rat(n, d); }
       return flt(Math.sqrt(val(a)));
     },
@@ -84,28 +175,28 @@
     switch (node.type) {
       case "ParenthesisNode": return convert(node.content);
       case "ConstantNode":
-        if (typeof node.value !== "number") fail("I couldn't read a number in this problem.");
+        if (typeof node.value !== "number") fail(t("noNumber"));
         return { t: "c", v: fromNumber(node.value) };
       case "SymbolNode":
         if (node.name === "pi") return { t: "c", v: flt(Math.PI), label: "π" };
         if (node.name === "e") return { t: "c", v: flt(Math.E), label: "e" };
-        fail("I don't know what \"" + node.name + "\" means here.");
+        fail(t("unknownSym", node.name));
         break;
       case "OperatorNode": {
         const args = node.args.map(convert);
         if (node.fn === "unaryPlus") return args[0];
         if (node.fn === "unaryMinus") return args[0].t === "c" && !args[0].label ? { t: "c", v: neg(args[0].v) } : { t: "op", op: "neg", args };
-        if (!(node.fn in ops)) fail("I can't do \"" + node.op + "\" yet.");
+        if (!(node.fn in ops)) fail(t("cantOp", node.op));
         return { t: "op", op: node.fn, args };
       }
       case "FunctionNode": {
         const name = node.fn && node.fn.name;
-        if (!fns[name]) fail("I don't know the function \"" + name + "\".");
-        if (node.args.length !== 1) fail(name + " needs one number.");
+        if (!fns[name]) fail(t("unknownFn", name));
+        if (node.args.length !== 1) fail(t("fnOne", name));
         return { t: "fn", name, args: node.args.map(convert) };
       }
     }
-    fail("I couldn't understand this problem.");
+    fail(t("notUnderstood"));
   }
 
   function show(n, minP, right, hasParent) {
@@ -149,18 +240,18 @@
     const steps = [show(tree)];
     let guard = 0;
     while (tree.t !== "c") {
-      if (guard++ > 80) fail("This problem is too long for me.");
+      if (guard++ > 80) fail(t("tooLong"));
       const b = findBest(tree, null);
       const x = b.args[0], y = b.args[1];
       let note = "";
       if (b.t === "op" && (b.op === "add" || b.op === "subtract") && x.v.exact && y.v.exact && x.v.d !== y.v.d) {
         const L = (x.v.d / gcd(x.v.d, y.v.d)) * y.v.d;
-        note = "    (common denominator " + L + ": " + fmt(rat(x.v.n * (L / x.v.d), 1)) + "/" + L + " " + SYM[b.op] + " " + fmt(rat(y.v.n * (L / y.v.d), 1)) + "/" + L + ")";
+        note = t("commonDen", L, iso(fmt(rat(x.v.n * (L / x.v.d), 1)) + "/" + L + " " + SYM[b.op] + " " + fmt(rat(y.v.n * (L / y.v.d), 1)) + "/" + L));
       }
       const v = b.t === "fn" ? fns[b.name](x.v) : b.op === "neg" ? neg(x.v) : ops[b.op](x.v, y.v);
       for (const k of Object.keys(b)) delete b[k];
       b.t = "c"; b.v = v;
-      steps.push("= " + show(tree) + note);
+      steps.push(iso("= " + show(tree)) + note);
     }
     return { answer: fmtFull(tree.v), steps, value: tree.v };
   }
@@ -215,43 +306,43 @@
     const steps = [display];
     if (val(a) === 0) {
       const same = val(ops.subtract(L.q, R.q)) === 0;
-      steps.push(same ? "Both sides are always equal." : "The " + v + " terms cancel and the numbers don't match.");
-      return { answer: same ? "Every value of " + v + " works" : "No solution", steps };
+      steps.push(same ? t("alwaysEqual") : t("cancel", v));
+      return { answer: same ? t("everyValue", v) : t("noSolution"), steps };
     }
     let c = R.q;
-    if (val(R.p) !== 0) steps.push((val(R.p) > 0 ? "Subtract " + term(R.p, v) + " from" : "Add " + term(abs(R.p), v) + " to") + " both sides:   " + combo([[a, v], [L.q, ""]]) + " = " + fmt(c));
+    if (val(R.p) !== 0) steps.push((val(R.p) > 0 ? t("subFrom", iso(term(R.p, v))) : t("addTo", iso(term(abs(R.p), v)))) + "   " + iso(combo([[a, v], [L.q, ""]]) + " = " + fmt(c)));
     if (val(L.q) !== 0) {
       c = ops.subtract(c, L.q);
-      steps.push((val(L.q) > 0 ? "Subtract " + fmt(L.q) + " from" : "Add " + fmt(abs(L.q)) + " to") + " both sides:   " + term(a, v) + " = " + fmt(c));
+      steps.push((val(L.q) > 0 ? t("subFrom", iso(fmt(L.q))) : t("addTo", iso(fmt(abs(L.q))))) + "   " + iso(term(a, v) + " = " + fmt(c)));
     }
     const x = ops.divide(c, a);
-    if (!(a.exact && a.n === 1 && a.d === 1)) steps.push("Divide both sides by " + paren(a) + ":   " + v + " = " + fmt(c) + " ÷ " + paren(a) + " = " + fmt(x));
+    if (!(a.exact && a.n === 1 && a.d === 1)) steps.push(t("divide", iso(paren(a))) + "   " + iso(v + " = " + fmt(c) + " ÷ " + paren(a) + " = " + fmt(x)));
     try {
       const lv = evalAt(cl, v, val(x)), rv = evalAt(cr, v, val(x));
-      if (close(lv, rv)) steps.push("Check: put " + v + " = " + fmt(x) + " back in. Left side = " + round(lv) + ", right side = " + round(rv) + " ✓");
+      if (close(lv, rv)) steps.push(t("check", v, fmt(x), iso(round(lv)), iso(round(rv))));
     } catch (e) { /* skip check */ }
-    return { answer: v + " = " + fmtFull(x), steps };
+    return { answer: iso(v + " = " + fmtFull(x)), steps };
   }
 
   function solveQuad(Q, v, display) {
     const { a, b, c } = Q;
-    const steps = [display, "Move everything to one side:   " + combo([[a, v + "²"], [b, v], [c, ""]]) + " = 0", "a = " + fmt(a) + ",  b = " + fmt(b) + ",  c = " + fmt(c)];
+    const steps = [display, t("oneSide") + "   " + iso(combo([[a, v + "²"], [b, v], [c, ""]]) + " = 0"), iso("a = " + fmt(a) + ",  b = " + fmt(b) + ",  c = " + fmt(c))];
     const D = ops.subtract(ops.multiply(b, b), ops.multiply(rat(4), ops.multiply(a, c)));
-    steps.push("Discriminant:  b² − 4ac = " + paren(b) + "² − 4 × " + paren(a) + " × " + paren(c) + " = " + fmt(D));
-    if (val(D) < 0) { steps.push("The discriminant is negative, so there is no real solution."); return { answer: "No real solution", steps }; }
+    steps.push(t("disc") + "  " + iso("b² − 4ac = " + paren(b) + "² − 4 × " + paren(a) + " × " + paren(c) + " = " + fmt(D)));
+    if (val(D) < 0) { steps.push(t("discNeg")); return { answer: t("noReal"), steps }; }
     const twoA = ops.multiply(rat(2), a), mb = neg(b);
     if (val(D) === 0) {
       const x = ops.divide(mb, twoA);
-      steps.push("The discriminant is 0, so there is one solution:   " + v + " = −b ÷ 2a = " + fmt(mb) + " ÷ " + paren(twoA) + " = " + fmt(x));
-      return { answer: v + " = " + fmtFull(x), steps };
+      steps.push(t("discZero") + "   " + iso(v + " = −b ÷ 2a = " + fmt(mb) + " ÷ " + paren(twoA) + " = " + fmt(x)));
+      return { answer: iso(v + " = " + fmtFull(x)), steps };
     }
     const sq = fns.sqrt(D);
-    steps.push("Quadratic formula:   " + v + " = (−b ± √D) ÷ 2a = (" + fmt(mb) + " ± √" + fmt(D) + ") ÷ " + paren(twoA));
-    if (sq.exact) steps.push("√" + fmt(D) + " = " + fmt(sq));
+    steps.push(t("quadFormula") + "   " + iso(v + " = (−b ± √D) ÷ 2a = (" + fmt(mb) + " ± √" + fmt(D) + ") ÷ " + paren(twoA)));
+    if (sq.exact) steps.push(iso("√" + fmt(D) + " = " + fmt(sq)));
     const x1 = ops.divide(ops.add(mb, sq), twoA), x2 = ops.divide(ops.subtract(mb, sq), twoA);
-    steps.push(v + "₁ = (" + fmt(mb) + " + " + fmt(sq) + ") ÷ " + paren(twoA) + " = " + fmtShort(x1));
-    steps.push(v + "₂ = (" + fmt(mb) + " − " + fmt(sq) + ") ÷ " + paren(twoA) + " = " + fmtShort(x2));
-    return { answer: v + " = " + fmtShort(x1) + "  or  " + v + " = " + fmtShort(x2), steps };
+    steps.push(iso(v + "₁ = (" + fmt(mb) + " + " + fmt(sq) + ") ÷ " + paren(twoA) + " = " + fmtShort(x1)));
+    steps.push(iso(v + "₂ = (" + fmt(mb) + " − " + fmt(sq) + ") ÷ " + paren(twoA) + " = " + fmtShort(x2)));
+    return { answer: iso(v + " = " + fmtShort(x1)) + t("or") + iso(v + " = " + fmtShort(x2)), steps };
   }
 
   function solveNumeric(f, v, display) {
@@ -269,10 +360,10 @@
       }
       px = x; py = y;
     }
-    if (!roots.length) fail("I couldn't find a solution to this equation.");
+    if (!roots.length) fail(t("noFound"));
     return {
-      answer: roots.map(r => v + " " + fmtShort(approxRat(r)).replace(/^(?!≈)/, "= ")).join("  or  "),
-      steps: [display, "I can't solve this kind of equation step by step, so I found the answer by trying values of " + v + " until both sides matched."],
+      answer: roots.map(r => iso(v + " " + fmtShort(approxRat(r)).replace(/^(?!≈)/, "= "))).join(t("or")),
+      steps: [display, t("numeric", v)],
     };
   }
   function safe(f, x) { try { const y = f(x); return typeof y === "number" && isFinite(y) ? y : null; } catch (e) { return null; } }
@@ -283,10 +374,10 @@
     if (vars.length === 0) {
       const a = arithmetic(ls), b = arithmetic(rs);
       const ok = close(val(a.value), val(b.value));
-      a.steps.push(ok ? "That matches the right side (" + fmt(b.value) + ") ✓" : "The right side says " + fmt(b.value) + ", but the correct answer is " + fmt(a.value) + ".");
+      a.steps.push(ok ? t("matches", iso(fmt(b.value))) : t("mismatch", iso(fmt(b.value)), iso(fmt(a.value))));
       return { answer: a.answer, steps: a.steps };
     }
-    if (vars.length > 1) fail("This has more than one unknown (" + vars.join(", ") + "). I can only solve for one.");
+    if (vars.length > 1) fail(t("multiVars", iso(vars.join(", "))));
     const v = vars[0], cl = lhs.compile(), cr = rhs.compile();
     const L = linCoef(cl, v), R = linCoef(cr, v);
     if (L && R) return solveLinear(L, R, v, display, cl, cr);
@@ -302,8 +393,8 @@
     try { out = M().rationalize(expr).toString(); } catch (e) { out = M().simplify(expr).toString(); }
     const result = pretty(out);
     const steps = [display];
-    if (result.replace(/\s/g, "") === display.replace(/\s/g, "")) steps.push("This is already as simple as it gets.");
-    else steps.push("Expand the brackets and combine like terms:", "= " + result);
+    if (result.replace(/\s/g, "") === display.replace(/\s/g, "")) steps.push(t("already"));
+    else steps.push(t("expand"), "= " + result);
     return { answer: result, steps };
   }
 
@@ -315,6 +406,7 @@
     s = s.replace(/π/g, "pi").replace(/²/g, "^2").replace(/³/g, "^3");
     s = s.replace(/(\d+(?:\.\d+)?)\s*%\s*of\b/gi, "($1/100)*").replace(/%/g, "/100");
     s = s.replace(/\b[a-z]{2,}\b\s*:?/gi, w => (WORDS_OK.test(w.replace(/[\s:]/g, "")) ? w : " "));
+    s = s.replace(/[\u0590-\u05FF][\u0590-\u05FF"'״׳]*\s*:?/g, " ");
     s = s.replace(/^\s*(\(?\d{1,2}[.)]|\(?[a-hA-H][.)])\s+/, " ");
     s = s.replace(/^[\s:]+/, "");
     s = s.replace(/:/g, "/");
@@ -341,20 +433,21 @@
     const display = pretty(s);
     try {
       const parts = s.split("=");
-      if (parts.length > 2) fail("This has more than one = sign.");
+      if (parts.length > 2) fail(t("multiEq"));
       if (parts.length === 2) {
-        if (!parts[0].trim() || !parts[1].trim()) fail("One side of the = is empty.");
+        if (!parts[0].trim() || !parts[1].trim()) fail(t("emptySide"));
         return Object.assign({ problem: display }, equation(parts[0], parts[1], display));
       }
       const vars = symbols(M().parse(s));
       const r = vars.length ? algebra(s, display) : arithmetic(s);
       return { problem: display, answer: r.answer, steps: r.steps };
     } catch (e) {
-      return { problem: display, error: e.friendly ? e.message : "I couldn't understand this one. Check the text and fix anything the camera misread." };
+      return { problem: display, error: e.friendly ? e.message : t("generic") };
     }
   }
 
-  function solve(text) {
+  function solve(text, lang) {
+    LANG = MSG[lang] ? lang : "en";
     return String(text).split(/\n|;/).map(solveOne).filter(Boolean);
   }
 

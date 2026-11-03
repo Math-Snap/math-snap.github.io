@@ -38,5 +38,21 @@ for (const [input, expect] of cases) {
   if (!ok) { failed++; console.log("      expected: " + expect); }
   if (r[0] && r[0].steps) console.log("      " + r[0].steps.join("\n      "));
 }
+// Hebrew
+const strip = s => s.replace(/[⁦-⁩]/g, "");
+for (const [input, expect, needHebrew] of [
+  ["פתור: 2x + 5 = 17", "x = 6", true],
+  ["x² - 5x + 6 = 0", "x = 3  או  x = 2", true],
+  ["3/4 + 2/3", "17/12", false],
+  ["4 / 0", null, true],
+]) {
+  const r = solve(input, "he")[0];
+  const got = r && strip(r.answer || "ERROR: " + r.error);
+  const allText = r ? [r.answer, r.error].concat(r.steps || []).join("\n") : "";
+  const ok = (expect === null ? !!(r && r.error) : !!(got && got.startsWith(expect))) && (!needHebrew || /[֐-׿]/.test(allText));
+  console.log((ok ? "PASS " : "FAIL ") + "[he] " + JSON.stringify(input) + "  ->  " + got);
+  if (!ok) failed++;
+  if (r && r.steps) console.log("      " + r.steps.map(strip).join("\n      "));
+}
 console.log(failed ? failed + " failed" : "All passed");
 process.exit(failed ? 1 : 0);
