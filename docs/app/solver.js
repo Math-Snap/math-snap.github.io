@@ -1384,7 +1384,8 @@
       if (G.length > 1) {
         const q1 = pdiv(N, G).q, q2 = pdiv(D, G).q, g = pstr(G, v);
         const part = q => (q.length === 1 && Math.abs(q[0] - 1) < 1e-12 ? "" : "·" + wrapP(pretty(pstr(q, v))));
-        steps.push(["(" + pretty(g) + ")" + part(q1) + "  /  (" + pretty(g) + ")" + part(q2), t("fracFactor")]);
+        const grp = q => (part(q) ? "((" + pretty(g) + ")" + part(q) + ")" : "(" + pretty(g) + ")");
+        steps.push([grp(q1) + "/" + grp(q2), t("fracFactor")]);
         const den1 = q2.length === 1 ? q2[0] : null;
         const res = den1 !== null ? pstr(q1.map(c => c / den1), v) : wrapP(pstr(q1, v)) + "/" + wrapP(pstr(q2, v));
         const zs = rootsOf(compileF(g, v), -100, 100);
