@@ -15,7 +15,11 @@
   const B = { isWeb: true, noWifiSetting: true };
   // the Windows app (Electron) adds window.MathSnapDesktop: files, printing to PDF, opening links
   const D = window.MathSnapDesktop || null;
-  if (D) { B.isDesktop = true; B.noGoogle = true; }
+  if (D) {
+    B.isDesktop = true; B.noGoogle = true;
+    if (D.checkUpdates) B.checkUpdates = () => D.checkUpdates();
+    if (D.onUpdate) D.onUpdate(s => call("onUpdateStatus", s));
+  }
 
   // ---------------- photos + text scanner ----------------
   function pickImage(useCamera) {

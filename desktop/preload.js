@@ -7,4 +7,6 @@ contextBridge.exposeInMainWorld("MathSnapDesktop", {
   openExternal: url => ipcRenderer.invoke("open-external", String(url || "")),
   version: () => ipcRenderer.invoke("version"),
   license: (action, params) => ipcRenderer.invoke("license", String(action), params || {}),
+  checkUpdates: () => ipcRenderer.invoke("check-updates"),
+  onUpdate: cb => ipcRenderer.on("update-status", (e, s) => { try { cb(s); } catch (err) {} }),
 });

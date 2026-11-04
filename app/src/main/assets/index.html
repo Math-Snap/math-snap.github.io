@@ -484,6 +484,10 @@ table.proof tr.prolocked{filter:none;opacity:.8}
 .proterms{margin:0;text-align:center;font:13px/1.45 var(--sans);color:var(--muted)}
 .prohave{margin:0;text-align:center;font:700 17px/1.3 var(--sans);color:var(--ok)}
 .protoast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;pointer-events:none;z-index:60;background:var(--ink);color:var(--bg);border-radius:14px;padding:12px 16px;font:500 14px/1.4 var(--sans);max-width:min(92vw,420px);text-align:center;transition:opacity .2s,transform .2s}
+#updBtn.spin svg{animation:updspin 1s linear infinite}
+@keyframes updspin{to{transform:rotate(360deg)}}
+#updBtn{position:relative}
+#updBtn.dot::after{content:"";position:absolute;top:6px;inset-inline-end:6px;width:9px;height:9px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 2px var(--surface)}
 .protoast.on{opacity:1;transform:translate(-50%,0)}
 .prrow{display:flex;gap:10px;margin-top:12px}
 .prrow .btn{flex:1;width:auto}
@@ -542,6 +546,7 @@ table.proof tr.prolocked{filter:none;opacity:.8}
       <div><h1>Math Snap</h1><p class="sub" data-t="sub"></p></div>
     </div>
     <button class="propill" id="proBtn" type="button" aria-label="Math Snap Pro"><svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2.8 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 16.8l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg><span>PRO</span></button>
+    <button class="iconbtn" id="updBtn" type="button" hidden aria-label="Check for updates"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 4v5h-5"/></svg></button>
     <button class="iconbtn" id="openBookTop" type="button" aria-label="Formulas" data-tlabel="formulas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M8 7h6M8 11h4"/></svg></button>
     <button class="iconbtn" id="openCustom" type="button" aria-label="Customize" data-tlabel="custom"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="1.5"/><circle cx="17.5" cy="10.5" r="1.5"/><circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12.5" r="1.5"/><path d="M12 2a10 10 0 0 0 0 20c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.3 0-1.1.9-2 2-2h2.4A5.6 5.6 0 0 0 22 9.8C22 5.5 17.5 2 12 2z"/></svg></button>
   </header>
@@ -3911,6 +3916,32 @@ readPro(); paintProBtn();
 if (keyPro && keyPro.key && Date.now() - (keyPro.checked || 0) > 864e5) setTimeout(checkKey, 2500);
 
 
+// ---------- Windows app: "check for updates" button ----------
+(function(){
+  const b = $("updBtn");
+  if (!b || !(hasBridge && Android.isDesktop && typeof Android.checkUpdates === "function")) return;
+  b.hidden = false;
+  const label = () => { const t = pick("Check for updates", "בדיקת עדכונים"); b.setAttribute("aria-label", t); b.title = t; };
+  label(); document.addEventListener("langchange", label);
+  const say = t => proToast(t);
+  window.onUpdateStatus = s => {
+    if (!s) return;
+    if (s.state === "downloading" && s.percent != null) say(pick("Downloading the update… ", "מוריד את העדכון… ") + s.percent + "%");
+    if (s.state === "ready") { b.classList.remove("spin"); b.classList.add("dot"); }
+  };
+  b.onclick = async () => {
+    if (b.classList.contains("spin")) return;
+    b.classList.add("spin"); say(pick("Checking for updates…", "בודק אם יש עדכון…"));
+    let r; try { r = await Android.checkUpdates(); } catch (e) { r = { state: "error" }; }
+    b.classList.remove("spin");
+    const v = r && (r.version || r.current) ? " (" + (r.version || r.current) + ")" : "";
+    if (r.state === "latest") say(pick("You have the newest version", "יש לך את הגרסה הכי חדשה") + (r.current ? " (" + r.current + ")" : ""));
+    else if (r.state === "downloading") say(pick("A new version was found and is downloading", "נמצאה גרסה חדשה, היא יורדת עכשיו") + v);
+    else if (r.state === "ready") say(pick("The update is ready", "העדכון מוכן") + v);
+    else if (r.state === "dev") say(pick("Updates work in the installed app", "עדכונים עובדים באפליקציה המותקנת"));
+    else say(pick("Couldn't check for updates. Check the internet and try again.", "לא הצלחתי לבדוק עדכונים. בדקו את האינטרנט ונסו שוב."));
+  };
+})();
 // ---------- computer: Ctrl+Enter solves, paste or drop a picture to read it ----------
 (function(){
   const hint = $("deskHint");
