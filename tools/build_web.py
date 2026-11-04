@@ -46,7 +46,11 @@ html = html.replace('<script src="math.js"></script>',
                     '<script src="firebase-config.js"></script>\n<script src="web-bridge.js"></script>\n<script src="math.js"></script>', 1)
 html = html.replace("</body>", """<script src="install-gate.js"></script>
 <script>
-if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+  const had = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.register("sw.js").then(r => r.update()).catch(() => {});
+  navigator.serviceWorker.addEventListener("controllerchange", () => { if (had && !window.__reloaded) { window.__reloaded = true; location.reload(); } });
+}
 </script>
 </body>""", 1)
 (OUT / "index.html").write_text(html, encoding="utf-8")

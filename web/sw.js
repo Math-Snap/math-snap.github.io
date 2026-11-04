@@ -23,6 +23,14 @@ self.addEventListener("fetch", e => {
   const url = new URL(req.url);
   if (/googleapis\.com|identitytoolkit|securetoken|firestore|firebaseapp\.com|accounts\.google/.test(url.host)) return;
 
+  if (url.origin === self.location.origin && (req.mode === "navigate" || /\.(html|js)$/.test(url.pathname) || url.pathname.endsWith("/"))) {
+    // the app's own page and code: newest from the internet, the saved copy when offline
+    e.respondWith(caches.open(CACHE).then(async c => {
+      try { const r = await fetch(req, { cache: "no-store" }); if (r.ok) c.put(req, r.clone()); return r; }
+      catch (err) { return (await c.match(req, { ignoreSearch: true })) || Response.error(); }
+    }));
+    return;
+  }
   if (url.origin === self.location.origin) {
     // show the saved copy right away, and quietly fetch a fresh one for next time
     e.respondWith(caches.open(CACHE).then(async c => {

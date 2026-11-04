@@ -46,6 +46,8 @@ class MainActivity : AppCompatActivity() {
         web.settings.javaScriptEnabled = true
         web.settings.allowFileAccess = false
         web.settings.domStorageEnabled = true
+        web.settings.cacheMode = android.webkit.WebSettings.LOAD_NO_CACHE
+        web.clearCache(true)
         web.addJavascriptInterface(Bridge(), "Android")
         setContentView(web)
         cameraUri = savedInstanceState?.getString("cameraUri")?.let { Uri.parse(it) }
@@ -143,6 +145,9 @@ class MainActivity : AppCompatActivity() {
 
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
-        if (web.canGoBack()) web.goBack() else super.onBackPressed()
+        web.evaluateJavascript("(window.onBack && window.onBack()) ? 'y' : 'n'") { r ->
+            if (r != null && r.contains("y")) return@evaluateJavascript
+            if (web.canGoBack()) web.goBack() else finish()
+        }
     }
 }

@@ -323,6 +323,31 @@ body[data-bg="plain"]{background-image:none}
 .overlay{position:fixed;inset:0;z-index:30;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch}
 .overlay .inner{max-width:640px;margin:0 auto;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:16px}
 .sheethead{display:flex;align-items:center;gap:12px;padding-top:6px}
+.formbtn{display:flex;align-items:center;gap:10px;border:0;background:var(--pen-soft);color:var(--pen);border-radius:var(--r2,16px);padding:13px 14px;font:600 15px/1.2 var(--sans);cursor:pointer;text-align:start;transition:transform .15s ease}
+.formbtn:active{transform:scale(.98)}
+.formbtn svg{width:22px;height:22px;flex:none}
+.formbtn span{flex:1}
+.formbtn .chev{width:18px;height:18px;opacity:.7}
+[dir="rtl"] .formbtn .chev{transform:scaleX(-1)}
+.bookwrap{position:fixed;inset:0;z-index:40;background:rgba(10,14,25,.5);display:flex;align-items:flex-end;justify-content:center}
+.bsheet{background:var(--bg);width:100%;max-width:680px;max-height:92vh;max-height:92dvh;overflow-y:auto;overscroll-behavior:contain;border-radius:26px 26px 0 0;box-shadow:0 -10px 40px rgba(0,0,0,.25)}
+.bsheet .grab{width:44px;height:5px;border-radius:3px;background:var(--line);margin:10px auto 0}
+.bsheet .inner{padding:4px max(16px,env(safe-area-inset-right,0px)) calc(28px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:14px}
+.booksearch{font:16px var(--sans)}
+.booklist{display:flex;flex-direction:column;gap:18px}
+.booksec h3{margin:0 0 8px;font-size:15px;font-weight:700;color:var(--pen)}
+.bookgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.fcard{background:var(--surface);border-radius:var(--r2,16px);padding:11px 14px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:4px;min-width:0}
+.fcard small{color:var(--muted);font:600 12.5px/1.3 var(--sans)}
+.fcard .fm{font:600 17px/1.55 var(--mono);color:var(--ink);overflow-x:auto;text-align:left;white-space:nowrap}
+.fcard .fm .pl{display:inline;line-height:2.3}
+body.noscroll{overflow:hidden}
+@keyframes sheetup{from{transform:translateY(100%)}to{transform:none}}
+@media (prefers-reduced-motion:no-preference){
+  .bookwrap:not([hidden]){animation:fadein .25s ease both}
+  .bookwrap:not([hidden]) .bsheet{animation:sheetup .38s cubic-bezier(.2,.8,.2,1) both}
+  .fcard{animation:rise .35s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0) * 35ms + 120ms)}
+}
 .sheethead h2{flex:1;margin:0;font-size:22px;font-weight:800}
 .opt{display:flex;flex-direction:column;gap:10px}
 .opt h3{margin:0;font-size:14px;font-weight:600;color:var(--muted)}
@@ -401,6 +426,7 @@ body[data-bg="plain"]{background-image:none}
       <span class="logo" aria-hidden="true"><svg viewBox="0 0 28 28" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V6a2 2 0 0 1 2-2h3M19 4h3a2 2 0 0 1 2 2v3M24 19v3a2 2 0 0 1-2 2h-3M9 24H6a2 2 0 0 1-2-2v-3"/><path d="M10 12h8M10 16h8" /><circle cx="20.5" cy="20.5" r="0.1" stroke="#FFE27A" stroke-width="3.2"/></svg></span>
       <div><h1>Math Snap</h1><p class="sub" data-t="sub"></p></div>
     </div>
+    <button class="iconbtn" id="openBookTop" type="button" aria-label="Formulas" data-tlabel="formulas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M8 7h6M8 11h4"/></svg></button>
     <button class="iconbtn" id="openCustom" type="button" aria-label="Customize" data-tlabel="custom"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="1.5"/><circle cx="17.5" cy="10.5" r="1.5"/><circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12.5" r="1.5"/><path d="M12 2a10 10 0 0 0 0 20c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.3 0-1.1.9-2 2-2h2.4A5.6 5.6 0 0 0 22 9.8C22 5.5 17.5 2 12 2z"/></svg></button>
   </header>
 
@@ -423,7 +449,7 @@ body[data-bg="plain"]{background-image:none}
       <div class="padkeys" id="padKeys"></div>
     </div>
     <div><p class="exlabel" data-t="tryOne"></p><div class="chips" id="solveChips"></div></div>
-    <details class="notes" id="formulas"><summary><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M8 7h6"/></svg><span data-t="formulas"></span></summary><div class="body" id="formulaBody"></div></details>
+    <button class="formbtn" id="openBook" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M8 7h6M8 11h4"/></svg><span data-t="formulas"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button>
     <button class="btn" id="solve" type="button"><span data-t="solve"></span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
   </section>
 
@@ -438,6 +464,7 @@ body[data-bg="plain"]{background-image:none}
     <label class="lbl" for="geoAsk" data-t="askLbl"></label>
     <textarea id="geoAsk" dir="auto" spellcheck="false" autocomplete="off" style="min-height:64px;font-family:var(--sans);font-size:17px"></textarea>
     <div><p class="exlabel" data-t="tryOne"></p><div class="chips" id="geoChips"></div></div>
+    <button class="formbtn" id="openBookGeo" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M8 7h6M8 11h4"/></svg><span data-t="formulas"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button>
     <button class="btn" id="geoRead" type="button"><span data-t="givensGo"></span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
     <p class="status" id="geoStatus" hidden></p>
     <p class="hint" id="geoDetected" hidden></p>
@@ -474,6 +501,8 @@ body[data-bg="plain"]{background-image:none}
 
 <div class="overlay" id="customize" hidden role="dialog" aria-modal="true" aria-labelledby="customTitle"><div class="inner" id="customInner"></div></div>
 <div class="overlay welcome" id="welcome" hidden role="dialog" aria-modal="true" aria-labelledby="welcomeTitle"><div class="inner" id="welcomeInner"></div></div>
+
+<div class="bookwrap" id="bookSheet" hidden role="dialog" aria-modal="true" aria-labelledby="bookTitle"><div class="bsheet"><div class="grab" aria-hidden="true"></div><div class="inner" id="bookInner"></div></div></div>
 
 <nav class="bottomnav" role="tablist">
   <button role="tab" id="tabSolve" aria-selected="true" type="button"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 7h8M8 12h2M14 12h2M8 16h2M14 16h2"/></svg></span><span data-t="tabSolve"></span></button>
@@ -535,7 +564,7 @@ const UI = {
     givensExList:"trapezoid ABCD, AB parallel to DC, angle A = 110 degrees, angle C = 43\nisosceles triangle, vertex angle 40\nisosceles triangle, leg 13, base 10\nkite ABCD, angle BAC 35, angle CBD 70\nkite, main diagonal 12, other diagonal 8\nright triangle ABC, angle C 90, AB 10, angle A 30 | find BC and AC\ntriangle ABC, AB = 7, AC = 5, angle A = 60 | find BC and the area\ncircle, radius 6, central angle 60 | arc length",
     givensPh:"e.g. trapezoid ABCD, AB parallel to DC, angle A = 110, angle C = 43",
     detected:(tool,list)=>"Found: "+tool+(list?"  ·  "+list:""), noGivens:"I couldn't find givens. Write them like: angle A = 110, AB parallel to DC, leg 13.",
-    examples:"Examples:", solve:"Solve it", formulas:"Formulas: power laws & extended distributive law", answer:"Answer", shape:"Shape", units:"Units", calc:"Calculate", noUnits:"no units",
+    examples:"Examples:", solve:"Solve it", formulas:"Formula sheet", bookTitle:"Formula sheet", bookSearch:"Search a formula…", answer:"Answer", shape:"Shape", units:"Units", calc:"Calculate", noUnits:"no units",
     reading:"Reading the photo…", noMath:"I couldn't find any math in that photo. Try again closer, with good light, or type it.",
     checkText:"Check the text below and fix anything that was misread. Then tap Solve it.",
     appOnly:"The camera only works in the app.", empty:"Type a problem or take a photo first.",
@@ -590,7 +619,7 @@ const UI = {
     givensExList:"טרפז ABCD, AB מקביל ל-DC, זווית A שווה 110 מעלות, זווית C שווה 43\nמשולש שווה שוקיים, זווית הראש 40\nמשולש שווה שוקיים, שוק 13, בסיס 10\nדלתון ABCD, זווית BAC שווה 35, זווית CBD שווה 70\nדלתון, אלכסון ראשי 12, אלכסון משני 8\nהאם ABCD טרפז? זווית A 30, זווית B 50, זווית D 150\nמשולש ישר זווית ABC, זווית C שווה 90, AB שווה 10, זווית A שווה 30 | מצאו את BC ואת AC\nמשולש ABC, AB שווה 7, AC שווה 5, זווית A שווה 60 | מצאו את BC ואת השטח\nמעגל, רדיוס 6, זווית מרכזית 60 | אורך הקשת",
     givensPh:"למשל: טרפז ABCD, AB מקביל ל-DC, זווית A שווה 110 מעלות, זווית C שווה 43",
     detected:(tool,list)=>"זיהיתי: "+tool+(list?"  ·  "+list:""), noGivens:"לא מצאתי נתונים. כתבו למשל: זווית A שווה 110, AB מקביל ל-DC, שוק 13.",
-    examples:"דוגמאות:", solve:"פתור", formulas:"נוסחאות: חוקי חזקות וחוק הפילוג המורחב", answer:"תשובה", shape:"צורה", units:"יחידות", calc:"חשב", noUnits:"ללא יחידות",
+    examples:"דוגמאות:", solve:"פתור", formulas:"דף נוסחאות", bookTitle:"דף נוסחאות", bookSearch:"חיפוש נוסחה…", answer:"תשובה", shape:"צורה", units:"יחידות", calc:"חשב", noUnits:"ללא יחידות",
     reading:"קורא את התמונה…", noMath:"לא מצאתי תרגיל בתמונה. נסו שוב מקרוב ובתאורה טובה, או הקלידו אותו.",
     checkText:"בדקו את הטקסט ותקנו מה שנקרא לא נכון. אחר כך לחצו פתור.",
     appOnly:"המצלמה עובדת רק באפליקציה.", empty:"הקלידו תרגיל או צלמו קודם.",
@@ -623,7 +652,7 @@ function setLang(l){
   $("geoText").placeholder = T("givensPh");
   $("problem").placeholder = T("problemPh");
   $("geoAsk").placeholder = T("askPh");
-  fillShapes(); fillUnits(); fillFormulas(); renderExamples(); renderToolChips();
+  fillShapes(); fillUnits(); renderExamples(); renderToolChips(); if (!$("bookSheet").hidden) renderBook();
   if (typeof renderBank === "function" && $("bankList")) renderBank();
   if (typeof renderMe === "function" && !$("mePanel").hidden) renderMe();
   if (!$("customize").hidden) renderCustomize();
@@ -3107,6 +3136,221 @@ function renderCustomize(){
   box.append(done, rs);
 }
 
+// ---------- the formula book: every formula in one pop-up ----------
+// [category id, English, Hebrew, items: [English name, Hebrew name, formula]]
+const BOOK = [
+  ["arith", "Arithmetic & fractions", "חשבון ושברים", [
+    ["Order of operations", "סדר פעולות", "( )  →  xⁿ  √  →  ×  ÷  →  +  −"],
+    ["Adding fractions", "חיבור שברים", "a/b + c/d = (ad + bc)/(bd)"],
+    ["Multiplying fractions", "כפל שברים", "a/b · c/d = (ac)/(bd)"],
+    ["Dividing fractions", "חילוק שברים", "a/b : c/d = a/b · d/c"],
+    ["Percent of a number", "אחוז ממספר", "p% · x = (p/100) · x"],
+    ["Percent change", "שינוי באחוזים", "(new − old)/old · 100%"],
+  ]],
+  ["powers", "Powers & roots", "חזקות ושורשים", [
+    ["Product, same base", "מכפלת חזקות עם אותו בסיס", "aᵐ · aⁿ = aᵐ⁺ⁿ"],
+    ["Quotient, same base", "מנת חזקות עם אותו בסיס", "aᵐ : aⁿ = aᵐ⁻ⁿ"],
+    ["Power of a power", "חזקה של חזקה", "(aᵐ)ⁿ = aᵐⁿ"],
+    ["Power of a product", "חזקה של מכפלה", "(ab)ⁿ = aⁿ · bⁿ"],
+    ["Power of a fraction", "חזקה של שבר", "(a/b)ⁿ = aⁿ/bⁿ"],
+    ["Exponent 0", "מעריך 0", "a⁰ = 1   (a ≠ 0)"],
+    ["Negative exponent", "מעריך שלילי", "a⁻ⁿ = 1/aⁿ"],
+    ["Root of a product", "שורש של מכפלה", "√(ab) = √a · √b"],
+    ["Root of a fraction", "שורש של שבר", "√(a/b) = √a/√b"],
+    ["Root as a power", "שורש כחזקה", "ⁿ√a = a^(1/n)"],
+  ]],
+  ["algebra", "Algebra", "אלגברה", [
+    ["Distributive law", "חוק הפילוג", "a(b + c) = ab + ac"],
+    ["Extended distributive law", "חוק הפילוג המורחב", "(a + b)(c + d) = ac + ad + bc + bd"],
+    ["Square of a sum", "ריבוע סכום", "(a + b)² = a² + 2ab + b²"],
+    ["Square of a difference", "ריבוע הפרש", "(a − b)² = a² − 2ab + b²"],
+    ["Difference of squares", "הפרש ריבועים", "(a + b)(a − b) = a² − b²"],
+    ["Cube of a sum", "סכום בחזקה שלישית", "(a + b)³ = a³ + 3a²b + 3ab² + b³"],
+    ["Factoring a trinomial", "פירוק טרינום", "x² + (p + q)x + pq = (x + p)(x + q)"],
+    ["Vieta", "נוסחאות ויאטה", "x₁ + x₂ = −b/a ,   x₁ · x₂ = c/a"],
+  ]],
+  ["equations", "Equations & inequalities", "משוואות ואי-שוויונים", [
+    ["Quadratic formula", "נוסחת השורשים", "x = (−b ± √(b² − 4ac))/(2a)"],
+    ["Discriminant", "דיסקרימיננטה", "D = b² − 4ac   D > 0: 2 ,  D = 0: 1 ,  D < 0: 0"],
+    ["Vertex of a parabola", "קודקוד הפרבולה", "x = −b/(2a)"],
+    ["Multiplying by a negative", "כפל במספר שלילי", "a < b  ⇒  −a > −b"],
+    ["Absolute value (less)", "ערך מוחלט (קטן)", "|x| < a  ⇔  −a < x < a"],
+    ["Absolute value (more)", "ערך מוחלט (גדול)", "|x| > a  ⇔  x < −a  or  x > a"],
+    ["Quadratic inequality (a > 0)", "אי-שוויון ריבועי (a > 0)", "ax² + bx + c < 0  ⇔  x₁ < x < x₂"],
+  ]],
+  ["logs", "Exponents & logarithms", "מעריכים ולוגריתמים", [
+    ["Definition", "הגדרה", "log_b(a) = c  ⇔  bᶜ = a"],
+    ["Log of a product", "לוג של מכפלה", "log(xy) = log x + log y"],
+    ["Log of a quotient", "לוג של מנה", "log(x/y) = log x − log y"],
+    ["Log of a power", "לוג של חזקה", "log(xⁿ) = n · log x"],
+    ["Change of base", "מעבר בסיס", "log_b(a) = log a/log b"],
+    ["Special values", "ערכים מיוחדים", "log_b(b) = 1 ,   log_b(1) = 0"],
+    ["Natural log", "לוגריתם טבעי", "ln x = logₑ x ,   e ≈ 2.718"],
+  ]],
+  ["seq", "Sequences", "סדרות", [
+    ["Arithmetic: general term", "חשבונית: איבר כללי", "aₙ = a₁ + (n − 1)d"],
+    ["Arithmetic: sum", "חשבונית: סכום", "Sₙ = n(a₁ + aₙ)/2"],
+    ["Arithmetic: sum (with d)", "חשבונית: סכום (עם d)", "Sₙ = n(2a₁ + (n − 1)d)/2"],
+    ["Geometric: general term", "הנדסית: איבר כללי", "aₙ = a₁ · qⁿ⁻¹"],
+    ["Geometric: sum", "הנדסית: סכום", "Sₙ = a₁(qⁿ − 1)/(q − 1)"],
+    ["Infinite geometric sum", "סכום הנדסית אינסופית", "S = a₁/(1 − q)   (|q| < 1)"],
+    ["Three terms in a row", "שלושה איברים עוקבים", "arith: 2b = a + c ,   geo: b² = ac"],
+  ]],
+  ["analytic", "Analytic geometry", "גאומטריה אנליטית", [
+    ["Slope", "שיפוע", "m = (y₂ − y₁)/(x₂ − x₁)"],
+    ["Line through a point", "ישר דרך נקודה", "y − y₁ = m(x − x₁)"],
+    ["Slope-intercept form", "הצגה מפורשת", "y = mx + b"],
+    ["Distance", "מרחק בין נקודות", "d = √((x₂ − x₁)² + (y₂ − y₁)²)"],
+    ["Midpoint", "אמצע קטע", "M = ((x₁ + x₂)/2 , (y₁ + y₂)/2)"],
+    ["Parallel lines", "ישרים מקבילים", "m₁ = m₂"],
+    ["Perpendicular lines", "ישרים מאונכים", "m₁ · m₂ = −1"],
+    ["Circle", "מעגל", "(x − a)² + (y − b)² = R²"],
+    ["Slope and angle", "שיפוע וזווית", "m = tan α"],
+  ]],
+  ["trig", "Trigonometry", "טריגונומטריה", [
+    ["Right triangle", "משולש ישר-זווית", "sin α = a/c ,  cos α = b/c ,  tan α = a/b"],
+    ["Pythagorean identity", "זהות פיתגורס", "sin²α + cos²α = 1"],
+    ["Tangent", "טנגנס", "tan α = sin α/cos α"],
+    ["Complementary angles", "זוויות משלימות ל-90°", "sin(90° − α) = cos α"],
+    ["Law of sines", "משפט הסינוסים", "a/sin α = b/sin β = c/sin γ = 2R"],
+    ["Law of cosines", "משפט הקוסינוסים", "c² = a² + b² − 2ab · cos γ"],
+    ["Triangle area", "שטח משולש", "S = ab · sin γ/2"],
+    ["sin x = a", "sin x = a", "x = α + 360°k  or  x = 180° − α + 360°k"],
+    ["cos x = a", "cos x = a", "x = ±α + 360°k"],
+    ["tan x = a", "tan x = a", "x = α + 180°k"],
+    ["Special values", "ערכים מיוחדים", "sin 30° = 1/2 ,  sin 45° = √2/2 ,  sin 60° = √3/2"],
+    ["Radians", "רדיאנים", "π = 180°"],
+  ]],
+  ["calc", "Calculus", "חדו״א", [
+    ["Power rule", "נגזרת של חזקה", "(xⁿ)' = n · xⁿ⁻¹"],
+    ["Constant", "נגזרת של מספר", "(c)' = 0"],
+    ["Sum", "נגזרת של סכום", "(f ± g)' = f' ± g'"],
+    ["Product", "נגזרת של מכפלה", "(f · g)' = f'g + fg'"],
+    ["Quotient", "נגזרת של מנה", "(f/g)' = (f'g − fg')/g²"],
+    ["Chain rule", "כלל השרשרת", "(f(g(x)))' = f'(g(x)) · g'(x)"],
+    ["Square root", "נגזרת של שורש", "(√x)' = 1/(2√x)"],
+    ["Trig", "נגזרות טריגונומטריות", "(sin x)' = cos x ,   (cos x)' = −sin x"],
+    ["e and ln", "e ו-ln", "(eˣ)' = eˣ ,   (ln x)' = 1/x"],
+    ["Tangent line", "משוואת משיק", "y − f(a) = f'(a)(x − a)"],
+    ["Extreme points", "נקודות קיצון", "f'(x) = 0"],
+    ["Integral of a power", "אינטגרל של חזקה", "∫xⁿ dx = xⁿ⁺¹/(n + 1) + C"],
+    ["Integral of 1/x", "אינטגרל של 1/x", "∫1/x dx = ln|x| + C"],
+    ["Integrals of e and sin", "אינטגרל של e ושל sin", "∫eˣ dx = eˣ + C ,   ∫sin x dx = −cos x + C"],
+    ["Definite integral", "אינטגרל מסוים", "∫ₐᵇ f(x) dx = F(b) − F(a)"],
+    ["Area between curves", "שטח בין גרפים", "S = ∫ₐᵇ (f(x) − g(x)) dx"],
+    ["Volume of revolution", "נפח גוף סיבוב", "V = π∫ₐᵇ f²(x) dx"],
+  ]],
+  ["prob", "Probability & statistics", "הסתברות וסטטיסטיקה", [
+    ["Factorial", "עצרת", "n! = n · (n − 1) · … · 2 · 1"],
+    ["Combinations", "צירופים", "C(n,k) = n!/(k!(n − k)!)"],
+    ["Arrangements", "תמורות חלקיות", "P(n,k) = n!/(n − k)!"],
+    ["Complement", "המאורע המשלים", "P(Ā) = 1 − P(A)"],
+    ["Union", "איחוד", "P(A∪B) = P(A) + P(B) − P(A∩B)"],
+    ["Independent events", "מאורעות בלתי תלויים", "P(A∩B) = P(A) · P(B)"],
+    ["Conditional", "הסתברות מותנית", "P(A|B) = P(A∩B)/P(B)"],
+    ["Binomial", "התפלגות בינומית", "P(X = k) = C(n,k) · pᵏ · (1 − p)ⁿ⁻ᵏ"],
+    ["Mean", "ממוצע", "x̄ = Σx/n"],
+    ["Variance", "שונות", "σ² = Σ(x − x̄)²/n"],
+    ["Standard deviation", "סטיית תקן", "σ = √(σ²)"],
+  ]],
+  ["areas", "Areas & perimeters", "שטחים והיקפים", [
+    ["Triangle", "משולש", "S = a · hₐ/2"],
+    ["Rectangle", "מלבן", "S = ab ,   P = 2(a + b)"],
+    ["Square", "ריבוע", "S = a² ,   d = a√2"],
+    ["Parallelogram", "מקבילית", "S = a · hₐ"],
+    ["Trapezoid", "טרפז", "S = (a + b)/2 · h"],
+    ["Rhombus, kite", "מעוין, דלתון", "S = d₁ · d₂/2"],
+    ["Circle", "מעגל", "S = πr² ,   P = 2πr"],
+    ["Sector and arc", "גזרה וקשת", "S = πr² · α/360° ,   L = 2πr · α/360°"],
+    ["Heron", "נוסחת הרון", "S = √(s(s − a)(s − b)(s − c))"],
+    ["Equilateral triangle", "משולש שווה צלעות", "h = a√3/2 ,   S = a²√3/4"],
+  ]],
+  ["solids", "Solids", "גופים", [
+    ["Cube", "קובייה", "V = a³ ,   S = 6a²"],
+    ["Box", "תיבה", "V = abc ,   S = 2(ab + ac + bc)"],
+    ["Prism", "מנסרה", "V = S_base · h"],
+    ["Cylinder", "גליל", "V = πr²h ,   S = 2πr² + 2πrh"],
+    ["Pyramid", "פירמידה", "V = S_base · h/3"],
+    ["Cone", "חרוט", "V = πr²h/3"],
+    ["Sphere", "כדור", "V = 4πr³/3 ,   S = 4πr²"],
+  ]],
+  ["angles", "Angles & theorems", "זוויות ומשפטים", [
+    ["Triangle", "משולש", "α + β + γ = 180°"],
+    ["Quadrilateral", "מרובע", "α + β + γ + δ = 360°"],
+    ["Polygon", "מצולע", "(n − 2) · 180°"],
+    ["Regular polygon angle", "זווית במצולע משוכלל", "(n − 2) · 180°/n"],
+    ["Exterior angles", "זוויות חיצוניות", "Σ = 360°"],
+    ["Diagonals", "מספר אלכסונים", "n(n − 3)/2"],
+    ["Exterior angle of a triangle", "זווית חיצונית למשולש", "δ = α + β"],
+    ["Inscribed angle", "זווית היקפית", "α = β/2"],
+    ["Pythagoras", "פיתגורס", "a² + b² = c²"],
+    ["Similar triangles", "משולשים דומים", "S₁/S₂ = k²"],
+    ["Midsegment", "קטע אמצעים", "MN = BC/2"],
+    ["Median to the hypotenuse", "תיכון ליתר", "CM = AB/2"],
+  ]],
+];
+let bookCat = "all";
+function openBook(cat){
+  bookCat = cat || "all";
+  renderBook();
+  $("bookSheet").hidden = false;
+  document.body.classList.add("noscroll");
+  setTimeout(() => { const sc = $("bookSheet").querySelector(".bsheet"); if (sc) sc.scrollTop = 0; }, 0);
+}
+function closeBook(){ $("bookSheet").hidden = true; document.body.classList.remove("noscroll"); }
+function renderBook(){
+  const box = $("bookInner"); box.innerHTML = "";
+  const head = el("div", "sheethead"); const h = el("h2", null, T("bookTitle")); h.id = "bookTitle";
+  const x = el("button", "iconbtn"); x.type = "button"; x.setAttribute("aria-label", T("done"));
+  x.append(svgEl('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>')); x.onclick = closeBook;
+  head.append(h, x);
+  const search = document.createElement("input"); search.type = "search"; search.placeholder = T("bookSearch"); search.dir = "auto"; search.className = "booksearch"; search.autocomplete = "off";
+  const cats = el("div", "chips");
+  cats.append(chip(T("bankAll"), "", () => { bookCat = "all"; draw(); paintCats(); }, bookCat === "all"));
+  for (const [id, en, he] of BOOK) cats.append(chip(pick(en, he), "", () => { bookCat = id; draw(); paintCats(); }, bookCat === id));
+  const paintCats = () => cats.querySelectorAll(".chip").forEach((c, i) => c.setAttribute("aria-pressed", String(i === 0 ? bookCat === "all" : BOOK[i - 1][0] === bookCat)));
+  const list = el("div", "booklist");
+  box.append(head, search, cats, list);
+  const draw = () => {
+    list.innerHTML = "";
+    const q = search.value.trim().toLowerCase();
+    let n = 0;
+    for (const [id, en, he, items] of BOOK) {
+      if (bookCat !== "all" && bookCat !== id && !q) continue;
+      const hits = items.filter(([ie, ih, f]) => !q || (ie + " " + ih + " " + f + " " + en + " " + he).toLowerCase().includes(q));
+      if (!hits.length) continue;
+      const sec = el("section", "booksec");
+      sec.append(el("h3", null, pick(en, he)));
+      const grid = el("div", "bookgrid");
+      hits.forEach(([ie, ih, f], i) => {
+        const card = el("div", "fcard"); card.style.setProperty("--i", Math.min(i, 10));
+        card.append(dirOf(el("small", null, pick(ie, ih)), pick(ie, ih)));
+        const fm = el("div", "fm"); fm.dir = "ltr";
+        if (/\//.test(f) && !HEB.test(f)) fm.innerHTML = mathView(f, -1, false); else fm.textContent = f;
+        card.append(fm); grid.append(card); n++;
+      });
+      sec.append(grid); list.append(sec);
+    }
+    if (!n) list.append(el("p", "hint", T("bankNone")));
+  };
+  search.oninput = draw;
+  draw();
+  const cur = cats.querySelector('[aria-pressed="true"]'); if (cur) setTimeout(() => cur.scrollIntoView({ inline: "center", block: "nearest" }), 0);
+}
+$("bookSheet").addEventListener("click", e => { if (e.target.id === "bookSheet") closeBook(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("bookSheet").hidden) closeBook(); });
+
+$("openBook").onclick = () => openBook(document.activeElement && $("problem").value.match(/sin|cos|tan/) ? "trig" : /log|ln/.test($("problem").value) ? "logs" : /f\(|'|∫|integral|derivative|נגזר|אינטגר/.test($("problem").value) ? "calc" : "all");
+$("openBookGeo").onclick = () => openBook("areas");
+$("openBookTop").onclick = () => openBook($("geoPanel").hidden ? "all" : "areas");
+// Android back button: close what's open first
+window.onBack = () => {
+  if (!$("bookSheet").hidden) { closeBook(); return true; }
+  if (!$("customize").hidden) { closeCustomize(); return true; }
+  if (!$("pad").hidden) { setPad(false); return true; }
+  return false;
+};
+
 // ---------- welcome: the first screen after installing ----------
 function seenWelcome(){ try { return localStorage.getItem("welcomed") === "1"; } catch(e) { return true; } }
 function hideWelcome(){ try { localStorage.setItem("welcomed", "1"); } catch(e) {} $("welcome").hidden = true; }
@@ -3138,7 +3382,11 @@ if (ACC && !account && !seenWelcome()) showWelcome();
 </script>
 <script src="install-gate.js"></script>
 <script>
-if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+  const had = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.register("sw.js").then(r => r.update()).catch(() => {});
+  navigator.serviceWorker.addEventListener("controllerchange", () => { if (had && !window.__reloaded) { window.__reloaded = true; location.reload(); } });
+}
 </script>
 </body>
 </html>
