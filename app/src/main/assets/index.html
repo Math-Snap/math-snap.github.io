@@ -432,6 +432,25 @@ body.noscroll{overflow:hidden}
 .deskhint{display:none;margin:0;font-size:13px;color:var(--muted)}
 .deskhint kbd{font:600 12px/1 var(--sans);border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;padding:2px 6px;background:var(--surface-2)}
 body.dropping::after{content:"";position:fixed;inset:12px;border:3px dashed var(--pen);border-radius:24px;background:color-mix(in srgb,var(--pen) 8%,transparent);z-index:90;pointer-events:none}
+/* ---------- language switch: always in the top-right corner ---------- */
+.langbtn{display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 12px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:700 14px/1 var(--sans);cursor:pointer;flex:none;box-shadow:var(--shadow)}
+.langbtn svg{width:18px;height:18px;color:var(--pen)}
+html[dir="rtl"] .langbtn{order:-1}
+html[dir="ltr"] .langbtn{order:99}
+@media (max-width:440px){
+  .appbar{gap:6px}
+  .appbar .logo{width:36px;height:36px;border-radius:11px}
+  .appbar .logo svg{width:22px;height:22px}
+  .appbar h1{font-size:18px}
+  .appbar .sub{display:none}
+  .appbar .iconbtn{width:40px;height:40px}
+  .propill{width:36px!important;height:36px;padding:0!important;justify-content:center}
+  .propill span{display:none}
+  .langbtn{height:36px;padding:0 9px;gap:4px}
+}
+@media (max-width:375px){ .appbar h1{display:none} }
+.brand{overflow:hidden}
+.appbar h1{overflow:hidden;text-overflow:ellipsis}
 /* ---------- Pro ---------- */
 .propill{display:inline-flex;align-items:center;gap:4px;height:30px;padding:0 9px;border-radius:999px;border:1.5px solid var(--pen);background:transparent;color:var(--pen);font:800 11px/1 var(--sans);letter-spacing:.05em;cursor:pointer;flex:none}
 .propill svg{width:14px;height:14px}
@@ -541,6 +560,7 @@ table.proof tr.prolocked{filter:none;opacity:.8}
 <body>
 <div class="wrap">
   <header class="appbar">
+    <button class="langbtn" id="langBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.8 2.5 15.2 0 18M12 3c-2.5 2.8-2.5 15.2 0 18"/></svg><span id="langLbl"></span></button>
     <div class="brand">
       <span class="logo" aria-hidden="true"><svg viewBox="0 0 28 28" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V6a2 2 0 0 1 2-2h3M19 4h3a2 2 0 0 1 2 2v3M24 19v3a2 2 0 0 1-2 2h-3M9 24H6a2 2 0 0 1-2-2v-3"/><path d="M10 12h8M10 16h8" /><circle cx="20.5" cy="20.5" r="0.1" stroke="#FFE27A" stroke-width="3.2"/></svg></span>
       <div><h1>Math Snap</h1><p class="sub" data-t="sub"></p></div>
@@ -773,6 +793,7 @@ function setLang(l){
   document.querySelectorAll("[data-t]").forEach(e => e.textContent = T(e.dataset.t));
   document.querySelectorAll("[data-tlabel]").forEach(e => e.setAttribute("aria-label", T(e.dataset.tlabel)));
   try { document.dispatchEvent(new Event("langchange")); } catch (e) {}
+  if ($("langLbl")) { $("langLbl").textContent = l === "he" ? "EN" : "עב"; $("langBtn").setAttribute("aria-label", l === "he" ? "Switch to English" : "החלפה לעברית"); $("langBtn").lang = l === "he" ? "en" : "he"; }
   $("geoText").placeholder = T("givensPh");
   $("problem").placeholder = T("problemPh");
   $("geoAsk").placeholder = T("askPh");
@@ -3910,6 +3931,8 @@ function proCard(){
 }
 
 $("proBtn").onclick = () => openPro();
+$("langBtn").onclick = () => { setLang(lang === "he" ? "en" : "he"); if (!$("proSheet").hidden && proSheetMode === "pay") renderPaywall(proFocus); };
+$("langLbl").textContent = lang === "he" ? "EN" : "עב";
 $("openChecker").onclick = openChecker;
 readPro(); paintProBtn();
 // a Pro key is checked again once a day when online (a cancelled subscription turns Pro off)
