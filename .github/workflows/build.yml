@@ -66,3 +66,54 @@ jobs:
           files: |
             MathSnap.apk
             MathSnap-PlayStore.aab
+
+  windows:
+    # Math Snap for Windows: the same screens, wrapped in an installer (MathSnap-Setup.exe)
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install the Windows app tools
+        working-directory: desktop
+        run: npm install --no-audit --no-fund
+
+      - name: Copy the app screens and the offline text scanner
+        working-directory: desktop
+        run: node prepare.js
+
+      - name: Set the version
+        working-directory: desktop
+        shell: bash
+        run: |
+          VER=$(sed -n 's/.*versionName = "\([^"]*\)".*/\1/p' ../app/build.gradle.kts)
+          case "$VER" in *.*.*) ;; *) VER="$VER.0" ;; esac
+          npm pkg set version="$VER"
+          echo "Windows app version $VER"
+
+      - name: Self-test (solve a problem and read a picture)
+        working-directory: desktop
+        shell: bash
+        run: |
+          npx electron . --smoke || true
+          cat smoke.txt || true
+          grep -q '^OK' smoke.txt
+
+      - name: Build the installer
+        working-directory: desktop
+        run: npx electron-builder --win nsis --x64 --publish never
+
+      - name: Add the installer to the release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          files: |
+            desktop/dist/MathSnap-Setup.exe
+            desktop/dist/MathSnap-Setup.exe.blockmap
+            desktop/dist/latest.yml
+

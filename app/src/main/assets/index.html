@@ -414,6 +414,24 @@ body.noscroll{overflow:hidden}
   .err{animation:rise .35s ease both}
 }
 
+
+/* ---------- big screens (computer): two columns, the nav becomes a side rail ---------- */
+@media (min-width:1000px){
+  .wrap{max-width:1280px;display:grid;grid-template-columns:minmax(380px,470px) minmax(0,1fr);align-items:start;column-gap:24px;row-gap:16px;padding:18px 32px 40px;padding-inline-start:124px}
+  .appbar{grid-column:1/-1}
+  #solvePanel,#geoPanel,#toolPanel,#bankPanel{grid-column:1}
+  #results,#geoResults{grid-column:2;grid-row:2/span 4}
+  #mePanel{grid-column:1/-1;max-width:760px;width:100%}
+  .bottomnav{inset:0 auto 0 0;inset-inline-start:0;inset-inline-end:auto;width:96px;grid-template-columns:1fr;align-content:start;gap:10px;padding:96px 0 24px;box-shadow:1px 0 0 var(--line)}
+  html[dir="rtl"] .bottomnav{box-shadow:-1px 0 0 var(--line)}
+  .protoast{bottom:28px}
+  .bsheet{max-width:760px;border-radius:26px;margin-bottom:4vh}
+  .bookwrap{align-items:center}
+  .deskhint{display:block!important}
+}
+.deskhint{display:none;margin:0;font-size:13px;color:var(--muted)}
+.deskhint kbd{font:600 12px/1 var(--sans);border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;padding:2px 6px;background:var(--surface-2)}
+body.dropping::after{content:"";position:fixed;inset:12px;border:3px dashed var(--pen);border-radius:24px;background:color-mix(in srgb,var(--pen) 8%,transparent);z-index:90;pointer-events:none}
 /* ---------- Pro ---------- */
 .propill{display:inline-flex;align-items:center;gap:4px;height:30px;padding:0 9px;border-radius:999px;border:1.5px solid var(--pen);background:transparent;color:var(--pen);font:800 11px/1 var(--sans);letter-spacing:.05em;cursor:pointer;flex:none}
 .propill svg{width:14px;height:14px}
@@ -539,6 +557,7 @@ table.proof tr.prolocked{filter:none;opacity:.8}
       <div class="padtabs" role="tablist"><button type="button" data-page="num" aria-selected="true">123</button><button type="button" data-page="abc" aria-selected="false">abc</button><button type="button" data-page="fn" aria-selected="false">f(x)</button></div>
       <div class="padkeys" id="padKeys"></div>
     </div>
+    <p class="deskhint" id="deskHint"></p>
     <div><p class="exlabel" data-t="tryOne"></p><div class="chips" id="solveChips"></div></div>
     <button class="formbtn" id="openBook" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M8 7h6M8 11h4"/></svg><span data-t="formulas"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button>
     <button class="formbtn" id="openChecker" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg><span data-t="checkMine"></span><span class="protag mini">PRO</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button>
@@ -741,6 +760,7 @@ function setLang(l){
 
   document.querySelectorAll("[data-t]").forEach(e => e.textContent = T(e.dataset.t));
   document.querySelectorAll("[data-tlabel]").forEach(e => e.setAttribute("aria-label", T(e.dataset.tlabel)));
+  try { document.dispatchEvent(new Event("langchange")); } catch (e) {}
   $("geoText").placeholder = T("givensPh");
   $("problem").placeholder = T("problemPh");
   $("geoAsk").placeholder = T("askPh");
@@ -2963,7 +2983,7 @@ function renderSignIn(box){
   const g = el("button", "btn google"); g.type = "button"; g.disabled = busy;
   g.append(svgEl(ICON.google), el("span", null, T("google")));
   g.onclick = () => { busy = true; authMsg = null; renderMe(); try { Android.signInGoogle(); } catch(e) { busy = false; } };
-  p.append(g, el("div", "divider", T("orEmail")));
+  if (!Android.noGoogle) p.append(g, el("div", "divider", T("orEmail")));
   const f = el("form", "authform"); f.noValidate = true;
   const mk = (id, type, ph, ac) => { const i = document.createElement("input"); i.id = id; i.type = type; i.placeholder = ph; i.autocomplete = ac; i.dir = "ltr"; return i; };
   let nameI = null;
@@ -3803,6 +3823,41 @@ $("proBtn").onclick = () => openPro();
 $("openChecker").onclick = openChecker;
 readPro(); paintProBtn();
 
+
+// ---------- computer: Ctrl+Enter solves, paste or drop a picture to read it ----------
+(function(){
+  const hint = $("deskHint");
+  if (hint && !(hasBridge && typeof Android.scanImage === "function")) hint.remove();
+  const fillHint = () => { if (hint && hint.isConnected) hint.innerHTML = pick("<kbd>Ctrl</kbd> + <kbd>Enter</kbd> solves · <kbd>Ctrl</kbd> + <kbd>V</kbd> or drag a picture to read it", "<kbd>Ctrl</kbd> + <kbd>Enter</kbd> פותר · <kbd>Ctrl</kbd> + <kbd>V</kbd> או גרירת תמונה כדי לקרוא אותה"); };
+  fillHint(); document.addEventListener("langchange", fillHint);
+  const onTab = () => !$("geoPanel").hidden ? "geo" : "solve";
+  // a computer usually has no camera pointed at paper: keep just "open a picture"
+  if (hasBridge && Android.isDesktop) { $("camera").hidden = true; $("geoCamera").hidden = true; }
+  const readImage = file => {
+    if (!file || !/^image\//.test(file.type) || !hasBridge || typeof Android.scanImage !== "function") return false;
+    photoFor = onTab(); Android.scanImage(file); return true;
+  };
+  document.addEventListener("keydown", e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+      if (!$("solvePanel").hidden) { e.preventDefault(); solveNow(); }
+      else if (!$("geoPanel").hidden && (document.activeElement === $("geoText") || document.activeElement === $("geoAsk"))) { e.preventDefault(); $("geoRead").click(); }
+    }
+  });
+  document.addEventListener("paste", e => {
+    const items = [...((e.clipboardData && e.clipboardData.items) || [])];
+    const it = items.find(x => x.kind === "file" && /^image\//.test(x.type));
+    if (it && readImage(it.getAsFile())) e.preventDefault();
+  });
+  let depth = 0;
+  document.addEventListener("dragenter", e => { if ([...(e.dataTransfer && e.dataTransfer.types || [])].includes("Files")) { depth++; document.body.classList.add("dropping"); } });
+  document.addEventListener("dragleave", () => { if (--depth <= 0) { depth = 0; document.body.classList.remove("dropping"); } });
+  document.addEventListener("dragover", e => { if ([...(e.dataTransfer && e.dataTransfer.types || [])].includes("Files")) e.preventDefault(); });
+  document.addEventListener("drop", e => {
+    depth = 0; document.body.classList.remove("dropping");
+    const f = e.dataTransfer && [...e.dataTransfer.files].find(x => /^image\//.test(x.type));
+    if (f) { e.preventDefault(); if (!$("mePanel").hidden) tab("solve"); readImage(f); }
+  });
+})();
 window.onBack = () => {
   if (!$("proSheet").hidden) { closeProSheet(); return true; }
   if (!$("bookSheet").hidden) { closeBook(); return true; }
@@ -3825,7 +3880,7 @@ function renderWelcome(){
   const f4 = el("span", "float f4"); f4.append(el("span", null, "x = 6")); hero.append(f4);
   const h = el("h2", null, T("welcomeTitle")); h.id = "welcomeTitle";
   const acts = el("div", "acts");
-  if (ACC) { const g = el("button", "btn google"); g.type = "button"; g.append(svgEl(ICON.google), el("span", null, T("google"))); g.onclick = () => { try { Android.signInGoogle(); } catch(e) {} }; acts.append(g); }
+  if (ACC && !Android.noGoogle) { const g = el("button", "btn google"); g.type = "button"; g.append(svgEl(ICON.google), el("span", null, T("google"))); g.onclick = () => { try { Android.signInGoogle(); } catch(e) {} }; acts.append(g); }
   const si = el("button", "btn"); si.type = "button"; si.textContent = T("wSignIn"); si.onclick = () => { hideWelcome(); authMode = "in"; tab("me"); setTimeout(() => $("accEmail") && $("accEmail").focus(), 80); };
   const su = el("button", "btn quiet"); su.type = "button"; su.textContent = T("wSignUp"); su.onclick = () => { hideWelcome(); authMode = "up"; tab("me"); setTimeout(() => $("accName") && $("accName").focus(), 80); };
   acts.append(si, su);

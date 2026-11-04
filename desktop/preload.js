@@ -1,0 +1,9 @@
+// What the Math Snap page may ask of Windows. Nothing else from the computer is reachable from the page.
+const { contextBridge, ipcRenderer } = require("electron");
+
+contextBridge.exposeInMainWorld("MathSnapDesktop", {
+  platform: process.platform,
+  savePdf: title => ipcRenderer.invoke("save-pdf", String(title || "Math Snap")),
+  openExternal: url => ipcRenderer.invoke("open-external", String(url || "")),
+  version: () => ipcRenderer.invoke("version"),
+});

@@ -1,0 +1,51 @@
+{
+  "name": "math-snap",
+  "productName": "Math Snap",
+  "version": "8.1.0",
+  "description": "Math Snap for Windows: snap or type a math problem and get every step.",
+  "main": "main.js",
+  "author": "Math Snap",
+  "homepage": "https://eitan1234f.github.io/Math-snap/",
+  "private": true,
+  "scripts": {
+    "prepare-app": "node prepare.js",
+    "start": "electron .",
+    "smoke": "electron . --smoke",
+    "dist": "electron-builder --win nsis --x64 --publish never"
+  },
+  "dependencies": {
+    "electron-updater": "6.3.9"
+  },
+  "devDependencies": {
+    "electron": "33.2.1",
+    "electron-builder": "25.1.8",
+    "tesseract.js": "5.1.0",
+    "tesseract.js-core": "5.1.0"
+  },
+  "build": {
+    "appId": "com.mathsnap.desktop",
+    "productName": "Math Snap",
+    "copyright": "Math Snap",
+    "files": ["main.js", "preload.js", "app/**/*"],
+    "directories": { "output": "dist", "buildResources": "build" },
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "build/icon.ico",
+      "artifactName": "MathSnap-Setup.exe"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Math Snap",
+      "uninstallDisplayName": "Math Snap",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico"
+    },
+    "publish": [
+      { "provider": "generic", "url": "https://github.com/eitan1234f/Math-snap/releases/latest/download" }
+    ]
+  }
+}

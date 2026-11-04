@@ -4,3 +4,7 @@ local.properties
 *.iml
 .idea/
 app/src/main/assets/math.js
+desktop/node_modules/
+desktop/app/
+desktop/dist/
+desktop/smoke.txt

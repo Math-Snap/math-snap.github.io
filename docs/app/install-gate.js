@@ -8,7 +8,7 @@
   "use strict";
   const standalone = window.navigator.standalone === true ||
     matchMedia("(display-mode: standalone)").matches || matchMedia("(display-mode: fullscreen)").matches;
-  if (standalone || window.Android && !window.Android.isWeb) return;
+  if (standalone || window.MathSnapDesktop || window.Android && !window.Android.isWeb) return;
 
   const ua = navigator.userAgent;
   const ios = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);

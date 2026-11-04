@@ -13,6 +13,9 @@
     const s = document.createElement("script"); s.src = src; s.async = true; s.onload = res; s.onerror = () => rej(new Error("load " + src)); document.head.appendChild(s);
   });
   const B = { isWeb: true, noWifiSetting: true };
+  // the Windows app (Electron) adds window.MathSnapDesktop: files, printing to PDF, opening links
+  const D = window.MathSnapDesktop || null;
+  if (D) { B.isDesktop = true; B.noGoogle = true; }
 
   // ---------------- photos + text scanner ----------------
   function pickImage(useCamera) {
@@ -28,7 +31,7 @@
     document.body.appendChild(inp);
     inp.click();
   }
-  B.takePhoto = () => pickImage(true);
+  B.takePhoto = () => pickImage(!D);
   B.pickPhoto = () => pickImage(false);
 
   async function shrink(file, max) {
@@ -46,9 +49,11 @@
   async function scan(file) {
     call("onPhotoStart");
     try {
-      if (!window.Tesseract) await loadScript("https://cdn.jsdelivr.net/npm/tesseract.js@5.1.0/dist/tesseract.min.js");
+      // the Windows app carries the text scanner with it, so it works without internet
+      const local = D ? (p => new URL(p, location.href).href) : null;
+      if (!window.Tesseract) await loadScript(local ? local("ocr/tesseract.min.js") : "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.0/dist/tesseract.min.js");
       if (!worker) {
-        worker = await Tesseract.createWorker("eng");
+        worker = await Tesseract.createWorker("eng", 1, local ? { workerPath: local("ocr/worker.min.js"), corePath: local("ocr/core"), langPath: local("ocr/lang"), workerBlobURL: false } : {});
         await worker.setParameters({ tessedit_pageseg_mode: "6", preserve_interword_spaces: "1", tessedit_char_whitelist: "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+-=*/:().,%<>|^°√π²³×÷−∢∥ " });
       }
       const img = await shrink(file, 1800);
@@ -178,13 +183,16 @@
   B.buyPro = () => { try { window.open(STORE, "_blank", "noopener"); } catch (e) {} };
   B.openStore = B.buyPro;
   B.managePro = () => {};
-  B.openUrl = url => { if (/^https:\/\//.test(url)) try { window.open(url, "_blank", "noopener"); } catch (e) {} };
-  B.printPage = () => { try { window.print(); } catch (e) {} };
+  B.openUrl = url => { if (/^https:\/\//.test(url)) try { D ? D.openExternal(url) : window.open(url, "_blank", "noopener"); } catch (e) {} };
+  B.printPage = title => { try { D ? D.savePdf(title || "Math Snap") : window.print(); } catch (e) {} };
+  if (D) { B.buyPro = B.openStore = () => D.openExternal(STORE); }
+  // a picture pasted or dropped onto the page
+  B.scanImage = file => scan(file);
   window.Android = B;
 
   // counting phones: one anonymous ID per installed copy, sent at most once a day (no personal details)
   try {
-    const installed = navigator.standalone === true || matchMedia("(display-mode: standalone)").matches;
+    const installed = !!D || navigator.standalone === true || matchMedia("(display-mode: standalone)").matches;
     const day = new Date().toISOString().slice(0, 10);
     if (installed && navigator.onLine && localStorage.getItem("pingDay") !== day) {
       let id = localStorage.getItem("installId");
@@ -194,7 +202,7 @@
       const tr = [{ fieldPath: "last", setToServerValue: "REQUEST_TIME" }, { fieldPath: "opens", increment: { integerValue: "1" } }];
       if (!localStorage.getItem("installSent")) tr.push({ fieldPath: "first", setToServerValue: "REQUEST_TIME" });
       fetch("https://firestore.googleapis.com/v1/" + base + ":commit", { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ writes: [{ update: { name: base + "/installs/" + id, fields: { platform: { stringValue: ios ? "ios" : "web" }, version: { stringValue: "8.0" } } },
+        body: JSON.stringify({ writes: [{ update: { name: base + "/installs/" + id, fields: { platform: { stringValue: D ? "windows" : ios ? "ios" : "web" }, version: { stringValue: "8.1" } } },
           updateMask: { fieldPaths: ["platform", "version"] }, updateTransforms: tr }] }) })
         .then(r => { if (r.ok) { localStorage.setItem("pingDay", day); localStorage.setItem("installSent", "1"); } }).catch(() => {});
     }
