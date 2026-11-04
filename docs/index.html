@@ -718,7 +718,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
 <script>
 (function () {
   "use strict";
-  const OWNER = "eitanski11@gmail.com";
+  const OWNERS = ["eitanski11@gmail.com", "eitandror2012@gmail.com"];
   const REPO = "eitan1234f/Math-snap";
   // the same Firebase project the app uses for accounts
   const CFG = (window.MATHSNAP_FIREBASE && window.MATHSNAP_FIREBASE.apiKey) ? window.MATHSNAP_FIREBASE
@@ -742,7 +742,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
     })();
     return booting;
   }
-  const isOwner = () => user && String(user.email || "").toLowerCase() === OWNER;
+  const isOwner = () => user && OWNERS.includes(String(user.email || "").toLowerCase());
   function paintButton(){
     const b = $("ownerBtn"); if (!b) return;
     const on = isOwner() && user.emailVerified;
@@ -812,7 +812,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
       + '<button class="btn primary" type="submit" id="oGo">התחברות</button>'
       + '<div class="olinks"><button type="button" id="oNew">יצירת חשבון בעלים</button><button type="button" id="oForgot">שכחתי סיסמה</button></div></form>';
     const email = () => $("oEmail").value.trim().toLowerCase(), pass = () => $("oPass").value;
-    const ownerOnly = () => { if (email() !== OWNER) { show("bad", "האזור הזה מיועד רק לבעלים של Math Snap."); return false; } return true; };
+    const ownerOnly = () => { if (!OWNERS.includes(email())) { show("bad", "האזור הזה מיועד רק לבעלים של Math Snap."); return false; } return true; };
     $("oForm").onsubmit = async e => {
       e.preventDefault(); if (!ownerOnly()) return;
       $("oGo").disabled = true;
