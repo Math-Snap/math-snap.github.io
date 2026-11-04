@@ -186,6 +186,14 @@
   B.openUrl = url => { if (/^https:\/\//.test(url)) try { D ? D.openExternal(url) : window.open(url, "_blank", "noopener"); } catch (e) {} };
   B.printPage = title => { try { D ? D.savePdf(title || "Math Snap") : window.print(); } catch (e) {} };
   if (D) { B.buyPro = B.openStore = () => D.openExternal(STORE); }
+  // Pro keys (Lemon Squeezy license service). The Windows app calls it from Windows itself.
+  B.license = (action, params) => {
+    if (!/^(activate|validate|deactivate)$/.test(action)) return Promise.resolve({ error: "bad" });
+    if (D && D.license) return D.license(action, params).catch(() => ({ error: "offline" }));
+    const body = new URLSearchParams(); Object.entries(params || {}).forEach(([k, v]) => { if (v !== "" && v != null) body.append(k, v); });
+    return fetch("https://api.lemonsqueezy.com/v1/licenses/" + action, { method: "POST", headers: { Accept: "application/json" }, body })
+      .then(r => r.json()).catch(() => ({ error: "offline" }));
+  };
   // a picture pasted or dropped onto the page
   B.scanImage = file => scan(file);
   window.Android = B;
@@ -202,7 +210,7 @@
       const tr = [{ fieldPath: "last", setToServerValue: "REQUEST_TIME" }, { fieldPath: "opens", increment: { integerValue: "1" } }];
       if (!localStorage.getItem("installSent")) tr.push({ fieldPath: "first", setToServerValue: "REQUEST_TIME" });
       fetch("https://firestore.googleapis.com/v1/" + base + ":commit", { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ writes: [{ update: { name: base + "/installs/" + id, fields: { platform: { stringValue: D ? "windows" : ios ? "ios" : "web" }, version: { stringValue: "8.1" } } },
+        body: JSON.stringify({ writes: [{ update: { name: base + "/installs/" + id, fields: { platform: { stringValue: D ? "windows" : ios ? "ios" : "web" }, version: { stringValue: "8.2" } } },
           updateMask: { fieldPaths: ["platform", "version"] }, updateTransforms: tr }] }) })
         .then(r => { if (r.ok) { localStorage.setItem("pingDay", day); localStorage.setItem("installSent", "1"); } }).catch(() => {});
     }

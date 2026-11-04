@@ -58,6 +58,16 @@ async function createWindow(){
 // ---- what the page can ask for (see preload.js) ----
 ipcMain.handle("version", () => app.getVersion());
 ipcMain.handle("open-external", (e, url) => { if (isHttps(url)) shell.openExternal(url); });
+// Pro keys: asks the Lemon Squeezy license service (activate / validate / deactivate)
+ipcMain.handle("license", async (e, action, params) => {
+  if (!/^(activate|validate|deactivate)$/.test(action)) return { error: "bad" };
+  try {
+    const body = new URLSearchParams();
+    for (const [k, v] of Object.entries(params || {})) if (v !== "" && v != null) body.append(k, String(v));
+    const r = await fetch("https://api.lemonsqueezy.com/v1/licenses/" + action, { method: "POST", headers: { Accept: "application/json" }, body });
+    return await r.json();
+  } catch (err) { return { error: "offline" }; }
+});
 ipcMain.handle("save-pdf", async (e, title) => {
   const w = BrowserWindow.fromWebContents(e.sender);
   const safe = String(title).replace(/[\\/:*?"<>|]+/g, " ").trim() || "Math Snap";

@@ -111,6 +111,26 @@ class MainActivity : AppCompatActivity() {
         @JavascriptInterface fun signOut() = runOnUiThread { account.signOut() }
         @JavascriptInterface fun deleteAccount() = runOnUiThread { account.deleteAccount() }
 
+        // ---- Pro key (bought on the web): asks the Lemon Squeezy license service ----
+        @JavascriptInterface fun licenseRequest(id: String, action: String, json: String) {
+            if (action !in listOf("activate", "validate", "deactivate")) return
+            Thread {
+                val out = try {
+                    val p = JSONObject(json)
+                    val form = p.keys().asSequence().filter { p.optString(it).isNotEmpty() }
+                        .joinToString("&") { java.net.URLEncoder.encode(it, "UTF-8") + "=" + java.net.URLEncoder.encode(p.optString(it), "UTF-8") }
+                    val c = java.net.URL("https://api.lemonsqueezy.com/v1/licenses/$action").openConnection() as java.net.HttpURLConnection
+                    c.requestMethod = "POST"; c.doOutput = true; c.connectTimeout = 15000; c.readTimeout = 15000
+                    c.setRequestProperty("Accept", "application/json")
+                    c.setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
+                    c.outputStream.use { it.write(form.toByteArray()) }
+                    val stream = if (c.responseCode < 400) c.inputStream else c.errorStream
+                    stream?.bufferedReader()?.use { it.readText() } ?: "{\"error\":\"offline\"}"
+                } catch (e: Exception) { "{\"error\":\"offline\"}" }
+                js("window.onLicense && onLicense(" + JSONObject.quote(id) + "," + JSONObject.quote(out) + ")")
+            }.start()
+        }
+
         // ---- Pro ----
         @JavascriptInterface fun proState(): String = pro.state()
         @JavascriptInterface fun buyPro() = runOnUiThread { pro.buy() }

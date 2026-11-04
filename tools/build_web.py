@@ -26,8 +26,7 @@ import re as _re
 _ver = (_re.search(r'versionName = "([^"]+)"', (ROOT / "app/build.gradle.kts").read_text()) or [None, ""])[1]
 for name in ["web-bridge.js", "install-gate.js", "manifest.webmanifest"]:
     (OUT / name).write_text((WEB / name).read_text(encoding="utf-8").replace("__APPVER__", _ver), encoding="utf-8")
-if not (OUT / "firebase-config.js").exists():
-    shutil.copy(WEB / "firebase-config.js", OUT / "firebase-config.js")
+shutil.copy(WEB / "firebase-config.js", OUT / "firebase-config.js")
 
 html = (ASSETS / "index.html").read_text(encoding="utf-8")
 html = html.replace('<meta name="viewport" content="width=device-width,initial-scale=1">',

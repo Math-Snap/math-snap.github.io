@@ -473,6 +473,13 @@ table.proof tr.prolocked{filter:none;opacity:.8}
 .prolist b{font:700 15px/1.3 var(--sans)}
 .prolist span{font:14px/1.4 var(--sans);color:var(--muted)}
 .profoot{display:flex;flex-direction:column;gap:10px;position:sticky;bottom:0;background:var(--bg);padding-top:8px}
+.keybox{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:12px;margin-top:4px}
+.keybox label{font:700 14px/1.3 var(--sans)}
+.keybox input{width:100%;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:11px 12px;font:500 14px/1.4 "JetBrains Mono",ui-monospace,monospace}
+.keybox input:focus{outline:none;border-color:var(--pen)}
+.keymsg{margin:0;font:14px/1.4 var(--sans);color:var(--muted)}
+.keymsg.ok{color:var(--ok)}
+.keymsg.bad{color:var(--warn)}
 .proprice{margin:0;text-align:center;font:800 22px/1.2 var(--sans)}
 .proterms{margin:0;text-align:center;font:13px/1.45 var(--sans);color:var(--muted)}
 .prohave{margin:0;text-align:center;font:700 17px/1.3 var(--sans);color:var(--ok)}
@@ -3539,7 +3546,54 @@ const FREE_LOOKS = ["classic", "night", "paper"];
 let proState = { pro: false, price: "", play: false, ready: false };
 function readPro(){ try { if (hasBridge && typeof Android.proState === "function") proState = JSON.parse(Android.proState()); } catch (e) {} }
 const isOwner = () => !!(typeof account !== "undefined" && account && PRO_OWNERS.includes(String(account.email || "").toLowerCase()));
-const isPro = () => !!proState.pro || isOwner();
+// ---- Pro outside Google Play (Windows, iPhone, the APK from the website): a monthly subscription
+// sold on a Lemon Squeezy checkout page. The buyer gets a Pro key by email and enters it here.
+const PRO_WEB = {
+  checkout: "",   // the Lemon Squeezy checkout link for the monthly Pro subscription
+  storeId: 0,     // Lemon Squeezy store number (keys from other stores are refused)
+  productId: 0,   // Lemon Squeezy product number of Math Snap Pro
+  portal: "https://app.lemonsqueezy.com/my-orders",
+};
+let keyPro = (() => { try { return JSON.parse(localStorage.getItem("proKey") || "null"); } catch (e) { return null; } })();
+const KEY_GRACE = 14 * 864e5; // offline, a checked key keeps working for 14 days
+const keyActive = () => !!(keyPro && keyPro.ok && Date.now() - (keyPro.checked || 0) < KEY_GRACE);
+function saveKey(){ try { keyPro ? localStorage.setItem("proKey", JSON.stringify(keyPro)) : localStorage.removeItem("proKey"); } catch (e) {} }
+// one call to the Lemon Squeezy license service (activate / validate / deactivate)
+function licenseApi(action, params){
+  if (hasBridge && typeof Android.license === "function") return Promise.resolve(Android.license(action, params)); // web / Windows
+  if (hasBridge && typeof Android.licenseRequest === "function") return new Promise(res => { // the Android app
+    const id = "L" + Date.now() + Math.random().toString(36).slice(2, 6);
+    (window.__lic = window.__lic || {})[id] = res;
+    Android.licenseRequest(id, action, JSON.stringify(params));
+  });
+  return Promise.resolve({ error: "offline" });
+}
+window.onLicense = (id, json) => { const f = window.__lic && window.__lic[id]; if (f) { delete window.__lic[id]; let r; try { r = JSON.parse(json); } catch (e) { r = { error: "bad" }; } f(r); } };
+const keyMatches = r => !!(r && r.meta && (!PRO_WEB.storeId || r.meta.store_id === PRO_WEB.storeId) && (!PRO_WEB.productId || r.meta.product_id === PRO_WEB.productId));
+async function activateKey(key){
+  key = String(key || "").trim();
+  if (!/^[A-Za-z0-9-]{16,}$/.test(key)) return "keyBad";
+  const r = await licenseApi("activate", { license_key: key, instance_name: "Math Snap " + (Android.isDesktop ? "Windows" : hasBridge && Android.isWeb ? "Web" : "Android") });
+  if (r && r.error === "offline") return "keyOffline";
+  if (!r || !r.activated || !keyMatches(r)) return r && /limit/i.test(String(r.error || "")) ? "keyLimit" : "keyBad";
+  if (r.license_key && r.license_key.status !== "active") return "keyExpired";
+  keyPro = { key, instance: r.instance && r.instance.id, ok: true, checked: Date.now() }; saveKey();
+  return "ok";
+}
+async function checkKey(){
+  if (!keyPro || !keyPro.key) return;
+  const r = await licenseApi("validate", { license_key: keyPro.key, instance_id: keyPro.instance || "" });
+  if (!r || r.error === "offline" || (r.valid === undefined && !r.license_key)) return; // offline: keep what we know
+  const was = isPro();
+  keyPro.ok = !!(r.valid && keyMatches(r) && r.license_key && r.license_key.status === "active");
+  keyPro.checked = Date.now(); saveKey();
+  if (was !== isPro()) proChanged();
+}
+async function removeKey(){
+  if (keyPro && keyPro.key && keyPro.instance) licenseApi("deactivate", { license_key: keyPro.key, instance_id: keyPro.instance });
+  keyPro = null; saveKey(); proChanged();
+}
+const isPro = () => !!proState.pro || isOwner() || keyActive();
 const PS = {
   title: ["Math Snap Pro", "Math Snap Pro"],
   sub: ["Everything to learn math, not just get answers.", "כל מה שצריך כדי ללמוד, לא רק לקבל תשובה."],
@@ -3561,7 +3615,7 @@ const PS = {
   notPlay: ["Pro is bought in the Google Play version of the app. Install it from Google Play to subscribe.", "את Pro קונים בגרסת האפליקציה מ-Google Play. התקינו אותה משם כדי להצטרף."],
   web: ["Pro is available in the Android app on Google Play.", "Pro זמין באפליקציית האנדרואיד ב-Google Play."],
   locked: ["Pro", "Pro"],
-  lockExplain: [n => "Explanations for " + n + " more steps are in Pro", n => "ההסבר ל-" + n + " שלבים נוספים נמצא ב-Pro"],
+  lockExplain: [n => n === 1 ? "The explanation for 1 more step is in Pro" : "Explanations for " + n + " more steps are in Pro", n => n === 1 ? "ההסבר לשלב נוסף נמצא ב-Pro" : "ההסבר ל-" + n + " שלבים נוספים נמצא ב-Pro"],
   lockProof: [n => n + " more proof rows are in Pro", n => "עוד " + n + " שורות בהוכחה נמצאות ב-Pro"],
   lockHistory: [n => n + " older problems are in Pro", n => "עוד " + n + " תרגילים ישנים נמצאים ב-Pro"],
   see: ["See Pro", "ל-Pro"],
@@ -3594,6 +3648,17 @@ const PS = {
   ckUnknown: ["I couldn't read this line", "לא הצלחתי לקרוא את השורה הזאת"],
   ckEmpty: ["Write at least two lines: the problem and one step.", "כתבו לפחות שתי שורות: התרגיל ושלב אחד."],
   info_thanks: ["Welcome to Pro!", "ברוכים הבאים ל-Pro!"],
+  termsWeb: ["Renews every month until you cancel. After paying you get a Pro key by email: enter it below. It works on Windows, iPhone and Android.", "המנוי מתחדש כל חודש עד שמבטלים. אחרי התשלום מגיע במייל קוד Pro: מקלידים אותו כאן למטה. הוא עובד ב-Windows, באייפון ובאנדרואיד."],
+  soon: ["Buying Pro on this device is coming very soon. Already have a Pro key? Enter it below.", "קנייה של Pro במכשיר הזה תגיע ממש בקרוב. כבר יש לכם קוד Pro? הקלידו אותו כאן למטה."],
+  keyHave: ["Have a Pro key?", "יש לכם קוד Pro?"],
+  keyGo: ["Activate", "הפעלה"],
+  keyChecking: ["Checking the key…", "בודק את הקוד…"],
+  keyBad: ["That key isn't valid. Check it in the email and try again.", "הקוד לא תקין. בדקו אותו במייל ונסו שוב."],
+  keyExpired: ["This key's subscription has ended. Renew it to use Pro.", "המנוי של הקוד הזה הסתיים. חדשו אותו כדי להשתמש ב-Pro."],
+  keyLimit: ["This key is already on the most devices it allows. Remove it from another device first.", "הקוד כבר פעיל בכמות המכשירים המקסימלית. הסירו אותו קודם ממכשיר אחר."],
+  keyOffline: ["Couldn't reach the server. Check the internet and try again.", "אין חיבור לשרת. בדקו את האינטרנט ונסו שוב."],
+  keyOn: [k => "Pro key " + k + " is active on this device.", k => "קוד Pro " + k + " פעיל במכשיר הזה."],
+  keyRemove: ["Remove the key from this device", "להסיר את הקוד מהמכשיר הזה"],
   info_pending: ["The payment is still being processed. Pro turns on when it goes through.", "התשלום עוד בטיפול. Pro יופעל כשהוא יעבור."],
   info_unavailable: ["Google Play isn't reachable right now. Check the internet and try again.", "אין חיבור ל-Google Play כרגע. בדקו את האינטרנט ונסו שוב."],
   info_error: ["Something went wrong with Google Play. Try again.", "משהו השתבש עם Google Play. נסו שוב."],
@@ -3686,16 +3751,39 @@ function renderPaywall(feature){
   box.append(list);
   const foot = el("div", "profoot");
   if (isPro()) {
-    foot.append(el("p", "prohave", proState.pro ? P("have") : P("haveOwner")));
+    foot.append(el("p", "prohave", proState.pro || keyActive() ? P("have") : P("haveOwner")));
     if (proState.pro && proState.play) { const m = el("button", "btn quiet", P("manage")); m.type = "button"; m.onclick = () => { try { Android.managePro(); } catch (e) {} }; foot.append(m); }
+    else if (keyActive()) {
+      foot.append(el("p", "proterms", P("keyOn", "…" + keyPro.key.slice(-4))));
+      const m = el("button", "btn quiet", P("manage")); m.type = "button"; m.onclick = () => { try { Android.openUrl(PRO_WEB.portal); } catch (e) {} };
+      const rm = el("button", "linkbtn", P("keyRemove")); rm.type = "button"; rm.onclick = () => removeKey();
+      foot.append(m, rm);
+    }
   } else if (proState.play) {
     foot.append(el("p", "proprice", proState.price ? P("perMonth", proState.price) : P("monthly")));
     const b = el("button", "btn", P("subscribe")); b.type = "button"; b.onclick = () => { try { Android.buyPro(); } catch (e) {} }; foot.append(b);
     foot.append(el("p", "proterms", P("terms")));
   } else {
-    const web = !!(hasBridge && Android.isWeb);
-    foot.append(el("p", "proterms", web ? P("web") : P("notPlay")));
-    if (!/iPhone|iPad|iPod/.test(navigator.userAgent)) { const b = el("button", "btn", P("getPlay")); b.type = "button"; b.onclick = () => { try { Android.openStore(); } catch (e) {} }; foot.append(b); }
+    // Windows, iPhone and the APK from the website: subscribe on the web, then enter the Pro key
+    if (PRO_WEB.checkout) {
+      foot.append(el("p", "proprice", P("monthly")));
+      const b = el("button", "btn", P("subscribe")); b.type = "button"; b.onclick = () => { try { Android.openUrl(PRO_WEB.checkout); } catch (e) {} }; foot.append(b);
+      foot.append(el("p", "proterms", P("termsWeb")));
+    } else foot.append(el("p", "proterms", P("soon")));
+    const kb = el("form", "keybox"); kb.noValidate = true;
+    const lbl = el("label", null, P("keyHave")); const ki = document.createElement("input"); ki.type = "text"; ki.dir = "ltr"; ki.placeholder = "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"; ki.autocomplete = "off"; ki.spellcheck = false; ki.setAttribute("autocapitalize", "off"); ki.id = "proKeyIn";
+    lbl.htmlFor = "proKeyIn";
+    const go = el("button", "btn quiet", P("keyGo")); go.type = "submit";
+    const msg = el("p", "keymsg"); msg.hidden = true;
+    kb.append(lbl, ki, go, msg);
+    kb.onsubmit = async e => {
+      e.preventDefault(); go.disabled = true; msg.hidden = false; msg.className = "keymsg"; msg.textContent = P("keyChecking");
+      const r = await activateKey(ki.value);
+      go.disabled = false;
+      if (r === "ok") { msg.className = "keymsg ok"; msg.textContent = P("info_thanks"); proChanged(); setTimeout(() => renderPaywall(proFocus), 900); }
+      else { msg.className = "keymsg bad"; msg.textContent = P(r); }
+    };
+    foot.append(kb);
   }
   box.append(foot);
   if (feature) setTimeout(() => { const on = list.querySelector("li.on"); if (on) on.scrollIntoView({ block: "nearest" }); }, 60);
@@ -3822,6 +3910,8 @@ function proCard(){
 $("proBtn").onclick = () => openPro();
 $("openChecker").onclick = openChecker;
 readPro(); paintProBtn();
+// a Pro key is checked again once a day when online (a cancelled subscription turns Pro off)
+if (keyPro && keyPro.key && Date.now() - (keyPro.checked || 0) > 864e5) setTimeout(checkKey, 2500);
 
 
 // ---------- computer: Ctrl+Enter solves, paste or drop a picture to read it ----------
