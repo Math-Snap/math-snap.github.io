@@ -9,6 +9,7 @@ on:
       - "docs/privacy.html"
       - "docs/sitemap.xml"
       - "docs/robots.txt"
+      - "docs/videos/**"
   workflow_dispatch:
 
 permissions:
