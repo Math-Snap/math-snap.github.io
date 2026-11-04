@@ -98,7 +98,9 @@ jobs:
         shell: bash
         run: |
           VER=$(sed -n 's/.*versionName = "\([^"]*\)".*/\1/p' ../app/build.gradle.kts)
-          case "$VER" in *.*.*) ;; *) VER="$VER.0" ;; esac
+          # the build number goes last (8.2 → 8.2.49), so every build is newer than the one before
+          # and installed copies always see it as an update
+          VER="$(echo "$VER" | cut -d. -f1-2).${{ github.run_number }}"
           npm pkg set version="$VER"
           echo "Windows app version $VER"
 
@@ -113,6 +115,14 @@ jobs:
       - name: Build the installer
         working-directory: desktop
         run: npx electron-builder --win nsis --x64 --publish never
+
+      - name: Check the installer can update itself
+        working-directory: desktop
+        shell: bash
+        run: |
+          cat dist/win-unpacked/resources/app-update.yml
+          grep -q "releases/latest/download" dist/win-unpacked/resources/app-update.yml
+          grep -q "^version:" dist/latest.yml && cat dist/latest.yml
 
       - name: Keep the Windows files for the release
         uses: actions/upload-artifact@v4

@@ -109,13 +109,30 @@ async function smoke(){
 }
 
 // ---- updates: new versions come from the GitHub releases ----
+// The app updates itself from the newest GitHub release: it checks when it opens and every 3 hours,
+// downloads in the background, and asks once to restart. If you say "Later", it installs when you close it.
 function checkUpdates(){
   if (!app.isPackaged || SMOKE) return;
-  try {
-    const { autoUpdater } = require("electron-updater");
-    autoUpdater.autoDownload = true;
-    autoUpdater.checkForUpdatesAndNotify().catch(() => {});
-  } catch (e) {}
+  let updater;
+  try { updater = require("electron-updater").autoUpdater; } catch (e) { return; }
+  updater.autoDownload = true;
+  updater.autoInstallOnAppQuit = true;
+  let asked = false;
+  updater.on("update-downloaded", async info => {
+    if (asked || !win) return; asked = true;
+    const he = await win.webContents.executeJavaScript("typeof lang === 'string' ? lang : 'he'").catch(() => "he") === "he";
+    const { response } = await dialog.showMessageBox(win, {
+      type: "info", title: "Math Snap",
+      message: he ? "גרסה חדשה של Math Snap מוכנה" : "A new version of Math Snap is ready",
+      detail: (he ? "גרסה " : "Version ") + info.version + (he ? ". להפעיל מחדש עכשיו כדי לעדכן?" : ". Restart now to update?"),
+      buttons: he ? ["הפעלה מחדש", "אחר כך"] : ["Restart", "Later"], defaultId: 0, cancelId: 1,
+    });
+    if (response === 0) setImmediate(() => updater.quitAndInstall(false, true));
+  });
+  updater.on("error", () => {});
+  const check = () => updater.checkForUpdates().catch(() => {});
+  check();
+  setInterval(check, 3 * 60 * 60 * 1000);
 }
 
 if (!SMOKE && !app.requestSingleInstanceLock()) app.quit();
