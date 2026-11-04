@@ -177,15 +177,13 @@
     }
   }
 
-  // Pro is sold only in the Google Play app; here it shows the store link instead.
-  const STORE = "https://play.google.com/store/apps/details?id=com.mathsnap";
+  // Pro outside the Google Play app comes from a Pro key (entered in the app); there is no store to open here
   B.proState = () => JSON.stringify({ pro: false, price: "", play: false, ready: false, web: true });
-  B.buyPro = () => { try { window.open(STORE, "_blank", "noopener"); } catch (e) {} };
-  B.openStore = B.buyPro;
+  B.buyPro = () => {};
+  B.openStore = () => {};
   B.managePro = () => {};
   B.openUrl = url => { if (/^https:\/\//.test(url)) try { D ? D.openExternal(url) : window.open(url, "_blank", "noopener"); } catch (e) {} };
   B.printPage = title => { try { D ? D.savePdf(title || "Math Snap") : window.print(); } catch (e) {} };
-  if (D) { B.buyPro = B.openStore = () => D.openExternal(STORE); }
   // Pro keys (Lemon Squeezy license service). The Windows app calls it from Windows itself.
   B.license = (action, params) => {
     if (!/^(activate|validate|deactivate)$/.test(action)) return Promise.resolve({ error: "bad" });
