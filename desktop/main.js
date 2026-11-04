@@ -43,7 +43,7 @@ async function createWindow(){
   win = new BrowserWindow({
     width: 1280, height: 860, minWidth: 380, minHeight: 560,
     title: "Math Snap", backgroundColor: "#F2F4F9", show: false,
-    icon: path.join(__dirname, "build", "icon.ico"),
+    icon: path.join(__dirname, "icons", "icon.ico"),
     autoHideMenuBar: true,
     webPreferences: { preload: path.join(__dirname, "preload.js"), contextIsolation: true, sandbox: true, nodeIntegration: false, spellcheck: false },
   });

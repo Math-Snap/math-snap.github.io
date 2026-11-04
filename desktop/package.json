@@ -26,11 +26,26 @@
     "appId": "com.mathsnap.desktop",
     "productName": "Math Snap",
     "copyright": "Math Snap",
-    "files": ["main.js", "preload.js", "app/**/*"],
-    "directories": { "output": "dist", "buildResources": "build" },
+    "files": [
+      "main.js",
+      "preload.js",
+      "icons/icon.ico",
+      "app/**/*"
+    ],
+    "directories": {
+      "output": "dist",
+      "buildResources": "icons"
+    },
     "win": {
-      "target": [{ "target": "nsis", "arch": ["x64"] }],
-      "icon": "build/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "icons/icon.ico",
       "artifactName": "MathSnap-Setup.exe"
     },
     "nsis": {
@@ -41,11 +56,14 @@
       "createStartMenuShortcut": true,
       "shortcutName": "Math Snap",
       "uninstallDisplayName": "Math Snap",
-      "installerIcon": "build/icon.ico",
-      "uninstallerIcon": "build/icon.ico"
+      "installerIcon": "icons/icon.ico",
+      "uninstallerIcon": "icons/icon.ico"
     },
     "publish": [
-      { "provider": "generic", "url": "https://github.com/eitan1234f/Math-snap/releases/latest/download" }
+      {
+        "provider": "generic",
+        "url": "https://github.com/eitan1234f/Math-snap/releases/latest/download"
+      }
     ]
   }
 }
