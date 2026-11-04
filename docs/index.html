@@ -692,6 +692,8 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
 .ocard h3{margin:0;font-size:16px}
 .ocard svg.chart{width:100%;height:auto;display:block;direction:ltr}
 .ochart text{font:500 10px var(--mono);fill:var(--muted)}
+.orules{background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:12px;font:12.5px/1.5 ui-monospace,Menlo,Consolas,monospace;overflow-x:auto;white-space:pre;margin:10px 0;text-align:left}
+.ocard details summary{cursor:pointer;font-weight:600;margin:6px 0}
 .otable{width:100%;border-collapse:collapse;font-size:15px}
 .otable th{text-align:start;color:var(--muted);font-weight:600;font-size:13px;padding:6px 8px;border-bottom:1px solid var(--line)}
 .otable td{padding:9px 8px;border-bottom:1px solid var(--line)}
@@ -874,31 +876,84 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
     s += '<text x="' + L + '" y="' + (H - 8) + '">' + df(t0) + '</text><text x="' + (W - R) + '" y="' + (H - 8) + '" text-anchor="end">' + df(t1) + "</text>";
     return s + "</svg>";
   }
+  // ---------- unique phones (each phone counted once, from the app itself) ----------
+  const RULES = `rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{uid}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+    match /installs/{id} {
+      allow create, update: if id.size() >= 16 && id.size() <= 80
+        && request.resource.data.keys().hasOnly(['platform', 'version', 'first', 'last', 'opens'])
+        && request.resource.data.platform in ['android', 'ios', 'web'];
+      allow read: if request.auth != null && request.auth.token.email_verified == true
+        && request.auth.token.email in ['eitanski11@gmail.com', 'eitandror2012@gmail.com'];
+    }
+  }
+}`;
+  async function phones(){
+    if (!firebase.firestore) await loadScript(FB + "firebase-firestore-compat.js");
+    const snap = await firebase.firestore().collection("installs").get();
+    const td = v => (v && v.toDate ? v.toDate() : v ? new Date(v) : null);
+    return snap.docs.map(d => { const x = d.data(); return { platform: x.platform || "android", version: String(x.version || "?"), first: td(x.first) || td(x.last), last: td(x.last) || td(x.first), opens: +x.opens || 1 }; });
+  }
+  const dayKey = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  function newPerDay(list){
+    const days = [], now = new Date();
+    for (let k = 29; k >= 0; k--) { const d = new Date(now); d.setDate(now.getDate() - k); days.push({ key: dayKey(d), name: d.getDate() + "." + (d.getMonth() + 1), downloads: 0 }); }
+    const at = Object.fromEntries(days.map(d => [d.key, d]));
+    list.forEach(x => { if (x.first && at[dayKey(x.first)]) at[dayKey(x.first)].downloads++; });
+    return days;
+  }
+  function phonesHTML(list){
+    const now = Date.now(), today = dayKey(new Date());
+    const and = list.filter(x => x.platform === "android").length, ios = list.length - and;
+    const active = list.filter(x => x.last && now - x.last < 7 * 864e5).length;
+    const fresh = list.filter(x => x.first && dayKey(x.first) === today).length;
+    const byVer = {}; list.forEach(x => { byVer[x.version] = (byVer[x.version] || 0) + 1; });
+    const vrows = Object.entries(byVer).sort((a, b) => b[0].localeCompare(a[0], "en", { numeric: true })).map(([v, n]) => "<tr><td>" + esc(v) + '</td><td class="n">' + fmt(n) + "</td></tr>").join("");
+    return '<div class="ostats">'
+      + '<div class="ostat main" style="--i:0"><small>טלפונים שונים</small><b>' + fmt(list.length) + "</b><span>כל טלפון נספר פעם אחת, גם אם הוריד כמה פעמים</span></div>"
+      + '<div class="ostat" style="--i:1"><small>אנדרואיד / אייפון</small><b>' + fmt(and) + " / " + fmt(ios) + "</b><span>לפי סוג המכשיר</span></div>"
+      + '<div class="ostat" style="--i:2"><small>פעילים השבוע</small><b>' + fmt(active) + "</b><span>פתחו את האפליקציה ב-7 הימים האחרונים</span></div>"
+      + '<div class="ostat" style="--i:3"><small>חדשים היום</small><b>' + fmt(fresh) + "</b><span>טלפונים שפתחו בפעם הראשונה היום</span></div>"
+      + "</div>"
+      + '<div class="ocard" style="--i:4"><h3>טלפונים חדשים בכל יום (30 יום)</h3>' + barChart(newPerDay(list)) + "</div>"
+      + (vrows ? '<div class="ocard" style="--i:5"><h3>באיזו גרסה הטלפונים</h3><div class="otablewrap"><table class="otable"><thead><tr><th>גרסה</th><th>טלפונים</th></tr></thead><tbody>' + vrows + "</tbody></table></div></div>" : "");
+  }
+  function rulesHTML(){
+    return '<div class="ocard"><h3>צריך להפעיל ספירת טלפונים (פעם אחת)</h3>'
+      + '<p class="onote">כדי לספור כל טלפון פעם אחת, צריך לעדכן את חוקי האבטחה של Firestore: נכנסים ל-<b dir="ltr">console.firebase.google.com</b> ← הפרויקט math-snap ← Firestore Database ← Rules, מוחקים את מה שיש, מדביקים את זה ולוחצים Publish.</p>'
+      + '<pre class="orules" dir="ltr" id="oRules">' + esc(RULES) + '</pre><div class="obar"><button class="btn primary small" type="button" id="oCopy">העתקת החוקים</button><span class="onote" id="oCopied" hidden>הועתק</span></div></div>';
+  }
   async function dashboard(){
     $("ownerTitle").textContent = "לוח הבעלים";
     const body = $("ownerBody");
     body.innerHTML = '<div class="obar"><span class="who">מחובר כ-<b dir="ltr">' + esc(user.email) + '</b></span><button class="btn ghost small" type="button" id="oRefresh">רענון</button><button class="btn ghost small" type="button" id="oOut">התנתקות</button></div><div id="oData"><p class="onote">טוען את המספרים…</p></div>';
     $("oOut").onclick = () => { try { localStorage.removeItem("ownerSeen"); } catch (e) {} auth.signOut(); };
     $("oRefresh").onclick = dashboard;
-    let list;
-    try { list = await releases(); } catch (e) { $("oData").innerHTML = '<p class="omsg bad">לא הצלחתי לקבל את המספרים מ-GitHub. נסו שוב בעוד כמה דקות.</p>'; return; }
-    const total = list.reduce((t, x) => t + x.downloads, 0), latest = list[list.length - 1] || { name: "-", downloads: 0, date: new Date() };
-    let prev = null; try { prev = JSON.parse(localStorage.getItem("ownerLast") || "null"); localStorage.setItem("ownerLast", JSON.stringify({ total, at: Date.now() })); } catch (e) {}
-    const since = prev && prev.total <= total ? total - prev.total : null;
-    const week = list.filter(x => Date.now() - x.date < 7 * 864e5).reduce((t, x) => t + x.downloads, 0);
-    const rows = list.slice().reverse().map(x => "<tr><td>" + esc(x.name) + '</td><td>' + x.date.toLocaleDateString("he-IL") + '</td><td class="n">' + fmt(x.downloads) + "</td></tr>").join("");
-    $("oData").innerHTML = '<div style="display:flex;flex-direction:column;gap:14px">'
-      + '<div class="ostats">'
-      + '<div class="ostat main" style="--i:0"><small>סך כל ההורדות</small><b>' + fmt(total) + "</b><span>של קובץ האפליקציה לאנדרואיד</span></div>"
-      + '<div class="ostat" style="--i:1"><small>הגרסה האחרונה (' + esc(latest.name) + ")</small><b>" + fmt(latest.downloads) + "</b><span>הורדות מאז " + latest.date.toLocaleDateString("he-IL") + "</span></div>"
-      + '<div class="ostat" style="--i:2"><small>השבוע האחרון</small><b>' + fmt(week) + "</b><span>הורדות של גרסאות שיצאו השבוע</span></div>"
-      + '<div class="ostat" style="--i:3"><small>מאז הביקור הקודם כאן</small><b>' + (since == null ? "—" : "+" + fmt(since)) + "</b><span>" + (prev ? new Date(prev.at).toLocaleString("he-IL", { dateStyle: "short", timeStyle: "short" }) : "ביקור ראשון") + "</span></div>"
-      + "</div>"
-      + '<div class="ocard" style="--i:4"><h3>הורדות לפי גרסה</h3>' + barChart(list) + "</div>"
-      + (list.length > 1 ? '<div class="ocard" style="--i:5"><h3>סך ההורדות לאורך זמן</h3>' + lineChart(list) + "</div>" : "")
-      + '<div class="ocard" style="--i:6"><h3>כל הגרסאות (' + list.length + ')</h3><div class="otablewrap"><table class="otable"><thead><tr><th>גרסה</th><th>תאריך</th><th>הורדות</th></tr></thead><tbody>' + rows + "</tbody></table></div></div>"
-      + '<p class="onote">המספרים מגיעים מ-GitHub, ונספרת כל הורדה של הקובץ (גם הורדה חוזרת של אותו אדם). התקנות באייפון לא נספרות, כי אין שם קובץ להוריד.</p>'
-      + "</div>";
+    const [ph, gh] = await Promise.allSettled([phones(), releases()]);
+    let html = '<div style="display:flex;flex-direction:column;gap:14px">';
+    if (ph.status === "fulfilled") html += phonesHTML(ph.value);
+    else if (/permission|insufficient/i.test(String(ph.reason && (ph.reason.code || ph.reason.message)))) html += rulesHTML();
+    else html += '<p class="omsg bad">לא הצלחתי לקרוא את מספר הטלפונים. נסו "רענון" בעוד רגע.</p>';
+    if (gh.status === "fulfilled") {
+      const list = gh.value, total = list.reduce((t, x) => t + x.downloads, 0);
+      let prev = null; try { prev = JSON.parse(localStorage.getItem("ownerLast") || "null"); localStorage.setItem("ownerLast", JSON.stringify({ total, at: Date.now() })); } catch (e) {}
+      const since = prev && prev.total <= total ? total - prev.total : null;
+      const rows = list.slice().reverse().map(x => "<tr><td>" + esc(x.name) + '</td><td>' + x.date.toLocaleDateString("he-IL") + '</td><td class="n">' + fmt(x.downloads) + "</td></tr>").join("");
+      html += '<div class="ocard" style="--i:6"><h3>הורדות של הקובץ (כולל הורדות חוזרות)</h3>'
+        + '<p class="onote">סך הכול <b>' + fmt(total) + "</b> הורדות של קובץ ה-APK" + (since ? " · +" + fmt(since) + " מאז הביקור הקודם" : "") + ". כאן אותו טלפון יכול להיספר כמה פעמים (למשל בכל עדכון).</p>"
+        + '<details><summary>לפי גרסה</summary>' + barChart(list) + '<div class="otablewrap"><table class="otable"><thead><tr><th>גרסה</th><th>תאריך</th><th>הורדות</th></tr></thead><tbody>' + rows + "</tbody></table></div></details></div>";
+    }
+    html += '<p class="onote">טלפון נספר כשפותחים בו את האפליקציה בגרסה 7.4 ומעלה עם אינטרנט. לכל טלפון יש מזהה אנונימי, ולא נשמר שום דבר אישי. באייפון נספרת רק אפליקציה שהותקנה למסך הבית.</p></div>';
+    $("oData").innerHTML = html;
+    const cp = $("oCopy");
+    if (cp) cp.onclick = async () => {
+      try { await navigator.clipboard.writeText(RULES); } catch (e) { const r = document.createRange(); r.selectNodeContents($("oRules")); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); try { document.execCommand("copy"); } catch (e2) {} }
+      $("oCopied").hidden = false;
+    };
   }
   // someone who already signed in as the owner: restore the session quietly
   try { if (localStorage.getItem("ownerSeen") === "1") boot().catch(() => {}); } catch (e) {}

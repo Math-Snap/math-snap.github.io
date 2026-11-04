@@ -338,6 +338,8 @@ body[data-bg="plain"]{background-image:none}
 .booksec h3{margin:0 0 8px;font-size:15px;font-weight:700;color:var(--pen)}
 .bookgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
 .fcard{background:var(--surface);border-radius:var(--r2,16px);padding:11px 14px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:4px;min-width:0}
+.notecard{display:block;font:500 15px/1.6 var(--sans);color:var(--ink)}
+.notecard b{color:var(--pen)}
 .fcard small{color:var(--muted);font:600 12.5px/1.3 var(--sans)}
 .fcard .fm{font:600 17px/1.55 var(--mono);color:var(--ink);overflow-x:auto;text-align:left;white-space:nowrap}
 .fcard .fm .pl{display:inline;line-height:2.3}
@@ -479,7 +481,7 @@ body.noscroll{overflow:hidden}
     <div class="chips" id="groupChips"></div>
     <div class="chips wrapchips" id="toolChips"></div>
     <label class="vh" for="shape">shape</label><select id="shape" class="vh"></select>
-    <details class="notes" id="geoNotesWrap" hidden><summary><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M8 7h6"/></svg><span data-t="reminder"></span></summary><div class="body" id="geoNotes"></div></details>
+    <button class="formbtn" id="geoNotesBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M8 7h6M8 11h4"/></svg><span id="geoNotesLbl"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button>
     <div class="fields" id="geoFields"></div>
     <div id="unitRow" style="display:flex;flex-direction:column;gap:8px">
       <label class="lbl" for="unit" data-t="units"></label>
@@ -559,7 +561,7 @@ const UI = {
     givensLbl:"Describe the problem: the givens, in words, numbers or symbols", givensEx:"Examples:", givensGo:"Solve",
     givensTip:"I understand: triangle, right triangle, isosceles, trapezoid, kite, circle, similar · angle A = 40 · AB = 5 · parallel · radius, central angle, hypotenuse, area",
     askLbl:"What do you need to find? (optional)", askPh:"e.g. find BC and angle B, or the area",
-    askAns:"Answer to your question", graphTitle:"Graph", nlTitle:"On the number line", stepOff:"Step by step", stepOn:"Step by step: on",
+    askAns:"Answer to your question", notesFor:x=>"Reminder: "+x, notesDefs:"Definitions and properties", notesForm:"Formulas", notesThm:"Theorems you can write as a reason", graphTitle:"Graph", nlTitle:"On the number line", stepOff:"Step by step", stepOn:"Step by step: on",
     stepNext:(n,t)=>"Next step ("+n+"/"+t+")", stepAll:"Show everything", tapRow:"Tap a row to see it in the drawing", askMiss:t=>"Not in this solution: "+t,
     givensExList:"trapezoid ABCD, AB parallel to DC, angle A = 110 degrees, angle C = 43\nisosceles triangle, vertex angle 40\nisosceles triangle, leg 13, base 10\nkite ABCD, angle BAC 35, angle CBD 70\nkite, main diagonal 12, other diagonal 8\nright triangle ABC, angle C 90, AB 10, angle A 30 | find BC and AC\ntriangle ABC, AB = 7, AC = 5, angle A = 60 | find BC and the area\ncircle, radius 6, central angle 60 | arc length",
     givensPh:"e.g. trapezoid ABCD, AB parallel to DC, angle A = 110, angle C = 43",
@@ -614,7 +616,7 @@ const UI = {
     givensLbl:"תארו את התרגיל: הנתונים במילים, במספרים או בסימנים", givensEx:"דוגמאות:", givensGo:"פתור",
     givensTip:"אני מבין: משולש, ישר זווית, שווה שוקיים, טרפז, דלתון, מעגל, דומים · זווית A שווה 40 · AB שווה 5 · מקביל · רדיוס, זווית מרכזית, יתר, שטח",
     askLbl:"מה צריך למצוא? (לא חובה)", askPh:"למשל: מצאו את BC ואת זווית B, או את השטח",
-    askAns:"התשובה לשאלה", graphTitle:"גרף", nlTitle:"על ציר המספרים", stepOff:"צעד אחר צעד", stepOn:"צעד אחר צעד: פועל",
+    askAns:"התשובה לשאלה", notesFor:x=>"תזכורת: "+x, notesDefs:"הגדרות ותכונות", notesForm:"נוסחאות", notesThm:"משפטים שאפשר לכתוב כנימוק", graphTitle:"גרף", nlTitle:"על ציר המספרים", stepOff:"צעד אחר צעד", stepOn:"צעד אחר צעד: פועל",
     stepNext:(n,t)=>"השלב הבא ("+n+"/"+t+")", stepAll:"הצג הכול", tapRow:"לחצו על שורה כדי לראות אותה בשרטוט", askMiss:t=>"לא מופיע בפתרון: "+t,
     givensExList:"טרפז ABCD, AB מקביל ל-DC, זווית A שווה 110 מעלות, זווית C שווה 43\nמשולש שווה שוקיים, זווית הראש 40\nמשולש שווה שוקיים, שוק 13, בסיס 10\nדלתון ABCD, זווית BAC שווה 35, זווית CBD שווה 70\nדלתון, אלכסון ראשי 12, אלכסון משני 8\nהאם ABCD טרפז? זווית A 30, זווית B 50, זווית D 150\nמשולש ישר זווית ABC, זווית C שווה 90, AB שווה 10, זווית A שווה 30 | מצאו את BC ואת AC\nמשולש ABC, AB שווה 7, AC שווה 5, זווית A שווה 60 | מצאו את BC ואת השטח\nמעגל, רדיוס 6, זווית מרכזית 60 | אורך הקשת",
     givensPh:"למשל: טרפז ABCD, AB מקביל ל-DC, זווית A שווה 110 מעלות, זווית C שווה 43",
@@ -652,7 +654,7 @@ function setLang(l){
   $("geoText").placeholder = T("givensPh");
   $("problem").placeholder = T("problemPh");
   $("geoAsk").placeholder = T("askPh");
-  fillShapes(); fillUnits(); renderExamples(); renderToolChips(); if (!$("bookSheet").hidden) renderBook();
+  fillShapes(); fillUnits(); renderExamples(); renderToolChips(); if (!$("bookSheet").hidden) { if ($("bookTitle") && /^(תזכורת|Reminder)/.test($("bookTitle").textContent)) openNotes(); else renderBook(); }
   if (typeof renderBank === "function" && $("bankList")) renderBank();
   if (typeof renderMe === "function" && !$("mePanel").hidden) renderMe();
   if (!$("customize").hidden) renderCustomize();
@@ -2310,10 +2312,8 @@ function buildFields(keep){
     i.id="g_"+k; i.dir="ltr";
     if (s.kind==="proof") i.placeholder="?";
     i.value = old["g_"+k] ?? (s.ex ? (s.ex[k] ?? "") : EX[k]); l.append(i); box.append(l); });
-  const notes=$("geoNotes"); notes.innerHTML="";
-  const list = s.g==="trap" ? TW().notes : (s.g && NOTES[s.g] ? NOTES[s.g][lang] : null);
-  if (list) list.forEach(h=>{ const p=document.createElement("div"); p.innerHTML=h; notes.append(p); });
-  $("geoNotesWrap").hidden = !list;
+  const gl = GROUPS.find(x => x[0] === s.g);
+  $("geoNotesLbl").textContent = T("notesFor", gl ? pick(...gl[1]) : pick(...s.l));
   renderToolChips();
   $("unitRow").hidden = !!s.noUnit;
 }
@@ -3342,6 +3342,45 @@ document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("bookSh
 
 $("openBook").onclick = () => openBook(document.activeElement && $("problem").value.match(/sin|cos|tan/) ? "trig" : /log|ln/.test($("problem").value) ? "logs" : /f\(|'|∫|integral|derivative|נגזר|אינטגר/.test($("problem").value) ? "calc" : "all");
 $("openBookGeo").onclick = () => openBook("areas");
+// ---------- geometry: definitions, formulas and theorems for the chosen shape, in the same pop-up ----------
+const GEO_FORM = {
+  trap: ["טרפז", "מרובע", "זוויות חיצוניות"],
+  iso: ["משולש", "משולש שווה צלעות", "פיתגורס", "זווית חיצונית למשולש"],
+  kite: ["מעוין, דלתון", "מרובע"],
+  trig: ["משולש ישר-זווית", "משפט הסינוסים", "משפט הקוסינוסים", "שטח משולש", "פיתגורס", "גזרה וקשת", "מעגל", "זווית היקפית", "משולשים דומים"],
+  para: ["מקבילית", "מלבן", "ריבוע", "מעוין, דלתון", "מרובע", "מצולע", "זווית במצולע משוכלל", "מספר אלכסונים"],
+  lines: ["משולש", "מרובע", "זווית חיצונית למשולש", "זוויות חיצוניות"],
+  shapes: ["משולש", "מלבן", "ריבוע", "מקבילית", "טרפז", "מעגל", "נוסחת הרון", "קובייה", "תיבה", "גליל", "חרוט", "כדור"],
+};
+const GEO_BANK = { trap: "trap", iso: "iso", kite: "kite", trig: "hs", lines: "angles", para: "def" };
+function openNotes(){
+  const sh = SH[$("shape").value] || {}, g = sh.g || "shapes", gl = GROUPS.find(x => x[0] === sh.g);
+  const box = $("bookInner"); box.innerHTML = "";
+  const head = el("div", "sheethead"); const h = el("h2", null, T("notesFor", gl ? pick(...gl[1]) : pick(...(sh.l || ["Shapes", "צורות"])))); h.id = "bookTitle";
+  const x = el("button", "iconbtn"); x.type = "button"; x.setAttribute("aria-label", T("done"));
+  x.append(svgEl('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>')); x.onclick = closeBook;
+  head.append(h, x); box.append(head);
+  const list = el("div", "booklist"); box.append(list);
+  const section = (title, cards) => { if (!cards.length) return; const sec = el("section", "booksec"); sec.append(el("h3", null, title)); const grid = el("div", "bookgrid"); cards.forEach((c, i) => { c.style.setProperty("--i", Math.min(i, 10)); grid.append(c); }); sec.append(grid); list.append(sec); };
+  // definitions and properties of the shape
+  const notes = sh.g === "trap" ? TW().notes : (sh.g && NOTES[sh.g] ? NOTES[sh.g][lang] : []);
+  section(T("notesDefs"), (notes || []).map(html => { const c = el("div", "fcard notecard"); c.innerHTML = html; c.dir = lang === "he" ? "rtl" : "ltr"; return c; }));
+  // formulas
+  const names = GEO_FORM[g] || GEO_FORM.shapes, seen = new Set(), fc = [];
+  for (const [, , , items] of BOOK) for (const [ie, ih, f] of items) if (names.includes(ih) && !seen.has(ih + f)) {
+    seen.add(ih + f);
+    const card = el("div", "fcard"); card.append(dirOf(el("small", null, pick(ie, ih)), pick(ie, ih)));
+    const fm = el("div", "fm"); fm.dir = "ltr"; if (/\//.test(f) && !HEB.test(f)) fm.innerHTML = mathView(f, -1, false); else fm.textContent = f;
+    card.append(fm); fc.push(card);
+  }
+  section(T("notesForm"), fc);
+  // theorems from the bank
+  const cat = GEO_BANK[g];
+  section(T("notesThm"), cat ? BANK.filter(b => b[0] === cat).map(b => { const c = el("div", "fcard notecard"); const tx = pick(b[1], b[2]).replace(/<[^>]+>/g, ""); c.textContent = tx; dirOf(c, tx); return c; }) : []);
+  $("bookSheet").hidden = false; document.body.classList.add("noscroll");
+  setTimeout(() => { const sc = $("bookSheet").querySelector(".bsheet"); if (sc) sc.scrollTop = 0; }, 0);
+}
+$("geoNotesBtn").onclick = openNotes;
 $("openBookTop").onclick = () => openBook($("geoPanel").hidden ? "all" : "areas");
 // Android back button: close what's open first
 window.onBack = () => {

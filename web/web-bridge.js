@@ -162,4 +162,22 @@
   }
 
   window.Android = B;
+
+  // counting phones: one anonymous ID per installed copy, sent at most once a day (no personal details)
+  try {
+    const installed = navigator.standalone === true || matchMedia("(display-mode: standalone)").matches;
+    const day = new Date().toISOString().slice(0, 10);
+    if (installed && navigator.onLine && localStorage.getItem("pingDay") !== day) {
+      let id = localStorage.getItem("installId");
+      if (!id) { id = "w" + (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2) + Date.now()).replace(/-/g, "").slice(0, 32); localStorage.setItem("installId", id); }
+      const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+      const base = "projects/math-snap-529bc/databases/(default)/documents";
+      const tr = [{ fieldPath: "last", setToServerValue: "REQUEST_TIME" }, { fieldPath: "opens", increment: { integerValue: "1" } }];
+      if (!localStorage.getItem("installSent")) tr.push({ fieldPath: "first", setToServerValue: "REQUEST_TIME" });
+      fetch("https://firestore.googleapis.com/v1/" + base + ":commit", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ writes: [{ update: { name: base + "/installs/" + id, fields: { platform: { stringValue: ios ? "ios" : "web" }, version: { stringValue: "__APPVER__" } } },
+          updateMask: { fieldPaths: ["platform", "version"] }, updateTransforms: tr }] }) })
+        .then(r => { if (r.ok) { localStorage.setItem("pingDay", day); localStorage.setItem("installSent", "1"); } }).catch(() => {});
+    }
+  } catch (e) { /* counting must never get in the way */ }
 })();

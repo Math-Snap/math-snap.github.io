@@ -22,8 +22,10 @@ for name in ["solver.js", "math.js"]:
     shutil.copy(ASSETS / name, OUT / name)
 for f in (ASSETS / "fonts").iterdir():
     shutil.copy(f, OUT / "fonts" / f.name)
+import re as _re
+_ver = (_re.search(r'versionName = "([^"]+)"', (ROOT / "app/build.gradle.kts").read_text()) or [None, ""])[1]
 for name in ["web-bridge.js", "install-gate.js", "manifest.webmanifest"]:
-    shutil.copy(WEB / name, OUT / name)
+    (OUT / name).write_text((WEB / name).read_text(encoding="utf-8").replace("__APPVER__", _ver), encoding="utf-8")
 if not (OUT / "firebase-config.js").exists():
     shutil.copy(WEB / "firebase-config.js", OUT / "firebase-config.js")
 

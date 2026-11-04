@@ -21,7 +21,9 @@ import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.UserProfileChangeRequest
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.MetadataChanges
 import com.google.firebase.firestore.Query
@@ -54,6 +56,28 @@ class Account(private val activity: AppCompatActivity, private val js: (String) 
             if (it.currentUser != null) listenHistory() else stopHistory()
         }
         watchNetwork()
+        countPhone()
+    }
+
+    // ---------- counting phones: one anonymous ID per phone, sent at most once a day ----------
+    // The ID is a scrambled code made on the phone. No name, email or anything personal is sent.
+    private fun countPhone() {
+        try {
+            val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
+            if (prefs.getString("pingDay", "") == today) return
+            val raw = android.provider.Settings.Secure.getString(activity.contentResolver, android.provider.Settings.Secure.ANDROID_ID)
+                ?: prefs.getString("installId", null)
+                ?: java.util.UUID.randomUUID().toString().also { prefs.edit().putString("installId", it).apply() }
+            val id = "a" + java.security.MessageDigest.getInstance("SHA-256").digest(("mathsnap:" + raw).toByteArray())
+                .joinToString("") { "%02x".format(it) }.take(32)
+            @Suppress("DEPRECATION")
+            val version = activity.packageManager.getPackageInfo(activity.packageName, 0).versionName ?: ""
+            val data = hashMapOf<String, Any>("platform" to "android", "version" to version,
+                "last" to FieldValue.serverTimestamp(), "opens" to FieldValue.increment(1))
+            if (!prefs.getBoolean("installSent", false)) data["first"] = FieldValue.serverTimestamp()
+            db.collection("installs").document(id).set(data, SetOptions.merge())
+                .addOnSuccessListener { prefs.edit().putString("pingDay", today).putBoolean("installSent", true).apply() }
+        } catch (e: Exception) { /* counting must never get in the way */ }
     }
 
     /** The page finished loading: send it the current account, history and sync state. */
