@@ -3,6 +3,12 @@ name: Build APK
 on:
   push:
     branches: [main, dev]
+    # website-only changes don't make a new app release
+    paths-ignore:
+      - "docs/index.html"
+      - "docs/privacy.html"
+      - "docs/sitemap.xml"
+      - "docs/robots.txt"
   workflow_dispatch:
 
 permissions:
@@ -10,6 +16,8 @@ permissions:
 
 jobs:
   build:
+    outputs:
+      version: ${{ steps.ver.outputs.name }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -56,16 +64,14 @@ jobs:
         id: ver
         run: echo "name=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)" >> "$GITHUB_OUTPUT"
 
-      - name: Publish the APK as a download
-        if: github.ref == 'refs/heads/main'
-        uses: softprops/action-gh-release@v2
+      - name: Keep the Android files for the release
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: build-${{ github.run_number }}
-          name: Math Snap ${{ steps.ver.outputs.name }} (build ${{ github.run_number }})
-          body: Open this page on your phone and tap MathSnap.apk to download and install.
-          files: |
+          name: android
+          path: |
             MathSnap.apk
             MathSnap-PlayStore.aab
+          if-no-files-found: ignore
 
   windows:
     # Math Snap for Windows: the same screens, wrapped in an installer (MathSnap-Setup.exe)
@@ -108,12 +114,38 @@ jobs:
         working-directory: desktop
         run: npx electron-builder --win nsis --x64 --publish never
 
-      - name: Add the installer to the release
-        uses: softprops/action-gh-release@v2
+      - name: Keep the Windows files for the release
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: build-${{ github.run_number }}
-          files: |
+          name: windows
+          path: |
             desktop/dist/MathSnap-Setup.exe
             desktop/dist/MathSnap-Setup.exe.blockmap
             desktop/dist/latest.yml
+
+  release:
+    # published only when BOTH the Android app and the Windows app built, so every
+    # download link on the website always finds its file in the newest release
+    needs: [build, windows]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
+
+      - name: Publish the downloads
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Math Snap ${{ needs.build.outputs.version }} (build ${{ github.run_number }})
+          body: "Android: MathSnap.apk · Windows: MathSnap-Setup.exe"
+          fail_on_unmatched_files: false
+          files: |
+            out/MathSnap.apk
+            out/MathSnap-PlayStore.aab
+            out/MathSnap-Setup.exe
+            out/MathSnap-Setup.exe.blockmap
+            out/latest.yml
 
