@@ -5,7 +5,7 @@
   "description": "Math Snap for Windows: snap or type a math problem and get every step.",
   "main": "main.js",
   "author": "Math Snap",
-  "homepage": "https://eitan1234f.github.io/Math-snap/",
+  "homepage": "https://math-snap.github.io/",
   "private": true,
   "scripts": {
     "prepare-app": "node prepare.js",
@@ -62,7 +62,7 @@
     "publish": [
       {
         "provider": "generic",
-        "url": "https://github.com/eitan1234f/Math-snap/releases/latest/download"
+        "url": "https://github.com/Math-Snap/math-snap.github.io/releases/latest/download"
       }
     ],
     "appx": {

@@ -17,8 +17,8 @@
   let he = true;
   try { he = (localStorage.getItem("lang") || ((navigator.language || "").match(/^(he|iw)/) ? "he" : "en")) === "he"; } catch (e) {}
 
-  const APK = "https://github.com/eitan1234f/Math-snap/releases/latest/download/MathSnap.apk";
-  const EXE = "https://github.com/eitan1234f/Math-snap/releases/latest/download/MathSnap-Setup.exe";
+  const APK = "https://github.com/Math-Snap/math-snap.github.io/releases/latest/download/MathSnap.apk";
+  const EXE = "https://github.com/Math-Snap/math-snap.github.io/releases/latest/download/MathSnap-Setup.exe";
   const GUIDE = "../#install";
   const S = he ? {
     title: "מתקינים את Math Snap", sub: "Math Snap עובדת אחרי התקנה בטלפון. זה לוקח פחות מדקה.",
