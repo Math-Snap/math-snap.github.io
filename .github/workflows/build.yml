@@ -37,6 +37,21 @@ jobs:
       - name: Rename APK
         run: cp app/build/outputs/apk/debug/app-debug.apk MathSnap.apk
 
+      - name: Build the Google Play bundle (only when the upload key is set)
+        env:
+          UPLOAD_KEYSTORE_B64: ${{ secrets.UPLOAD_KEYSTORE_B64 }}
+          UPLOAD_KEY_PASSWORD: ${{ secrets.UPLOAD_KEY_PASSWORD }}
+        run: |
+          if [ -z "$UPLOAD_KEYSTORE_B64" ] || [ -z "$UPLOAD_KEY_PASSWORD" ]; then
+            echo "No upload key in the GitHub secrets yet, skipping the Play Store bundle."
+            exit 0
+          fi
+          echo "$UPLOAD_KEYSTORE_B64" | tr -d ' \n\r' | base64 -d > "$RUNNER_TEMP/upload.jks"
+          export UPLOAD_KEYSTORE_FILE="$RUNNER_TEMP/upload.jks"
+          gradle bundleRelease
+          cp app/build/outputs/bundle/release/app-release.aab MathSnap-PlayStore.aab
+          rm -f "$RUNNER_TEMP/upload.jks"
+
       - name: Read the app version
         id: ver
         run: echo "name=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)" >> "$GITHUB_OUTPUT"
@@ -48,4 +63,6 @@ jobs:
           tag_name: build-${{ github.run_number }}
           name: Math Snap ${{ steps.ver.outputs.name }} (build ${{ github.run_number }})
           body: Open this page on your phone and tap MathSnap.apk to download and install.
-          files: MathSnap.apk
+          files: |
+            MathSnap.apk
+            MathSnap-PlayStore.aab

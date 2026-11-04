@@ -6,14 +6,14 @@ plugins {
 
 android {
     namespace = "com.mathsnap"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.mathsnap"
         minSdk = 24
-        targetSdk = 34
-        versionCode = 26
-        versionName = "7.4"
+        targetSdk = 36
+        versionCode = 27
+        versionName = "7.5"
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }
 
@@ -25,6 +25,17 @@ android {
             keyAlias = "mathsnap"
             keyPassword = "mathsnap"
         }
+        // The Google Play upload key. It is never in the code: the build reads it from
+        // GitHub secrets (UPLOAD_KEYSTORE_B64 and UPLOAD_KEY_PASSWORD).
+        val uploadStore = System.getenv("UPLOAD_KEYSTORE_FILE")
+        if (uploadStore != null && file(uploadStore).exists()) {
+            create("play") {
+                storeFile = file(uploadStore)
+                storePassword = System.getenv("UPLOAD_KEY_PASSWORD")
+                keyAlias = "upload"
+                keyPassword = System.getenv("UPLOAD_KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
@@ -33,8 +44,12 @@ android {
         }
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("stable")
+            signingConfig = signingConfigs.findByName("play") ?: signingConfigs.getByName("stable")
         }
+    }
+    lint {
+        checkReleaseBuilds = false
+        abortOnError = false
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

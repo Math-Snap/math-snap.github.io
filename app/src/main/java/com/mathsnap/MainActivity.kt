@@ -5,9 +5,13 @@ import android.net.Uri
 import android.os.Bundle
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
@@ -49,7 +53,33 @@ class MainActivity : AppCompatActivity() {
         web.settings.cacheMode = android.webkit.WebSettings.LOAD_NO_CACHE
         web.clearCache(true)
         web.addJavascriptInterface(Bridge(), "Android")
-        setContentView(web)
+        // Android 15+ draws apps under the status and navigation bars, so the page sits inside
+        // a frame padded by the bars (and by the keyboard when it is open).
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        val root = android.widget.FrameLayout(this)
+        root.setBackgroundColor(getColor(R.color.paper))
+        root.addView(web, android.widget.FrameLayout.LayoutParams(-1, -1))
+        setContentView(root)
+        ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+            v.setPadding(bars.left, bars.top, bars.right, maxOf(bars.bottom, ime.bottom))
+            WindowInsetsCompat.CONSUMED
+        }
+        WindowCompat.getInsetsController(window, root).apply {
+            val light = resources.getBoolean(R.bool.light_bars)
+            isAppearanceLightStatusBars = light
+            isAppearanceLightNavigationBars = light
+        }
+        // Back button: first let the page close its pop-ups, then go back, then leave.
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                web.evaluateJavascript("(window.onBack && window.onBack()) ? 'y' : 'n'") { r ->
+                    if (r != null && r.contains("y")) return@evaluateJavascript
+                    if (web.canGoBack()) web.goBack() else finish()
+                }
+            }
+        })
         cameraUri = savedInstanceState?.getString("cameraUri")?.let { Uri.parse(it) }
         account = Account(this) { code -> js(code) }
         account.start()
@@ -142,12 +172,4 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun js(code: String) = web.post { web.evaluateJavascript(code, null) }
-
-    @Deprecated("Deprecated in Java")
-    override fun onBackPressed() {
-        web.evaluateJavascript("(window.onBack && window.onBack()) ? 'y' : 'n'") { r ->
-            if (r != null && r.contains("y")) return@evaluateJavascript
-            if (web.canGoBack()) web.goBack() else finish()
-        }
-    }
 }
