@@ -340,6 +340,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
 <div class="site" dir="rtl" lang="he">
 <header class="nav" id="nav">
   <div class="wrap">
+    <button class="ownerbtn" id="ownerBtn" type="button" aria-label="כניסת בעלים" title="כניסת בעלים"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></button>
     <a class="brand" href="#top"><span class="logo" aria-hidden="true"><svg viewBox="0 0 28 28" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V6a2 2 0 0 1 2-2h3M19 4h3a2 2 0 0 1 2 2v3M24 19v3a2 2 0 0 1-2 2h-3M9 24H6a2 2 0 0 1-2-2v-3"/><path d="M10 12h8M10 16h8"/></svg></span>Math Snap</a>
     <nav aria-label="ניווט">
       <a href="#how">איך זה עובד</a><a href="#features">תכונות</a><a href="#geometry">גאומטריה</a><a href="#style">התאמה אישית</a><a href="#install">התקנה</a><a href="#faq">שאלות</a>
@@ -645,6 +646,262 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
     demo.style.setProperty("--d-bg", dark ? "#0D111C" : "#F2F4F9"); demo.style.setProperty("--d-card", dark ? "#161C2B" : "#fff");
     demo.style.setProperty("--d-ink", dark ? "#E9EDF7" : "#131A2C"); demo.style.setProperty("--d-grid", dark ? "#1A2132" : "#E3E8F2");
   }, i === 0, label));
+})();
+</script>
+
+<!-- owner area: sign-in and download numbers -->
+<div class="ownerwrap" id="ownerSheet" hidden role="dialog" aria-modal="true" aria-labelledby="ownerTitle">
+  <div class="osheet">
+    <div class="ohead">
+      <h2 id="ownerTitle">כניסת בעלים</h2>
+      <button class="oclose" id="ownerClose" type="button" aria-label="סגירה"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </div>
+    <div id="ownerBody"></div>
+  </div>
+</div>
+<style>
+.ownerbtn{width:42px;height:42px;border-radius:50%;border:0;background:var(--surface);color:var(--ink);box-shadow:var(--shadow);display:grid;place-items:center;cursor:pointer;flex:none;transition:transform .15s ease,background .2s ease}
+.ownerbtn:hover{transform:translateY(-1px)}
+.ownerbtn svg{width:21px;height:21px}
+.ownerbtn.on{background:var(--pen);color:var(--on-pen)}
+.ownerwrap{position:fixed;inset:0;z-index:50;background:rgba(10,14,25,.5);display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:max(16px,env(safe-area-inset-top,0px)) 16px 32px}
+.osheet{background:var(--bg);width:100%;max-width:760px;border-radius:28px;box-shadow:0 30px 80px rgba(0,0,0,.3);padding:22px clamp(16px,4vw,32px) 28px;margin-top:4vh;display:flex;flex-direction:column;gap:18px}
+.osheet.small{max-width:440px}
+.ohead{display:flex;align-items:center;gap:12px}
+.ohead h2{margin:0;flex:1;font:800 24px/1.2 var(--display)}
+.oclose{width:40px;height:40px;border-radius:50%;border:0;background:var(--surface);color:var(--ink);box-shadow:var(--shadow);display:grid;place-items:center;cursor:pointer}
+.oclose svg{width:20px;height:20px}
+.oform{display:flex;flex-direction:column;gap:12px}
+.oform label{display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:14px;color:var(--muted)}
+.oform input{border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:14px;padding:13px 14px;font:16px var(--body)}
+.oform input:focus{outline:none;border-color:var(--pen)}
+.omsg{margin:0;border-radius:14px;padding:11px 14px;font-size:15px}
+.omsg.bad{background:#FDECEC;color:#B42318}
+.omsg.good{background:var(--ok-soft);color:var(--ok)}
+.olinks{display:flex;gap:16px;flex-wrap:wrap}
+.olinks button{border:0;background:none;color:var(--pen);font:600 14px var(--body);cursor:pointer;padding:4px 0}
+.ostats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.ostat{background:var(--surface);border-radius:20px;padding:16px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:4px;min-width:0}
+.ostat small{color:var(--muted);font-weight:600;font-size:13px}
+.ostat b{font:800 34px/1.1 var(--display);color:var(--ink)}
+.ostat.main{background:var(--pen);color:var(--on-pen)}
+.ostat.main small,.ostat.main b{color:inherit}
+.ostat span{font-size:13px;color:var(--muted)}
+.ostat.main span{color:inherit;opacity:.85}
+.ocard{background:var(--surface);border-radius:20px;padding:16px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px;min-width:0}
+.ocard h3{margin:0;font-size:16px}
+.ocard svg.chart{width:100%;height:auto;display:block;direction:ltr}
+.ochart text{font:500 10px var(--mono);fill:var(--muted)}
+.otable{width:100%;border-collapse:collapse;font-size:15px}
+.otable th{text-align:start;color:var(--muted);font-weight:600;font-size:13px;padding:6px 8px;border-bottom:1px solid var(--line)}
+.otable td{padding:9px 8px;border-bottom:1px solid var(--line)}
+.otable td.n{font-family:var(--mono);font-weight:600}
+.otable tr:last-child td{border-bottom:0}
+.otablewrap{max-height:340px;overflow-y:auto}
+.onote{margin:0;color:var(--muted);font-size:14px}
+.obar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.obar .who{flex:1;color:var(--muted);font-size:14px;min-width:0;overflow-wrap:anywhere}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .omsg.bad{background:#3A1717;color:#FF9C92}}
+@media (prefers-reduced-motion:no-preference){
+  .ownerwrap:not([hidden]){animation:ofade .25s ease both}
+  .ownerwrap:not([hidden]) .osheet{animation:orise .4s cubic-bezier(.2,.8,.2,1) both}
+  .ostat,.ocard{animation:orise .5s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0) * 70ms + 100ms)}
+  .ochart .bar{transform-box:fill-box;transform-origin:bottom;animation:ogrow .7s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0) * 30ms + 250ms)}
+  .ochart .line{stroke-dasharray:1;stroke-dashoffset:1;animation:odraw 1.3s ease-out .3s forwards}
+}
+@keyframes ofade{from{opacity:0}}
+@keyframes orise{from{opacity:0;transform:translateY(16px)}}
+@keyframes ogrow{from{transform:scaleY(0)}}
+@keyframes odraw{to{stroke-dashoffset:0}}
+</style>
+<script src="app/firebase-config.js"></script>
+<script>
+(function () {
+  "use strict";
+  const OWNER = "eitanski11@gmail.com";
+  const REPO = "eitan1234f/Math-snap";
+  // the same Firebase project the app uses for accounts
+  const CFG = (window.MATHSNAP_FIREBASE && window.MATHSNAP_FIREBASE.apiKey) ? window.MATHSNAP_FIREBASE
+    : { apiKey: "AIzaSyAb526ddpk8T8R66COOSfpVuIa_zYrtplI", authDomain: "math-snap-529bc.firebaseapp.com", projectId: "math-snap-529bc" };
+  const FB = "https://www.gstatic.com/firebasejs/10.12.2/";
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  const fmt = n => Number(n).toLocaleString("he-IL");
+  let auth = null, user = null, booting = null;
+
+  const loadScript = src => new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = () => rej(new Error("load")); document.head.appendChild(s); });
+  function boot(){
+    if (!booting) booting = (async () => {
+      await loadScript(FB + "firebase-app-compat.js");
+      await loadScript(FB + "firebase-auth-compat.js");
+      if (!firebase.apps.length) firebase.initializeApp(CFG);
+      auth = firebase.auth();
+      auth.languageCode = "he";
+      await new Promise(r => { const off = auth.onAuthStateChanged(u => { user = u; paintButton(); off(); r(); }); });
+      auth.onAuthStateChanged(u => { user = u; paintButton(); if (!$("ownerSheet").hidden) render(); });
+    })();
+    return booting;
+  }
+  const isOwner = () => user && String(user.email || "").toLowerCase() === OWNER;
+  function paintButton(){
+    const b = $("ownerBtn"); if (!b) return;
+    const on = isOwner() && user.emailVerified;
+    b.classList.toggle("on", !!on);
+    b.setAttribute("aria-label", on ? "לוח הבעלים" : "כניסת בעלים"); b.title = b.getAttribute("aria-label");
+    try { if (on) localStorage.setItem("ownerSeen", "1"); } catch (e) {}
+  }
+  const ERR = {
+    "auth/invalid-email": "כתובת האימייל לא תקינה.",
+    "auth/wrong-password": "הסיסמה לא נכונה.", "auth/invalid-credential": "האימייל או הסיסמה לא נכונים.", "auth/invalid-login-credentials": "האימייל או הסיסמה לא נכונים.",
+    "auth/user-not-found": "עוד אין חשבון עם האימייל הזה. לחצו \"יצירת חשבון בעלים\".",
+    "auth/email-already-in-use": "כבר יש חשבון עם האימייל הזה. התחברו עם הסיסמה שלו.",
+    "auth/weak-password": "הסיסמה צריכה לפחות 6 תווים.",
+    "auth/too-many-requests": "יותר מדי ניסיונות. נסו שוב בעוד כמה דקות.",
+    "auth/network-request-failed": "אין חיבור לאינטרנט.",
+  };
+  const SETUP = "הכניסה באתר עוד לא הופעלה בפרויקט Firebase. צריך להוסיף אפליקציית Web בפרויקט ולהדביק את ההגדרות שלה.";
+  function errText(e){
+    const code = (e && e.code) || "", msg = String((e && e.message) || "");
+    if (ERR[code]) return ERR[code];
+    if (/api-key|API key|referer|blocked|configuration-not-found|operation-not-allowed|app-not-authorized|unauthorized-domain/i.test(code + " " + msg)) return SETUP;
+    if (/load/.test(msg)) return "לא הצלחתי לטעון את הכניסה. בדקו את החיבור לאינטרנט.";
+    return "משהו השתבש: " + (code || msg);
+  }
+
+  function open(){ $("ownerSheet").hidden = false; document.body.style.overflow = "hidden"; render(); }
+  function close(){ $("ownerSheet").hidden = true; document.body.style.overflow = ""; }
+  $("ownerClose").onclick = close;
+  $("ownerSheet").addEventListener("click", e => { if (e.target.id === "ownerSheet") close(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("ownerSheet").hidden) close(); });
+  $("ownerBtn").onclick = open;
+
+  async function render(){
+    const body = $("ownerBody"), sheet = $("ownerSheet").querySelector(".osheet");
+    body.innerHTML = '<p class="onote">טוען…</p>';
+    try { await boot(); } catch (e) { sheet.classList.add("small"); body.innerHTML = '<p class="omsg bad">' + esc(errText(e)) + "</p>"; return; }
+    if (!user) return loginForm();
+    if (!isOwner()) {
+      sheet.classList.add("small"); $("ownerTitle").textContent = "כניסת בעלים";
+      body.innerHTML = '<p class="omsg bad">האזור הזה מיועד רק לבעלים של Math Snap.</p><div class="olinks"><button type="button" id="oOut">התנתקות</button></div>';
+      $("oOut").onclick = () => auth.signOut();
+      return;
+    }
+    if (!user.emailVerified) {
+      sheet.classList.add("small"); $("ownerTitle").textContent = "אימות האימייל";
+      body.innerHTML = '<p class="onote">שלחנו מייל אימות ל-<b dir="ltr">' + esc(user.email) + '</b>. לחצו על הקישור במייל, ואז על "בדיקה".</p>'
+        + '<p class="omsg" id="oMsg" hidden></p><div class="obar"><button class="btn primary small" type="button" id="oCheck">בדיקה</button>'
+        + '<div class="olinks"><button type="button" id="oResend">שליחה מחדש</button><button type="button" id="oOut">התנתקות</button></div></div>';
+      $("oCheck").onclick = async () => { await user.reload(); user = auth.currentUser; paintButton(); render(); };
+      $("oResend").onclick = async () => { try { await user.sendEmailVerification(); show("good", "נשלח מייל חדש."); } catch (e) { show("bad", errText(e)); } };
+      $("oOut").onclick = () => auth.signOut();
+      return;
+    }
+    sheet.classList.remove("small");
+    dashboard();
+  }
+  function show(kind, text){ const m = $("oMsg"); if (!m) return; m.className = "omsg " + kind; m.textContent = text; m.hidden = false; }
+
+  function loginForm(){
+    const sheet = $("ownerSheet").querySelector(".osheet"); sheet.classList.add("small");
+    $("ownerTitle").textContent = "כניסת בעלים";
+    $("ownerBody").innerHTML = '<form class="oform" id="oForm" novalidate>'
+      + '<p class="onote">הכניסה מיועדת לבעלים של האפליקציה בלבד.</p>'
+      + '<label>אימייל<input id="oEmail" type="email" dir="ltr" autocomplete="username" required></label>'
+      + '<label>סיסמה<input id="oPass" type="password" dir="ltr" autocomplete="current-password" required minlength="6"></label>'
+      + '<p class="omsg" id="oMsg" hidden></p>'
+      + '<button class="btn primary" type="submit" id="oGo">התחברות</button>'
+      + '<div class="olinks"><button type="button" id="oNew">יצירת חשבון בעלים</button><button type="button" id="oForgot">שכחתי סיסמה</button></div></form>';
+    const email = () => $("oEmail").value.trim().toLowerCase(), pass = () => $("oPass").value;
+    const ownerOnly = () => { if (email() !== OWNER) { show("bad", "האזור הזה מיועד רק לבעלים של Math Snap."); return false; } return true; };
+    $("oForm").onsubmit = async e => {
+      e.preventDefault(); if (!ownerOnly()) return;
+      $("oGo").disabled = true;
+      try { await auth.signInWithEmailAndPassword(email(), pass()); } catch (err) { show("bad", errText(err)); }
+      if ($("oGo")) $("oGo").disabled = false;
+    };
+    $("oNew").onclick = async () => {
+      if (!ownerOnly()) return;
+      if (pass().length < 6) return show("bad", ERR["auth/weak-password"]);
+      try { const c = await auth.createUserWithEmailAndPassword(email(), pass()); await c.user.sendEmailVerification(); } catch (err) { show("bad", errText(err)); }
+    };
+    $("oForgot").onclick = async () => {
+      if (!ownerOnly()) return;
+      try { await auth.sendPasswordResetEmail(email()); show("good", "שלחנו מייל לאיפוס הסיסמה."); } catch (err) { show("bad", errText(err)); }
+    };
+  }
+
+  // ---------- the dashboard ----------
+  async function releases(){
+    const all = [];
+    for (let page = 1; page <= 5; page++) {
+      const r = await fetch("https://api.github.com/repos/" + REPO + "/releases?per_page=100&page=" + page, { cache: "no-store" });
+      if (!r.ok) throw new Error("github " + r.status);
+      const list = await r.json(); all.push(...list);
+      if (list.length < 100) break;
+    }
+    return all.map(x => ({
+      name: (String(x.name || x.tag_name).match(/\d+\.\d+/) || [x.tag_name])[0],
+      build: +((String(x.tag_name).match(/\d+/) || [0])[0]),
+      date: new Date(x.published_at || x.created_at),
+      downloads: x.assets.filter(a => /\.apk$/i.test(a.name)).reduce((t, a) => t + a.download_count, 0),
+    })).sort((a, b) => a.date - b.date);
+  }
+  function barChart(list){
+    const W = 640, H = 220, L = 34, R = 8, T = 14, B = 34, last = list.slice(-20);
+    const max = Math.max(1, ...last.map(x => x.downloads)), step = Math.max(1, Math.ceil(max / 4 / 5) * 5);
+    const top = Math.ceil(max / step) * step, bw = (W - L - R) / last.length;
+    let s = '<svg class="chart ochart" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="הורדות לפי גרסה">';
+    for (let v = 0; v <= top; v += step) { const y = H - B - v / top * (H - T - B); s += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y + '" y2="' + y + '" style="stroke:var(--line)"/><text x="' + (L - 6) + '" y="' + (y + 4) + '" text-anchor="end">' + v + "</text>"; }
+    last.forEach((x, i) => {
+      const h = x.downloads / top * (H - T - B), xx = L + i * bw + bw * 0.18, w = bw * 0.64;
+      s += '<rect class="bar" style="--i:' + i + ';fill:' + (i === last.length - 1 ? "var(--pen)" : "color-mix(in srgb,var(--pen) 45%,var(--surface))") + '" x="' + xx.toFixed(1) + '" y="' + (H - B - h).toFixed(1) + '" width="' + w.toFixed(1) + '" height="' + h.toFixed(1) + '" rx="4"><title>' + esc(x.name) + ": " + x.downloads + "</title></rect>";
+      if (last.length <= 12 || i % 2 === last.length % 2 || i === last.length - 1) s += '<text x="' + (xx + w / 2).toFixed(1) + '" y="' + (H - B + 16) + '" text-anchor="middle">' + esc(x.name) + "</text>";
+    });
+    return s + "</svg>";
+  }
+  function lineChart(list){
+    const W = 640, H = 200, L = 40, R = 12, T = 14, B = 30;
+    let sum = 0; const pts = list.map(x => ({ t: +x.date, v: (sum += x.downloads) }));
+    if (pts.length < 2) return "";
+    const t0 = pts[0].t, t1 = pts[pts.length - 1].t || t0 + 1, max = Math.max(1, sum);
+    const X = t => L + (t - t0) / Math.max(1, t1 - t0) * (W - L - R), Y = v => H - B - v / max * (H - T - B);
+    let s = '<svg class="chart ochart" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="סך ההורדות לאורך זמן">';
+    for (let k = 0; k <= 4; k++) { const v = Math.round(max * k / 4), y = Y(v); s += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y + '" y2="' + y + '" style="stroke:var(--line)"/><text x="' + (L - 6) + '" y="' + (y + 4) + '" text-anchor="end">' + v + "</text>"; }
+    const d = pts.map((p, i) => (i ? "L" : "M") + X(p.t).toFixed(1) + "," + Y(p.v).toFixed(1)).join(" ");
+    s += '<path d="' + d + " L" + X(t1).toFixed(1) + "," + (H - B) + " L" + L + "," + (H - B) + ' Z" style="fill:var(--pen);opacity:.12"/>';
+    s += '<path class="line" pathLength="1" d="' + d + '" style="fill:none;stroke:var(--pen);stroke-width:3;stroke-linejoin:round"/>';
+    const df = t => new Date(t).toLocaleDateString("he-IL", { day: "numeric", month: "numeric" });
+    s += '<text x="' + L + '" y="' + (H - 8) + '">' + df(t0) + '</text><text x="' + (W - R) + '" y="' + (H - 8) + '" text-anchor="end">' + df(t1) + "</text>";
+    return s + "</svg>";
+  }
+  async function dashboard(){
+    $("ownerTitle").textContent = "לוח הבעלים";
+    const body = $("ownerBody");
+    body.innerHTML = '<div class="obar"><span class="who">מחובר כ-<b dir="ltr">' + esc(user.email) + '</b></span><button class="btn ghost small" type="button" id="oRefresh">רענון</button><button class="btn ghost small" type="button" id="oOut">התנתקות</button></div><div id="oData"><p class="onote">טוען את המספרים…</p></div>';
+    $("oOut").onclick = () => { try { localStorage.removeItem("ownerSeen"); } catch (e) {} auth.signOut(); };
+    $("oRefresh").onclick = dashboard;
+    let list;
+    try { list = await releases(); } catch (e) { $("oData").innerHTML = '<p class="omsg bad">לא הצלחתי לקבל את המספרים מ-GitHub. נסו שוב בעוד כמה דקות.</p>'; return; }
+    const total = list.reduce((t, x) => t + x.downloads, 0), latest = list[list.length - 1] || { name: "-", downloads: 0, date: new Date() };
+    let prev = null; try { prev = JSON.parse(localStorage.getItem("ownerLast") || "null"); localStorage.setItem("ownerLast", JSON.stringify({ total, at: Date.now() })); } catch (e) {}
+    const since = prev && prev.total <= total ? total - prev.total : null;
+    const week = list.filter(x => Date.now() - x.date < 7 * 864e5).reduce((t, x) => t + x.downloads, 0);
+    const rows = list.slice().reverse().map(x => "<tr><td>" + esc(x.name) + '</td><td>' + x.date.toLocaleDateString("he-IL") + '</td><td class="n">' + fmt(x.downloads) + "</td></tr>").join("");
+    $("oData").innerHTML = '<div style="display:flex;flex-direction:column;gap:14px">'
+      + '<div class="ostats">'
+      + '<div class="ostat main" style="--i:0"><small>סך כל ההורדות</small><b>' + fmt(total) + "</b><span>של קובץ האפליקציה לאנדרואיד</span></div>"
+      + '<div class="ostat" style="--i:1"><small>הגרסה האחרונה (' + esc(latest.name) + ")</small><b>" + fmt(latest.downloads) + "</b><span>הורדות מאז " + latest.date.toLocaleDateString("he-IL") + "</span></div>"
+      + '<div class="ostat" style="--i:2"><small>השבוע האחרון</small><b>' + fmt(week) + "</b><span>הורדות של גרסאות שיצאו השבוע</span></div>"
+      + '<div class="ostat" style="--i:3"><small>מאז הביקור הקודם כאן</small><b>' + (since == null ? "—" : "+" + fmt(since)) + "</b><span>" + (prev ? new Date(prev.at).toLocaleString("he-IL", { dateStyle: "short", timeStyle: "short" }) : "ביקור ראשון") + "</span></div>"
+      + "</div>"
+      + '<div class="ocard" style="--i:4"><h3>הורדות לפי גרסה</h3>' + barChart(list) + "</div>"
+      + (list.length > 1 ? '<div class="ocard" style="--i:5"><h3>סך ההורדות לאורך זמן</h3>' + lineChart(list) + "</div>" : "")
+      + '<div class="ocard" style="--i:6"><h3>כל הגרסאות (' + list.length + ')</h3><div class="otablewrap"><table class="otable"><thead><tr><th>גרסה</th><th>תאריך</th><th>הורדות</th></tr></thead><tbody>' + rows + "</tbody></table></div></div>"
+      + '<p class="onote">המספרים מגיעים מ-GitHub, ונספרת כל הורדה של הקובץ (גם הורדה חוזרת של אותו אדם). התקנות באייפון לא נספרות, כי אין שם קובץ להוריד.</p>'
+      + "</div>";
+  }
+  // someone who already signed in as the owner: restore the session quietly
+  try { if (localStorage.getItem("ownerSeen") === "1") boot().catch(() => {}); } catch (e) {}
 })();
 </script>
 
