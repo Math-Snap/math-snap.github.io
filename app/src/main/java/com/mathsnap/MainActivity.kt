@@ -106,6 +106,7 @@ class MainActivity : AppCompatActivity() {
         @JavascriptInterface fun resetPassword(email: String) = runOnUiThread { account.resetPassword(email) }
         @JavascriptInterface fun signInGoogle() = runOnUiThread { account.signInGoogle() }
         @JavascriptInterface fun signOut() = runOnUiThread { account.signOut() }
+        @JavascriptInterface fun deleteAccount() = runOnUiThread { account.deleteAccount() }
         @JavascriptInterface fun saveProblem(json: String): String = account.save(json)
         @JavascriptInterface fun updateProblem(id: String, json: String) = account.update(id, json)
         @JavascriptInterface fun deleteProblem(id: String) = account.delete(id)

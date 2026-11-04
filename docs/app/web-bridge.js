@@ -118,6 +118,17 @@
       return standalone ? auth.signInWithRedirect(p) : auth.signInWithPopup(p);
     }).catch(fail);
     B.signOut = () => boot.then(() => { stop(); return auth.signOut(); });
+    B.deleteAccount = () => boot.then(async () => {
+      const me = auth.currentUser; if (!me) return;
+      stop();
+      try {
+        const c = db.collection("users").doc(me.uid).collection("problems"), snap = await c.get(), batch = db.batch();
+        snap.docs.forEach(d => batch.delete(d.ref)); batch.delete(db.collection("users").doc(me.uid));
+        await batch.commit();
+      } catch (e) { console.error(e); }
+      try { await me.delete(); call("onAuthInfo", "deleted"); }
+      catch (e) { if (e && e.code === "auth/requires-recent-login") { await auth.signOut(); call("onAuthError", "relogin", ""); } else fail(e); }
+    });
 
     const col = () => user && db ? db.collection("users").doc(user.uid).collection("problems") : null;
     B.saveProblem = json => {
@@ -175,7 +186,7 @@
       const tr = [{ fieldPath: "last", setToServerValue: "REQUEST_TIME" }, { fieldPath: "opens", increment: { integerValue: "1" } }];
       if (!localStorage.getItem("installSent")) tr.push({ fieldPath: "first", setToServerValue: "REQUEST_TIME" });
       fetch("https://firestore.googleapis.com/v1/" + base + ":commit", { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ writes: [{ update: { name: base + "/installs/" + id, fields: { platform: { stringValue: ios ? "ios" : "web" }, version: { stringValue: "7.5" } } },
+        body: JSON.stringify({ writes: [{ update: { name: base + "/installs/" + id, fields: { platform: { stringValue: ios ? "ios" : "web" }, version: { stringValue: "7.6" } } },
           updateMask: { fieldPaths: ["platform", "version"] }, updateTransforms: tr }] }) })
         .then(r => { if (r.ok) { localStorage.setItem("pingDay", day); localStorage.setItem("installSent", "1"); } }).catch(() => {});
     }

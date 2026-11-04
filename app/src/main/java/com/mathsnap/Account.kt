@@ -17,6 +17,7 @@ import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
+import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import com.google.firebase.auth.GoogleAuthProvider
@@ -162,6 +163,33 @@ class Account(private val activity: AppCompatActivity, private val js: (String) 
         auth.signOut()
         activity.lifecycleScope.launch {
             try { CredentialManager.create(activity).clearCredentialState(androidx.credentials.ClearCredentialStateRequest()) } catch (_: Exception) {}
+        }
+    }
+
+    /** Deletes the account for good: all saved problems first, then the sign-in itself. */
+    fun deleteAccount() {
+        val u = auth.currentUser ?: return
+        val c = col() ?: return
+        stopHistory()
+        c.get().addOnCompleteListener { t ->
+            val batch = db.batch()
+            t.result?.documents?.forEach { batch.delete(it.reference) }
+            batch.delete(db.collection("users").document(u.uid))
+            batch.commit().addOnCompleteListener {
+                u.delete()
+                    .addOnSuccessListener {
+                        activity.lifecycleScope.launch {
+                            try { CredentialManager.create(activity).clearCredentialState(androidx.credentials.ClearCredentialStateRequest()) } catch (_: Exception) {}
+                        }
+                        js("window.onAuthInfo && onAuthInfo('deleted')")
+                    }
+                    .addOnFailureListener { e ->
+                        if (e is FirebaseAuthRecentLoginRequiredException) {
+                            auth.signOut()
+                            js("window.onAuthError && onAuthError('relogin','')")
+                        } else { listenHistory(); fail(e) }
+                    }
+            }
         }
     }
 

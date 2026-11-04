@@ -229,6 +229,9 @@ table.proof{width:100%;border-collapse:collapse;font-size:14px;line-height:1.5}
 .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
 .authform{display:flex;flex-direction:column;gap:10px}
 .authform input{font-family:var(--sans);font-size:17px;text-align:start}
+.delacc{margin-top:10px;padding-top:10px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+.delacc p{margin:0;font-size:14px}
+.dangerlink{color:var(--warn)!important;align-self:flex-start}
 .linkbtn{border:0;background:none;color:var(--pen);font:600 14px/1.3 var(--sans);padding:6px 0;text-align:start}
 .linkrow{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .profile{display:flex;align-items:center;gap:12px}
@@ -528,7 +531,7 @@ const UI = {
     perkHistory:"Every problem you solve is saved", perkSync:"The same history on every phone", perkFav:"Star important problems and add notes",
     google:"Continue with Google", orEmail:"or with email", name:"Name (optional)", email:"Email", password:"Password",
     signIn:"Sign in", signUp:"Create account", toUp:"No account yet? Create one", toIn:"Already have an account? Sign in", forgot:"Forgot password?",
-    appOnlyAcc:"Signing in works in the Math Snap app.", signOut:"Sign out",
+    appOnlyAcc:"Signing in works in the Math Snap app.", signOut:"Sign out", delAcc:"Delete my account", delAccQ:"Delete your account and all your saved problems? This can't be undone.", delAccYes:"Delete for good", err_relogin:"For your safety, sign in again and then delete the account.", info_deleted:"Your account and saved problems were deleted.",
     synced:"Synced", pendingN:n=>"Waiting to sync ("+n+")", offlineSync:"Offline, will sync later", pausedSync:"Sync paused until Wi-Fi",
     wifiTitle:"Sync on Wi-Fi only", wifiSub:"Saves mobile data. Your problems wait on the phone and sync when you're on Wi-Fi.",
     myProblems:"My problems", all:"All", favs:"Favorites", emptyAll:"No saved problems yet. Every problem you solve will be saved here.",
@@ -583,7 +586,7 @@ const UI = {
     perkHistory:"כל תרגיל שפותרים נשמר", perkSync:"אותה היסטוריה בכל טלפון", perkFav:"כוכב לתרגילים חשובים, והערות",
     google:"המשך עם Google", orEmail:"או עם אימייל", name:"שם (לא חובה)", email:"אימייל", password:"סיסמה",
     signIn:"התחברות", signUp:"יצירת חשבון", toUp:"אין לך חשבון? ליצירת חשבון", toIn:"כבר יש לך חשבון? להתחברות", forgot:"שכחתי סיסמה",
-    appOnlyAcc:"ההתחברות עובדת באפליקציה Math Snap.", signOut:"התנתקות",
+    appOnlyAcc:"ההתחברות עובדת באפליקציה Math Snap.", signOut:"התנתקות", delAcc:"מחיקת החשבון", delAccQ:"למחוק את החשבון ואת כל התרגילים השמורים? אי אפשר לבטל את זה.", delAccYes:"מחיקה לתמיד", err_relogin:"ליתר ביטחון, התחברו שוב ואז מחקו את החשבון.", info_deleted:"החשבון והתרגילים השמורים נמחקו.",
     synced:"מסונכרן", pendingN:n=>"ממתין לסנכרון ("+n+")", offlineSync:"אין חיבור, יסונכרן אחר כך", pausedSync:"הסנכרון מחכה ל-Wi-Fi",
     wifiTitle:"סנכרון רק ב-Wi-Fi", wifiSub:"חוסך גלישה. התרגילים נשמרים בטלפון ומסתנכרנים כשיש Wi-Fi.",
     myProblems:"התרגילים שלי", all:"הכול", favs:"מועדפים", emptyAll:"עוד אין תרגילים שמורים. כל תרגיל שתפתרו יישמר כאן אוטומטית.",
@@ -2743,6 +2746,7 @@ function reopen(h){
   }
 }
 
+let askDelete = false;
 function renderMe(){
   const box = $("mePanel"); if (!box) return;
   box.innerHTML = "";
@@ -2766,6 +2770,19 @@ function renderMe(){
   inp.onchange = () => { try { Android.setWifiOnly(inp.checked); } catch(e) {} };
   sw.append(inp, el("span", "track")); set.append(txt, sw);
   if (!Android.noWifiSetting) prof.append(set);
+  // delete the account (two taps, so it can't happen by mistake)
+  const del = el("div", "delacc");
+  if (!askDelete) {
+    const b = el("button", "linkbtn dangerlink", T("delAcc")); b.type = "button"; b.onclick = () => { askDelete = true; renderMe(); };
+    del.append(b);
+  } else {
+    del.append(el("p", null, T("delAccQ")));
+    const acts = el("div", "hact");
+    const y = el("button", "danger", T("delAccYes")); y.type = "button"; y.onclick = () => { askDelete = false; busy = true; try { Android.deleteAccount(); } catch(e) {} y.disabled = true; };
+    const n = el("button", null, T("cancel")); n.type = "button"; n.onclick = () => { askDelete = false; renderMe(); };
+    acts.append(y, n); del.append(acts);
+  }
+  prof.append(del);
   box.append(prof);
   // history
   const hp = el("section", "panel");
