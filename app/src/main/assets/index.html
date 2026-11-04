@@ -39,7 +39,8 @@ body{margin:0;background-color:var(--bg);color:var(--ink);font:16px/1.5 var(--sa
 .brand{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
 .logo{width:44px;height:44px;border-radius:14px;background:var(--pen);display:grid;place-items:center;flex:none;box-shadow:0 6px 16px rgba(51,70,224,.28)}
 .logo svg{width:28px;height:28px}
-h1{margin:0;font-size:22px;line-height:1.1;font-weight:800;letter-spacing:-.01em}
+h1{margin:0;font-size:22px;line-height:1.1;font-weight:800;letter-spacing:-.01em;white-space:nowrap}
+.appbar{gap:8px}
 .sub{margin:2px 0 0;color:var(--muted);font-size:13px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .brand>div{min-width:0}
 .lang{display:flex;background:var(--surface);border-radius:999px;padding:3px;box-shadow:var(--shadow);flex:none}
@@ -412,6 +413,100 @@ body.noscroll{overflow:hidden}
   .stepbar{animation:fadein .3s ease both}
   .err{animation:rise .35s ease both}
 }
+
+/* ---------- Pro ---------- */
+.propill{display:inline-flex;align-items:center;gap:4px;height:30px;padding:0 9px;border-radius:999px;border:1.5px solid var(--pen);background:transparent;color:var(--pen);font:800 11px/1 var(--sans);letter-spacing:.05em;cursor:pointer;flex:none}
+.propill svg{width:14px;height:14px}
+.propill.on{background:var(--pen);color:var(--on-pen)}
+.protag{display:inline-flex;align-items:center;gap:3px;border-radius:999px;background:var(--mark);color:var(--ink);font:800 10px/1 var(--sans);letter-spacing:.06em;padding:4px 7px;flex:none}
+.protag svg{width:10px;height:10px}
+.protag[hidden]{display:none}
+.formbtn .protag.mini{margin-inline-start:auto;flex:none!important;width:auto!important}
+.formbtn .protag.mini + .chev{margin-inline-start:6px}
+.prolocked{filter:blur(4.5px);user-select:none;pointer-events:none;opacity:.75}
+table.proof tr.prolocked td{filter:blur(4.5px)}
+table.proof tr.prolocked{filter:none;opacity:.8}
+.prolock{display:flex;align-items:center;gap:10px;width:100%;margin-top:12px;border:1.5px dashed color-mix(in srgb,var(--pen) 45%,var(--line));background:var(--pen-soft);color:var(--ink);border-radius:var(--r2,16px);padding:12px 14px;font:500 14px/1.35 var(--sans);text-align:start;cursor:pointer}
+.prolock svg{width:20px;height:20px;color:var(--pen);flex:none}
+.prolock span{flex:1}
+.prolock b{background:var(--pen);color:var(--on-pen);border-radius:999px;padding:7px 12px;font:700 13px/1 var(--sans);flex:none}
+.whybtn{margin-inline-start:8px;border:0;background:var(--pen-soft);color:var(--pen);border-radius:999px;padding:3px 10px;font:700 12px/1.3 var(--sans);cursor:pointer;vertical-align:baseline}
+.whybtn[aria-expanded="true"]{background:var(--pen);color:var(--on-pen)}
+.steps .deep{margin-top:8px;background:var(--surface-2);border-inline-start:3px solid var(--pen);border-radius:10px;padding:10px 12px;font:14px/1.55 var(--sans);color:var(--ink)}
+.protools{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.protool{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:9px 14px;font:600 14px/1 var(--sans);cursor:pointer}
+.protool svg{width:18px;height:18px;color:var(--pen)}
+.protool .protag{padding:3px 6px}
+.procard{display:flex;align-items:center;gap:14px;width:100%;border:0;border-radius:var(--r,20px);padding:16px 18px;background:linear-gradient(135deg,var(--pen),var(--pen-press));color:var(--on-pen);text-align:start;cursor:pointer;box-shadow:var(--shadow)}
+.procard > svg{width:30px;height:30px;color:var(--mark);flex:none}
+.procard div{display:flex;flex-direction:column;gap:3px;min-width:0}
+.procard b{font:800 17px/1.2 var(--sans)}
+.procard span{font:500 13.5px/1.35 var(--sans);opacity:.9}
+.procard.on{background:var(--surface);color:var(--ink)}
+.procard.on > svg{color:var(--pen)}
+.prohero{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;padding:4px 0 2px}
+.prohero svg{width:46px;height:46px;color:var(--mark);filter:drop-shadow(0 4px 10px color-mix(in srgb,var(--mark) 60%,transparent))}
+.prohero p{margin:0;font:600 16px/1.4 var(--sans);color:var(--muted);max-width:30ch}
+.prolist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.prolist li{display:flex;gap:12px;align-items:flex-start;background:var(--surface);border-radius:var(--r2,16px);padding:12px 14px;border:1.5px solid transparent}
+.prolist li.on{border-color:var(--pen);background:var(--pen-soft)}
+.prolist li > svg{width:22px;height:22px;color:var(--pen);flex:none;margin-top:1px}
+.prolist li div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.prolist b{font:700 15px/1.3 var(--sans)}
+.prolist span{font:14px/1.4 var(--sans);color:var(--muted)}
+.profoot{display:flex;flex-direction:column;gap:10px;position:sticky;bottom:0;background:var(--bg);padding-top:8px}
+.proprice{margin:0;text-align:center;font:800 22px/1.2 var(--sans)}
+.proterms{margin:0;text-align:center;font:13px/1.45 var(--sans);color:var(--muted)}
+.prohave{margin:0;text-align:center;font:700 17px/1.3 var(--sans);color:var(--ok)}
+.protoast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;pointer-events:none;z-index:60;background:var(--ink);color:var(--bg);border-radius:14px;padding:12px 16px;font:500 14px/1.4 var(--sans);max-width:min(92vw,420px);text-align:center;transition:opacity .2s,transform .2s}
+.protoast.on{opacity:1;transform:translate(-50%,0)}
+.prrow{display:flex;gap:10px;margin-top:12px}
+.prrow .btn{flex:1;width:auto}
+.prrow .btn.quiet{flex:0 0 auto;padding:0 20px}
+.prdots{display:flex;gap:6px;justify-content:center}
+.prdots i{width:28px;height:6px;border-radius:3px;background:var(--line)}
+.prdots i.now{background:var(--pen)}
+.prdots i.ok{background:var(--ok)}
+.prdots i.bad{background:var(--warn)}
+.prinput,.cktext{width:100%;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:14px;padding:13px 14px;font:500 18px/1.5 "JetBrains Mono",ui-monospace,monospace;margin-top:12px}
+.cktext{font-size:16px;margin-top:0;resize:vertical}
+.prinput:focus,.cktext:focus{outline:none;border-color:var(--pen)}
+.prfb{margin-top:12px;border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.prfb.ok{background:var(--ok-soft,#E5F5EE)}
+.prfb.ok b{color:var(--ok)}
+.prfb.bad{background:color-mix(in srgb,var(--warn) 12%,var(--surface))}
+.prfb.bad b{color:var(--warn)}
+.prfb .linkbtn{align-self:flex-start}
+.prodone{display:flex;flex-direction:column;align-items:center;gap:6px;padding:18px 0}
+.prodone b{font:800 52px/1 var(--sans);color:var(--pen)}
+.prodone p{margin:0;font:600 16px/1.4 var(--sans);color:var(--muted)}
+.ckout{display:flex;flex-direction:column;gap:12px}
+.cksum{border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;font:14.5px/1.5 var(--sans)}
+.cksum p{margin:0}
+.cksum.ok{background:var(--ok-soft,#E5F5EE);color:var(--ok)}
+.cksum.bad{background:color-mix(in srgb,var(--warn) 12%,var(--surface))}
+.cksum.bad b{color:var(--warn)}
+.cklist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.cklist li{display:grid;grid-template-columns:28px 1fr;align-items:center;column-gap:8px;background:var(--surface);border-radius:12px;padding:10px 12px;direction:ltr}
+.cklist li small{grid-column:2;color:var(--muted);font:12.5px/1.3 var(--sans);direction:rtl;text-align:right}
+:root:not([lang="he"]) .cklist li small,html[lang="en"] .cklist li small{direction:ltr;text-align:left}
+.ckic{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font:800 14px/1 var(--sans);background:var(--surface-2);color:var(--muted)}
+.cklist li.ok .ckic{background:var(--ok-soft,#E5F5EE);color:var(--ok)}
+.cklist li.bad{box-shadow:inset 0 0 0 2px var(--warn)}
+.cklist li.bad .ckic{background:var(--warn);color:#fff}
+.cklist li.after{opacity:.7}
+.preset{position:relative}
+.preset .lockdot{position:absolute;top:6px;inset-inline-end:6px;width:18px;height:18px;border-radius:50%;background:var(--ink) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round'%3E%3Crect x='5' y='11' width='14' height='10' rx='2.5'/%3E%3Cpath d='M8 11V8a4 4 0 0 1 8 0v3'/%3E%3C/svg%3E") center/11px no-repeat;opacity:.75}
+.sw.locked{position:relative}
+.sw.locked::after{content:"";position:absolute;inset:0;border-radius:inherit;background:rgba(10,14,25,.28) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.6' stroke-linecap='round'%3E%3Crect x='5' y='11' width='14' height='10' rx='2.5'/%3E%3Cpath d='M8 11V8a4 4 0 0 1 8 0v3'/%3E%3C/svg%3E") center/14px no-repeat}
+@media print{
+  body{background:#fff!important}
+  .appbar,.bottomnav,.bookwrap,.overlay,.protools,.prolock,.resbar,.savebar,#proToast,#welcome{display:none!important}
+  body[data-print="solve"] .wrap > :not(#results){display:none!important}
+  body[data-print="geo"] .wrap > :not(#geoResults){display:none!important}
+  #results,#geoResults{box-shadow:none!important;background:#fff!important}
+  .steps li{animation:none!important;break-inside:avoid}
+}
 </style>
 </head>
 <body>
@@ -421,6 +516,7 @@ body.noscroll{overflow:hidden}
       <span class="logo" aria-hidden="true"><svg viewBox="0 0 28 28" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V6a2 2 0 0 1 2-2h3M19 4h3a2 2 0 0 1 2 2v3M24 19v3a2 2 0 0 1-2 2h-3M9 24H6a2 2 0 0 1-2-2v-3"/><path d="M10 12h8M10 16h8" /><circle cx="20.5" cy="20.5" r="0.1" stroke="#FFE27A" stroke-width="3.2"/></svg></span>
       <div><h1>Math Snap</h1><p class="sub" data-t="sub"></p></div>
     </div>
+    <button class="propill" id="proBtn" type="button" aria-label="Math Snap Pro"><svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2.8 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 16.8l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg><span>PRO</span></button>
     <button class="iconbtn" id="openBookTop" type="button" aria-label="Formulas" data-tlabel="formulas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M8 7h6M8 11h4"/></svg></button>
     <button class="iconbtn" id="openCustom" type="button" aria-label="Customize" data-tlabel="custom"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="1.5"/><circle cx="17.5" cy="10.5" r="1.5"/><circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12.5" r="1.5"/><path d="M12 2a10 10 0 0 0 0 20c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.3 0-1.1.9-2 2-2h2.4A5.6 5.6 0 0 0 22 9.8C22 5.5 17.5 2 12 2z"/></svg></button>
   </header>
@@ -445,6 +541,7 @@ body.noscroll{overflow:hidden}
     </div>
     <div><p class="exlabel" data-t="tryOne"></p><div class="chips" id="solveChips"></div></div>
     <button class="formbtn" id="openBook" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M8 7h6M8 11h4"/></svg><span data-t="formulas"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button>
+    <button class="formbtn" id="openChecker" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg><span data-t="checkMine"></span><span class="protag mini">PRO</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button>
     <button class="btn" id="solve" type="button"><span data-t="solve"></span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
   </section>
 
@@ -497,6 +594,7 @@ body.noscroll{overflow:hidden}
 <div class="overlay" id="customize" hidden role="dialog" aria-modal="true" aria-labelledby="customTitle"><div class="inner" id="customInner"></div></div>
 <div class="overlay welcome" id="welcome" hidden role="dialog" aria-modal="true" aria-labelledby="welcomeTitle"><div class="inner" id="welcomeInner"></div></div>
 
+<div class="bookwrap" id="proSheet" hidden role="dialog" aria-modal="true" aria-labelledby="proTitle"><div class="bsheet"><div class="grab" aria-hidden="true"></div><div class="inner" id="proInner"></div></div></div>
 <div class="bookwrap" id="bookSheet" hidden role="dialog" aria-modal="true" aria-labelledby="bookTitle"><div class="bsheet"><div class="grab" aria-hidden="true"></div><div class="inner" id="bookInner"></div></div></div>
 
 <nav class="bottomnav" role="tablist">
@@ -507,6 +605,7 @@ body.noscroll{overflow:hidden}
 
 <script src="math.js"></script>
 <script src="solver.js"></script>
+<script src="pro-core.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 const hasBridge = typeof window.Android !== "undefined";
@@ -557,7 +656,7 @@ const UI = {
     givensExList:"trapezoid ABCD, AB parallel to DC, angle A = 110 degrees, angle C = 43\nisosceles triangle, vertex angle 40\nisosceles triangle, leg 13, base 10\nkite ABCD, angle BAC 35, angle CBD 70\nkite, main diagonal 12, other diagonal 8\nright triangle ABC, angle C 90, AB 10, angle A 30 | find BC and AC\ntriangle ABC, AB = 7, AC = 5, angle A = 60 | find BC and the area\ncircle, radius 6, central angle 60 | arc length",
     givensPh:"e.g. trapezoid ABCD, AB parallel to DC, angle A = 110, angle C = 43",
     detected:(tool,list)=>"Found: "+tool+(list?"  ·  "+list:""), noGivens:"I couldn't find givens. Write them like: angle A = 110, AB parallel to DC, leg 13.",
-    examples:"Examples:", solve:"Solve it", formulas:"Formula sheet", bookTitle:"Formula sheet", bookSearch:"Search a formula…", answer:"Answer", shape:"Shape", units:"Units", calc:"Calculate", noUnits:"no units",
+    examples:"Examples:", solve:"Solve it", formulas:"Formula sheet", checkMine:"Check my work", bookTitle:"Formula sheet", bookSearch:"Search a formula…", answer:"Answer", shape:"Shape", units:"Units", calc:"Calculate", noUnits:"no units",
     reading:"Reading the photo…", noMath:"I couldn't find any math in that photo. Try again closer, with good light, or type it.",
     checkText:"Check the text below and fix anything that was misread. Then tap Solve it.",
     appOnly:"The camera only works in the app.", empty:"Type a problem or take a photo first.",
@@ -612,7 +711,7 @@ const UI = {
     givensExList:"טרפז ABCD, AB מקביל ל-DC, זווית A שווה 110 מעלות, זווית C שווה 43\nמשולש שווה שוקיים, זווית הראש 40\nמשולש שווה שוקיים, שוק 13, בסיס 10\nדלתון ABCD, זווית BAC שווה 35, זווית CBD שווה 70\nדלתון, אלכסון ראשי 12, אלכסון משני 8\nהאם ABCD טרפז? זווית A 30, זווית B 50, זווית D 150\nמשולש ישר זווית ABC, זווית C שווה 90, AB שווה 10, זווית A שווה 30 | מצאו את BC ואת AC\nמשולש ABC, AB שווה 7, AC שווה 5, זווית A שווה 60 | מצאו את BC ואת השטח\nמעגל, רדיוס 6, זווית מרכזית 60 | אורך הקשת",
     givensPh:"למשל: טרפז ABCD, AB מקביל ל-DC, זווית A שווה 110 מעלות, זווית C שווה 43",
     detected:(tool,list)=>"זיהיתי: "+tool+(list?"  ·  "+list:""), noGivens:"לא מצאתי נתונים. כתבו למשל: זווית A שווה 110, AB מקביל ל-DC, שוק 13.",
-    examples:"דוגמאות:", solve:"פתור", formulas:"דף נוסחאות", bookTitle:"דף נוסחאות", bookSearch:"חיפוש נוסחה…", answer:"תשובה", shape:"צורה", units:"יחידות", calc:"חשב", noUnits:"ללא יחידות",
+    examples:"דוגמאות:", solve:"פתור", formulas:"דף נוסחאות", checkMine:"בדיקת הפתרון שלי", bookTitle:"דף נוסחאות", bookSearch:"חיפוש נוסחה…", answer:"תשובה", shape:"צורה", units:"יחידות", calc:"חשב", noUnits:"ללא יחידות",
     reading:"קורא את התמונה…", noMath:"לא מצאתי תרגיל בתמונה. נסו שוב מקרוב ובתאורה טובה, או הקלידו אותו.",
     checkText:"בדקו את הטקסט ותקנו מה שנקרא לא נכון. אחר כך לחצו פתור.",
     appOnly:"המצלמה עובדת רק באפליקציה.", empty:"הקלידו תרגיל או צלמו קודם.",
@@ -840,18 +939,32 @@ function solveNow(quiet, noSave){
       if (r.numberLine) { try { fig(numberLineSVG(r.numberLine), T("nlTitle")); } catch (e) { console.error(e); } }
       if (r.graph) { try { fig(plotSVG(r.graph), T("graphTitle")); } catch (e) { console.error(e); } }
       if (r.steps && r.steps.length) {
-        const ol = el("ol","steps");
-        r.steps.forEach(([c, why]) => {
+        const ol = el("ol","steps"), pro = isPro();
+        let lockedWhy = 0;
+        r.steps.forEach(([c, why], k) => {
           const li = el("li"); li.style.setProperty("--i", Math.min(ol.childElementCount, 12)); li.append(mathEl("div","math",c));
-          if (why) li.append(dirOf(el("div","why",why), why));
+          if (why) {
+            const w = dirOf(el("div","why",why), why);
+            // without Pro, only the first steps are explained
+            if (!pro && k >= FREE_STEPS) { w.classList.add("prolocked"); w.setAttribute("aria-hidden", "true"); lockedWhy++; }
+            li.append(w);
+            const deep = pro ? deepFor(why) : null;
+            if (deep) {
+              const q = el("button", "whybtn", P("why")); q.type = "button";
+              q.onclick = () => { const d = li.querySelector(".deep"); if (d) { d.remove(); q.setAttribute("aria-expanded", "false"); return; } li.append(dirOf(el("div", "deep", deep), deep)); q.setAttribute("aria-expanded", "true"); };
+              q.setAttribute("aria-expanded", "false"); w.append(q);
+            }
+          }
           ol.append(li);
         });
         box.append(ol);
+        if (lockedWhy) box.append(proLockBar(P("lockExplain", lockedWhy), "explain"));
         applyStepper(box, ol.children, veil);
       }
     }
     out.append(box);
   });
+  { const ok1 = res.filter(r => !r.error); if (ok1.length) out.append(proTools("solve", res.length === 1 && !!ProCore.key(ok1[0].answer))); }
   if (!quiet) {
     const ok = res.filter(r => !r.error);
     let id = null;
@@ -2320,12 +2433,16 @@ function calcGeo(quiet){
       if (r.svg !== "") { const fig=el("div","fig"); fig.innerHTML = r.svg !== undefined ? r.svg : trapSVG(r.angles, r.par, r.computed); box.append(fig); }
       const a=el("div","ans"); a.append(el("small",null,r.title), dirOf(el("div",null,r.answer), r.answer)); box.append(a);
       box.append(proofTable(r.rows));
+      // without Pro, the first rows of the proof are shown and the rest are blurred
+      const lockedRows = [...box.querySelectorAll("table.proof tbody tr")].slice(FREE_PROOF_ROWS);
+      if (!isPro() && lockedRows.length) { lockedRows.forEach(tr => { tr.classList.add("prolocked"); tr.setAttribute("aria-hidden", "true"); }); box.append(proLockBar(P("lockProof", lockedRows.length), "proof")); }
       const tg = askTargets(); let ab = null; if (tg.length) { ab = askBox(r, tg); if (ab) box.prepend(ab); }
       const rb = el("div", "resbar"); rb.append(stepToggle(() => calcGeo(true)));
       if (r.rows.length > 2) out.append(rb);
       out.append(box);
       linkProof(box);
-      applyStepper(box, box.querySelectorAll("table.proof tbody tr"), [a, ...(ab ? [ab] : []), ...box.querySelectorAll('.fig text[style*="--ok)"]')]);
+      applyStepper(box, box.querySelectorAll("table.proof tbody tr:not(.prolocked)"), [a, ...(ab ? [ab] : []), ...box.querySelectorAll('.fig text[style*="--ok)"]')]);
+      out.append(proTools("geo", false));
       afterGeo(quiet, plain(r.answer));
       out.hidden = $("geoPanel").hidden;
       if (!quiet) out.scrollIntoView({behavior:"smooth",block:"start"});
@@ -2669,7 +2786,7 @@ const ICON = {
 };
 const svgEl = html => { const t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstChild; };
 
-window.onAuth = st => { account = st && st.signedIn ? st : null; busy = false; if (account) { authMsg = null; if (!$("welcome").hidden) { hideWelcome(); tab("me"); } } renderMe(); refreshSaveBars(); };
+window.onAuth = st => { const proBefore = typeof isPro === "function" && isPro(); account = st && st.signedIn ? st : null; setTimeout(() => { if (typeof isPro === "function" && isPro() !== proBefore) proChanged(); }, 0); busy = false; if (account) { authMsg = null; if (!$("welcome").hidden) { hideWelcome(); tab("me"); } } renderMe(); refreshSaveBars(); };
 window.onAuthError = (code) => { busy = false; authMsg = { bad:true, key:"err_" + (UI.en["err_"+code] ? code : "other") }; renderMe(); };
 window.onAuthInfo = code => { busy = false; authMsg = code === "cancelled" ? null : { bad:false, key:"info_" + code }; renderMe(); };
 window.onHistory = list => { history = Array.isArray(list) ? list : []; if (!$("mePanel").hidden) renderMe(); refreshSaveBars(); };
@@ -2750,6 +2867,7 @@ let askDelete = false;
 function renderMe(){
   const box = $("mePanel"); if (!box) return;
   box.innerHTML = "";
+  box.append(proCard());
   if (!account) return renderSignIn(box);
   // profile
   const prof = el("section", "panel");
@@ -2793,10 +2911,12 @@ function renderMe(){
              chip(T("favs") + " · " + favN, "", () => { meView = "fav"; renderMe(); }, meView === "fav"));
   hp.append(seg);
   const list = el("div", "hlist");
-  const items = meView === "fav" ? history.filter(x => x.fav) : history;
+  const allItems = meView === "fav" ? history.filter(x => x.fav) : history;
+  const items = isPro() ? allItems : allItems.slice(0, FREE_HISTORY);
   if (!items.length) list.append(el("p", "empty", meView === "fav" ? T("emptyFav") : T("emptyAll")));
   for (const h of items) list.append(historyItem(h));
   hp.append(list);
+  if (allItems.length > items.length) hp.append(proLockBar(P("lockHistory", allItems.length - items.length), "history"));
   box.append(hp);
 }
 function historyItem(h){
@@ -3082,7 +3202,8 @@ function renderCustomize(){
   const opt = (title, content) => { const o = el("div", "opt"); o.append(el("h3", null, title), content); panel.append(o); };
   const chips = (pairs, key) => { const c = el("div", "chips wrapchips"); for (const [val, label] of pairs) c.append(chip(label, "", () => setUI(key, val), ui[key] === val)); return c; };
   const picker = (key, customKey, title) => {
-    const b = el("button", "sw pick"); b.type = "button"; b.title = T("customC"); b.setAttribute("aria-label", T("customC")); b.setAttribute("aria-pressed", String(ui[key] === "custom"));
+    const b = el("button", "sw pick" + (isPro() ? "" : " locked")); b.type = "button";
+    if (!isPro()) { b.title = "Pro"; b.onclick = () => openPro("themes"); b.setAttribute("aria-label", T("customC") + " (Pro)"); return b; } b.title = T("customC"); b.setAttribute("aria-label", T("customC")); b.setAttribute("aria-pressed", String(ui[key] === "custom"));
     const inp = document.createElement("input"); inp.type = "color"; inp.value = ui[customKey]; inp.setAttribute("aria-label", title);
     inp.oninput = () => { ui[customKey] = inp.value; ui[key] = "custom"; try { localStorage.setItem("ui", JSON.stringify(ui)); } catch (e) {} applyUI(); };
     inp.onchange = () => renderCustomize();
@@ -3098,7 +3219,8 @@ function renderCustomize(){
     const dot = el("b"); dot.style.background = dk ? ACCENTS[p.v.accent][3] : ACCENTS[p.v.accent][0];
     const bar = el("u"); bar.style.background = dk ? MARKS[p.v.mark][1] : MARKS[p.v.mark][0];
     sw.append(bar, dot); b.append(sw, el("span", null, pick(p.en, p.he)));
-    b.onclick = () => { Object.assign(ui, p.v); if (!p.v.theme) ui.theme = ui.theme; try { localStorage.setItem("ui", JSON.stringify(ui)); } catch (e) {} applyUI(); renderCustomize(); };
+    b.onclick = () => { if (!FREE_LOOKS.includes(k) && !isPro()) return openPro("themes"); Object.assign(ui, p.v); if (!p.v.theme) ui.theme = ui.theme; try { localStorage.setItem("ui", JSON.stringify(ui)); } catch (e) {} applyUI(); renderCustomize(); };
+    if (!FREE_LOOKS.includes(k) && !isPro()) b.append(el("em", "lockdot"));
     ps.append(b);
   }
   opt(T("presetH"), ps);
@@ -3110,7 +3232,7 @@ function renderCustomize(){
   const bc = el("div", "swatches");
   { const b = el("button", "sw"); b.type = "button"; b.style.background = isDark() ? "#0D111C" : "#F2F4F9"; b.setAttribute("aria-label", T("bgDefault")); b.title = T("bgDefault"); b.setAttribute("aria-pressed", String(ui.bgc === "default")); b.onclick = () => setUI("bgc", "default"); bc.append(b); }
   for (const [k, c] of Object.entries(BGCOL)) { const b = el("button", "sw"); b.type = "button"; b.style.background = isDark() ? c[2] : c[0]; b.setAttribute("aria-label", k); b.setAttribute("aria-pressed", String(ui.bgc === k)); b.onclick = () => setUI("bgc", k); bc.append(b); }
-  for (const [k, g] of Object.entries(GRADS)) { const b = el("button", "sw grad"); b.type = "button"; b.style.background = isDark() ? g[1] : g[0]; b.setAttribute("aria-label", k); b.setAttribute("aria-pressed", String(ui.bgc === k)); b.onclick = () => setUI("bgc", k); bc.append(b); }
+  for (const [k, g] of Object.entries(GRADS)) { const b = el("button", "sw grad" + (isPro() ? "" : " locked")); b.type = "button"; b.style.background = isDark() ? g[1] : g[0]; b.setAttribute("aria-label", k); b.setAttribute("aria-pressed", String(ui.bgc === k)); b.onclick = () => isPro() ? setUI("bgc", k) : openPro("themes"); bc.append(b); }
   bc.append(picker("bgc", "customBg", T("bgcH")));
   opt(T("bgcH"), bc);
   const mk = el("div", "swatches");
@@ -3388,7 +3510,301 @@ function openNotes(){
 $("geoNotesBtn").onclick = openNotes;
 $("openBookTop").onclick = () => openBook($("geoPanel").hidden ? "all" : "areas");
 // Android back button: close what's open first
+// ---------- Math Snap Pro: monthly subscription through Google Play ----------
+const PRO_OWNERS = ["eitanski11@gmail.com", "eitandror2012@gmail.com"];
+const FREE_STEPS = 2;        // steps whose explanation is shown without Pro
+const FREE_PROOF_ROWS = 3;   // proof rows shown without Pro
+const FREE_HISTORY = 30;     // saved problems shown without Pro
+const FREE_LOOKS = ["classic", "night", "paper"];
+let proState = { pro: false, price: "", play: false, ready: false };
+function readPro(){ try { if (hasBridge && typeof Android.proState === "function") proState = JSON.parse(Android.proState()); } catch (e) {} }
+const isOwner = () => !!(typeof account !== "undefined" && account && PRO_OWNERS.includes(String(account.email || "").toLowerCase()));
+const isPro = () => !!proState.pro || isOwner();
+const PS = {
+  title: ["Math Snap Pro", "Math Snap Pro"],
+  sub: ["Everything to learn math, not just get answers.", "כל מה שצריך כדי ללמוד, לא רק לקבל תשובה."],
+  f_explain: [["Full explanations", "Every step explained, plus a deeper “why?”"], ["הסבר מלא", "הסבר לכל שלב, ועוד “למה?” שמסביר לעומק"]],
+  f_proof: [["Full geometry proofs", "Every claim-and-reason row"], ["הוכחות מלאות בגאומטריה", "כל שורות הטענה והנימוק"]],
+  f_practice: [["Practice", "5 similar problems with new numbers, checked for you"], ["תרגול", "5 תרגילים דומים עם מספרים חדשים, עם בדיקה"]],
+  f_check: [["Mistake checker", "Write your own solution and see where it went wrong"], ["בודק טעויות", "כותבים את הפתרון שלכם ומגלים איפה טעיתם"]],
+  f_pdf: [["Save as PDF", "Print or share any solution"], ["שמירה כ-PDF", "הדפסה או שליחה של כל פתרון"]],
+  f_themes: [["All looks", "Every theme, gradient backgrounds and your own colours"], ["כל העיצובים", "כל ערכות הצבעים, רקעי מעבר וצבעים משלכם"]],
+  f_history: [["Unlimited history", "Every problem you ever solved"], ["היסטוריה בלי הגבלה", "כל תרגיל שפתרתם אי פעם"]],
+  perMonth: [p => p + " / month", p => p + " לחודש"],
+  monthly: ["Monthly subscription", "מנוי חודשי"],
+  subscribe: ["Subscribe", "הצטרפות ל-Pro"],
+  terms: ["Renews every month until you cancel. Cancel any time in Google Play → Subscriptions.", "המנוי מתחדש כל חודש עד שמבטלים. אפשר לבטל בכל רגע ב-Google Play ← מינויים."],
+  have: ["You have Pro", "יש לך Pro"],
+  haveOwner: ["Pro is on (owner account)", "Pro פעיל (חשבון בעלים)"],
+  manage: ["Manage subscription", "ניהול המנוי"],
+  getPlay: ["Get Math Snap on Google Play", "להורדה מ-Google Play"],
+  notPlay: ["Pro is bought in the Google Play version of the app. Install it from Google Play to subscribe.", "את Pro קונים בגרסת האפליקציה מ-Google Play. התקינו אותה משם כדי להצטרף."],
+  web: ["Pro is available in the Android app on Google Play.", "Pro זמין באפליקציית האנדרואיד ב-Google Play."],
+  locked: ["Pro", "Pro"],
+  lockExplain: [n => "Explanations for " + n + " more steps are in Pro", n => "ההסבר ל-" + n + " שלבים נוספים נמצא ב-Pro"],
+  lockProof: [n => n + " more proof rows are in Pro", n => "עוד " + n + " שורות בהוכחה נמצאות ב-Pro"],
+  lockHistory: [n => n + " older problems are in Pro", n => "עוד " + n + " תרגילים ישנים נמצאים ב-Pro"],
+  see: ["See Pro", "ל-Pro"],
+  why: ["Why?", "למה?"],
+  practice: ["Practice", "תרגול"],
+  check: ["Check my work", "בדיקת הפתרון שלי"],
+  pdf: ["PDF", "PDF"],
+  // practice
+  prTitle: [(i, n) => "Practice · " + i + " of " + n, (i, n) => "תרגול · " + i + " מתוך " + n],
+  prNone: ["I couldn't make similar problems for this one. Practice works on equations, inequalities, systems and calculations with a number answer.", "לא הצלחתי ליצור תרגילים דומים לזה. התרגול עובד על משוואות, אי-שוויונים, מערכות וחישובים עם תשובה במספרים."],
+  prPh: ["x = 4", "x = 4"],
+  prCheck: ["Check", "בדיקה"],
+  prRight: ["Correct!", "נכון!"],
+  prWrong: ["Not quite. The answer:", "לא בדיוק. התשובה:"],
+  prShow: ["Show the solution", "להראות את הפתרון"],
+  prNext: ["Next problem", "לתרגיל הבא"],
+  prDone: [(s, n) => "You got " + s + " of " + n + " right", (s, n) => "צדקתם ב-" + s + " מתוך " + n],
+  prMore: ["5 more", "עוד 5"],
+  prSkip: ["Skip", "דילוג"],
+  close: ["Close", "סגירה"],
+  // checker
+  ckTitle: ["Check my work", "בדיקת הפתרון שלי"],
+  ckHelp: ["Write the problem on the first line, then each step of your solution on its own line. I'll find the line where it went wrong.", "כתבו את התרגיל בשורה הראשונה, ואחריו כל שלב של הפתרון בשורה משלו. אמצא את השורה שבה נפלה הטעות."],
+  ckGo: ["Check", "בדיקה"],
+  ckAllRight: ["Every step is right.", "כל השלבים נכונים."],
+  ckBadEq: [(n, a, b) => "The mistake is in line " + n + ". Before it the solution is " + a + ", but this line gives " + b + ".", (n, a, b) => "הטעות בשורה " + n + ". לפניה הפתרון הוא " + a + ", אבל השורה הזאת נותנת " + b + "."],
+  ckBadEx: [n => "The mistake is in line " + n + ": it isn't equal to the line before it.", n => "הטעות בשורה " + n + ": היא לא שווה לשורה שלפניה."],
+  ckCorrect: [a => "The right answer: " + a, a => "התשובה הנכונה: " + a],
+  ckAfter: ["follows from the line before", "ממשיכה נכון מהשורה הקודמת"],
+  ckUnknown: ["I couldn't read this line", "לא הצלחתי לקרוא את השורה הזאת"],
+  ckEmpty: ["Write at least two lines: the problem and one step.", "כתבו לפחות שתי שורות: התרגיל ושלב אחד."],
+  info_thanks: ["Welcome to Pro!", "ברוכים הבאים ל-Pro!"],
+  info_pending: ["The payment is still being processed. Pro turns on when it goes through.", "התשלום עוד בטיפול. Pro יופעל כשהוא יעבור."],
+  info_unavailable: ["Google Play isn't reachable right now. Check the internet and try again.", "אין חיבור ל-Google Play כרגע. בדקו את האינטרנט ונסו שוב."],
+  info_error: ["Something went wrong with Google Play. Try again.", "משהו השתבש עם Google Play. נסו שוב."],
+};
+const P = (k, ...a) => { const v = pick(...PS[k]); return typeof v === "function" ? v(...a) : v; };
+const LOCK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+const STAR_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2.8 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 16.8l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg>';
+
+// ---- deeper explanations for common steps (shown with "Why?" in Pro) ----
+const DEEP = [
+  [/נחלק את שני האגפים|divide both sides/i, ["Whatever you do to one side of an equation you must do to the other, so the balance stays. Dividing both sides by the number next to x leaves x alone.", "מה שעושים לאגף אחד עושים גם לשני, וכך המשוואה נשארת מאוזנת. כשמחלקים את שני האגפים במספר שליד x, נשאר x לבד."]],
+  [/נחסר .* משני האגפים|subtract .* from both sides/i, ["Subtracting the same number from both sides keeps the equation true and moves that number away from the x side.", "חיסור של אותו מספר משני האגפים שומר על המשוואה נכונה, ומעביר את המספר מהצד של x."]],
+  [/נוסיף .* לשני האגפים|add .* to both sides/i, ["Adding the same number to both sides keeps the equation true and cancels the number that was subtracted next to x.", "הוספה של אותו מספר לשני האגפים שומרת על המשוואה נכונה, ומבטלת את המספר שהיה מחוסר ליד x."]],
+  [/כינוס איברים|like terms/i, ["Like terms have the same letter part (like 3x and 5x). You add their numbers and keep the letter: 3x + 5x = 8x.", "איברים דומים הם איברים עם אותו חלק של אותיות (כמו 3x ו-5x). מחברים את המספרים ומשאירים את האות: 3x + 5x = 8x."]],
+  [/בדיקה|check/i, ["Putting the answer back into the original problem shows it really works. If both sides come out equal, the answer is right.", "כשמציבים את התשובה בתרגיל המקורי רואים שהיא באמת עובדת. אם שני האגפים יוצאים שווים, התשובה נכונה."]],
+  [/לאגף אחד|to one side/i, ["A quadratic is solved when one side is 0: then you can use the formula or factor it.", "משוואה ריבועית פותרים כשאגף אחד הוא 0: אז אפשר להשתמש בנוסחת השורשים או לפרק לגורמים."]],
+  [/דיסקרימיננטה|discriminant/i, ["The discriminant D = b² − 4ac tells how many solutions there are: D > 0 two, D = 0 one, D < 0 none.", "הדיסקרימיננטה D = b² − 4ac מראה כמה פתרונות יש: D > 0 שניים, D = 0 אחד, D < 0 אין פתרון."]],
+  [/נוסחת השורשים|quadratic formula/i, ["x = (−b ± √D) ÷ 2a gives both solutions of ax² + bx + c = 0: one with +, one with −.", "x = (−b ± √D) ÷ 2a נותנת את שני הפתרונות של ax² + bx + c = 0: אחד עם + ואחד עם −."]],
+  [/המקדמים|coefficients/i, ["In ax² + bx + c = 0, a is the number with x², b the number with x, c the number alone. Take the sign too.", "ב-ax² + bx + c = 0, a הוא המספר שליד x², b המספר שליד x, ו-c המספר לבד. לוקחים גם את הסימן."]],
+  [/חוק הפילוג|distributive/i, ["Multiply the number outside the brackets by each term inside: a(b + c) = ab + ac.", "כופלים את המספר שמחוץ לסוגריים בכל איבר בפנים: a(b + c) = ab + ac."]],
+  [/מכנה משותף|common denominator/i, ["Fractions can only be added when the bottoms are the same. Multiply each fraction up to the common denominator first.", "אפשר לחבר שברים רק כשהמכנים שווים. קודם מרחיבים כל שבר למכנה המשותף."]],
+  [/נגזרת של חזקה|power rule/i, ["Bring the power down in front and lower it by one: (x⁵)' = 5x⁴.", "מורידים את החזקה לפני ה-x ומקטינים אותה ב-1: (x⁵)' = 5x⁴."]],
+  [/נקודות קיצון|f'\(x\) = 0|extrem/i, ["At a highest or lowest point the graph is flat, so the slope (the derivative) there is 0.", "בנקודה הכי גבוהה או הכי נמוכה הגרף שטוח, ולכן השיפוע (הנגזרת) שם הוא 0."]],
+  [/סימן הנגזרת|sign of the derivative/i, ["Where the derivative is positive the graph goes up; where it is negative it goes down.", "איפה שהנגזרת חיובית הגרף עולה, ואיפה שהיא שלילית הוא יורד."]],
+  [/אינטגרל מסוים|definite integral/i, ["Find an antiderivative F, then compute F(b) − F(a). That is the signed area under the graph from a to b.", "מוצאים פונקציה קדומה F ומחשבים F(b) − F(a). זה השטח (עם סימן) מתחת לגרף בין a ל-b."]],
+  [/הפכים|הופך את סימן|flips the inequality|negative number/i, ["Multiplying or dividing an inequality by a negative number flips it: −x > 2 becomes x < −2.", "כשכופלים או מחלקים אי-שוויון במספר שלילי, הסימן מתהפך: −x > 2 הופך ל-x < −2."]],
+  [/הגדרת הלוגריתם|definition of the log/i, ["log_b(A) = k is another way to write bᵏ = A: the log asks “to what power do I raise b to get A?”", "log_b(A) = k זו דרך אחרת לכתוב bᵏ = A: הלוגריתם שואל “באיזו חזקה צריך להעלות את b כדי לקבל A?”"]],
+  [/אותו בסיס|same base/i, ["If two powers of the same base are equal, their exponents must be equal too.", "אם שתי חזקות עם אותו בסיס שוות, גם המעריכים שלהן שווים."]],
+  [/נציב|substitute/i, ["Replace the letter with what it equals. Now there is one equation with one unknown, which we can solve.", "מחליפים את האות במה שהיא שווה לו. עכשיו יש משוואה אחת עם נעלם אחד, ואותה אפשר לפתור."]],
+  [/סדרה חשבונית|האיבר הכללי|arithmetic|general term/i, ["In an arithmetic sequence each term adds d: aₙ = a₁ + (n − 1)d. In a geometric one each term multiplies by q: aₙ = a₁·qⁿ⁻¹.", "בסדרה חשבונית כל איבר מוסיף d: aₙ = a₁ + (n − 1)d. בסדרה הנדסית כל איבר כופל ב-q: aₙ = a₁·qⁿ⁻¹."]],
+  [/sin|cos|tan|טריג/i, ["sin, cos and tan repeat, so there are many solutions. Find one angle, then add the full period (360° for sin and cos, 180° for tan).", "sin, cos ו-tan חוזרים על עצמם, ולכן יש הרבה פתרונות. מוצאים זווית אחת ומוסיפים מחזור שלם (360° ל-sin ו-cos, 180° ל-tan)."]],
+  [/חזק|power|exponent/i, ["Powers with the same base: multiply → add the exponents, divide → subtract them, power of a power → multiply them.", "חזקות עם אותו בסיס: בכפל מחברים מעריכים, בחילוק מחסרים, ובחזקה של חזקה כופלים."]],
+];
+const deepFor = why => { const w = String(why); for (const [re, t] of DEEP) if (re.test(w)) return pick(...t); return null; };
+
+// ---- small pieces ----
+function proTag(){ const t = el("span", "protag"); t.append(svgEl(STAR_SVG), document.createTextNode("PRO")); return t; }
+function proLockBar(text, feature){
+  const b = el("button", "prolock"); b.type = "button";
+  b.append(svgEl(LOCK_SVG), el("span", null, text), el("b", null, P("see")));
+  b.onclick = () => openPro(feature);
+  return b;
+}
+function proToast(text){
+  let t = $("proToast"); if (!t) { t = el("div", "protoast"); t.id = "proToast"; t.setAttribute("role", "status"); document.body.append(t); }
+  t.textContent = text; t.classList.add("on"); clearTimeout(proToast.h); proToast.h = setTimeout(() => t.classList.remove("on"), 3800);
+}
+function paintProBtn(){ document.querySelectorAll("#openChecker .protag").forEach(t => t.hidden = isPro()); const b = $("proBtn"); if (b) { b.classList.toggle("on", isPro()); b.setAttribute("aria-label", isPro() ? P("have") : P("title")); } }
+// re-draw whatever is on screen when Pro turns on or off
+function proChanged(){
+  paintProBtn();
+  if (!$("results").hidden && $("results").childElementCount && $("problem").value.trim()) solveNow(true, true);
+  if (!$("geoResults").hidden && $("geoResults").querySelector("table.proof")) { try { calcGeo(true); } catch (e) {} }
+  if (typeof renderMe === "function" && !$("mePanel").hidden) renderMe();
+  if (!$("customize").hidden) renderCustomize();
+  if (!$("proSheet").hidden && proSheetMode === "pay") renderPaywall(proFocus);
+}
+window.onPro = st => { const was = isPro(); proState = Object.assign(proState, st || {}); if (was !== isPro()) proChanged(); else { paintProBtn(); if (!$("proSheet").hidden && proSheetMode === "pay") renderPaywall(proFocus); } };
+window.onProInfo = code => { if (code === "cancelled") return; if (PS["info_" + code]) proToast(P("info_" + code)); if (code === "thanks") closeProSheet(); };
+
+// ---- the sheet (paywall, practice, checker share it) ----
+let proSheetMode = null, proFocus = null;
+function openProSheet(mode){
+  proSheetMode = mode; $("proSheet").hidden = false; document.body.classList.add("noscroll");
+  setTimeout(() => { const sc = $("proSheet").querySelector(".bsheet"); if (sc) sc.scrollTop = 0; }, 0);
+}
+function closeProSheet(){ $("proSheet").hidden = true; proSheetMode = null; document.body.classList.remove("noscroll"); }
+$("proSheet").addEventListener("click", e => { if (e.target.id === "proSheet") closeProSheet(); });
+function sheetHead(box, title){
+  const head = el("div", "sheethead"); const h = el("h2", null, title); h.id = "proTitle";
+  const x = el("button", "iconbtn"); x.type = "button"; x.setAttribute("aria-label", P("close"));
+  x.append(svgEl('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>')); x.onclick = closeProSheet;
+  head.append(h, x); box.append(head);
+}
+
+// ---- the paywall ----
+function openPro(feature){ proFocus = feature || null; renderPaywall(proFocus); openProSheet("pay"); }
+function renderPaywall(feature){
+  readPro();
+  const box = $("proInner"); box.innerHTML = "";
+  sheetHead(box, P("title"));
+  const hero = el("div", "prohero"); hero.append(svgEl(STAR_SVG), el("p", null, P("sub"))); box.append(hero);
+  const list = el("ul", "prolist");
+  for (const k of ["explain", "proof", "practice", "check", "pdf", "themes", "history"]) {
+    const [t, d] = pick(...PS["f_" + k]);
+    const li = el("li", feature === k ? "on" : null); li.style.setProperty("--i", list.childElementCount);
+    const tx = el("div"); tx.append(el("b", null, t), el("span", null, d)); li.append(svgEl('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>'), tx);
+    list.append(li);
+  }
+  box.append(list);
+  const foot = el("div", "profoot");
+  if (isPro()) {
+    foot.append(el("p", "prohave", proState.pro ? P("have") : P("haveOwner")));
+    if (proState.pro && proState.play) { const m = el("button", "btn quiet", P("manage")); m.type = "button"; m.onclick = () => { try { Android.managePro(); } catch (e) {} }; foot.append(m); }
+  } else if (proState.play) {
+    foot.append(el("p", "proprice", proState.price ? P("perMonth", proState.price) : P("monthly")));
+    const b = el("button", "btn", P("subscribe")); b.type = "button"; b.onclick = () => { try { Android.buyPro(); } catch (e) {} }; foot.append(b);
+    foot.append(el("p", "proterms", P("terms")));
+  } else {
+    const web = !!(hasBridge && Android.isWeb);
+    foot.append(el("p", "proterms", web ? P("web") : P("notPlay")));
+    if (!/iPhone|iPad|iPod/.test(navigator.userAgent)) { const b = el("button", "btn", P("getPlay")); b.type = "button"; b.onclick = () => { try { Android.openStore(); } catch (e) {} }; foot.append(b); }
+  }
+  box.append(foot);
+  if (feature) setTimeout(() => { const on = list.querySelector("li.on"); if (on) on.scrollIntoView({ block: "nearest" }); }, 60);
+}
+
+// ---- practice ----
+let practiceSet = null;
+function startPractice(src){
+  if (!isPro()) return openPro("practice");
+  const box = $("proInner"); box.innerHTML = ""; sheetHead(box, P("practice"));
+  practiceSet = { src, items: ProCore.practice(Solver.solve, src, lang, 5), i: 0, score: 0, answered: false };
+  openProSheet("practice");
+  renderPractice();
+}
+function renderPractice(){
+  const S = practiceSet, box = $("proInner"); box.innerHTML = "";
+  if (!S.items.length) { sheetHead(box, P("practice")); box.append(el("p", "hint", P("prNone"))); return; }
+  if (S.i >= S.items.length) {
+    sheetHead(box, P("practice"));
+    const done = el("div", "prodone"); done.append(el("b", null, S.score + " / " + S.items.length), el("p", null, P("prDone", S.score, S.items.length))); box.append(done);
+    const more = el("button", "btn", P("prMore")); more.type = "button"; more.onclick = () => startPractice(S.src);
+    const cl = el("button", "btn quiet", P("close")); cl.type = "button"; cl.onclick = closeProSheet;
+    box.append(more, cl); return;
+  }
+  const it = S.items[S.i];
+  sheetHead(box, P("prTitle", S.i + 1, S.items.length));
+  const dots = el("div", "prdots"); S.items.forEach((x, k) => { const d = el("i", k < S.i ? (x.ok ? "ok" : "bad") : k === S.i ? "now" : null); dots.append(d); }); box.append(dots);
+  const card = el("section", "panel");
+  const pr = mathEl("div", "prob", it.result.problem || it.problem); if (!pr.classList.contains("mv")) pr.dir = "ltr"; card.append(pr);
+  const inp = document.createElement("input"); inp.type = "text"; inp.className = "prinput"; inp.dir = "ltr"; inp.placeholder = P("prPh"); inp.autocomplete = "off"; inp.setAttribute("autocapitalize", "off"); inp.spellcheck = false;
+  const fb = el("div", "prfb"); fb.hidden = true;
+  const go = el("button", "btn", P("prCheck")); go.type = "button";
+  const skip = el("button", "btn quiet", P("prSkip")); skip.type = "button";
+  const check = () => {
+    if (S.answered) { S.i++; S.answered = false; renderPractice(); return; }
+    if (!inp.value.trim()) { inp.focus(); return; }
+    const ok = ProCore.sameAnswer(it.answer, inp.value);
+    it.ok = ok; if (ok) S.score++; S.answered = true; inp.disabled = true;
+    fb.hidden = false; fb.innerHTML = ""; fb.className = "prfb " + (ok ? "ok" : "bad");
+    fb.append(el("b", null, ok ? P("prRight") : P("prWrong")));
+    if (!ok) fb.append(mathEl("div", "math", it.answer));
+    const sol = el("button", "linkbtn", P("prShow")); sol.type = "button";
+    sol.onclick = () => { sol.remove(); const ol = el("ol", "steps"); (it.result.steps || []).forEach(([c, why]) => { const li = el("li"); li.append(mathEl("div", "math", c)); if (why) li.append(dirOf(el("div", "why", why), why)); ol.append(li); }); fb.append(ol); };
+    if (it.result.steps && it.result.steps.length) fb.append(sol);
+    go.textContent = P("prNext");
+    skip.hidden = true;
+  };
+  go.onclick = check; inp.onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); check(); } };
+  skip.onclick = () => { it.ok = false; S.i++; S.answered = false; renderPractice(); };
+  const row = el("div", "prrow"); row.append(go, skip);
+  card.append(inp, fb, row); box.append(card);
+  setTimeout(() => inp.focus(), 80);
+}
+
+// ---- mistake checker ----
+function openChecker(){
+  if (!isPro()) return openPro("check");
+  const box = $("proInner"); box.innerHTML = ""; sheetHead(box, P("ckTitle"));
+  box.append(el("p", "hint", P("ckHelp")));
+  const ta = document.createElement("textarea"); ta.className = "cktext"; ta.dir = "ltr"; ta.rows = 7; ta.spellcheck = false; ta.setAttribute("autocapitalize", "off");
+  const first = $("problem").value.trim().split("\n")[0] || "";
+  ta.value = first ? first + "\n" : "";
+  const go = el("button", "btn", P("ckGo")); go.type = "button";
+  const out = el("div", "ckout");
+  go.onclick = () => {
+    out.innerHTML = "";
+    const lines = ta.value.split("\n").filter(s => s.trim());
+    if (lines.length < 2) { out.append(el("p", "hint", P("ckEmpty"))); return; }
+    const r = ProCore.checkWork(Solver.solve, math, Solver.normalize, ta.value, lang);
+    const sum = el("div", "cksum");
+    if (r.firstBad < 0 && r.rows.every(x => x.status !== "unknown")) { sum.classList.add("ok"); sum.append(el("b", null, P("ckAllRight"))); }
+    else if (r.firstBad >= 0) {
+      const b = r.rows[r.firstBad], n = r.firstBad + 1;
+      sum.classList.add("bad");
+      const txt = b.answer ? P("ckBadEq", n, shortAns(b.expected), shortAns(b.answer)) : P("ckBadEx", n);
+      sum.append(dirOf(el("b", null, txt), txt));
+      if (r.correct) { const c = P("ckCorrect", shortAns(r.correct)); sum.append(dirOf(el("p", null, c), c)); }
+    }
+    if (sum.childElementCount) out.append(sum);
+    const ol = el("ol", "cklist");
+    r.rows.forEach((x, i) => {
+      const li = el("li", x.status); li.style.setProperty("--i", i);
+      const ic = { ok: "✓", start: "•", bad: "✗", after: "→", unknown: "?" }[x.status];
+      li.append(el("span", "ckic", ic), mathEl("div", "math", x.line));
+      if (x.status === "after") li.append(el("small", null, P("ckAfter")));
+      if (x.status === "unknown") li.append(el("small", null, P("ckUnknown")));
+      ol.append(li);
+    });
+    out.append(ol);
+    out.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  };
+  box.append(ta, go, out);
+  openProSheet("check");
+  setTimeout(() => { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }, 80);
+}
+
+// "x = 7/3 = 2 1/3 ≈ 2.3333" → "x = 7/3"
+const shortAns = a => plain(a).replace(/\s*≈\s*[−-]?[\d.]+/g, "").replace(/\s*=\s*[−-]?\d+\s+\d+\/\d+/g, "").replace(/\s+/g, " ").trim();
+// ---- PDF: the phone's print screen, showing only the results ----
+function exportPdf(which){
+  if (!isPro()) return openPro("pdf");
+  document.body.dataset.print = which;
+  try { Android.printPage("Math Snap"); } catch (e) { try { window.print(); } catch (e2) {} }
+}
+
+// ---- the row of Pro tools under a result ----
+function proTools(kind, canPractice){
+  const row = el("div", "protools");
+  const mk = (label, icon, fn) => { const b = el("button", "protool"); b.type = "button"; b.append(svgEl(icon), el("span", null, label)); if (!isPro()) b.append(proTag()); b.onclick = fn; row.append(b); };
+  if (kind === "solve" && canPractice) mk(P("practice"), '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5M4 19h16M8 15l3-4 3 2 5-6"/></svg>', () => startPractice($("problem").value.trim()));
+  if (kind === "solve") mk(P("check"), '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>', openChecker);
+  mk(P("pdf"), '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 18v-6M9 15l3 3 3-3"/></svg>', () => exportPdf(kind));
+  return row;
+}
+
+// ---- the Pro card in "Me" ----
+function proCard(){
+  const c = el("button", "procard" + (isPro() ? " on" : "")); c.type = "button";
+  const tx = el("div"); tx.append(el("b", null, isPro() ? P("have") : P("title")), el("span", null, isPro() ? pick(...PS.f_practice)[0] + " · " + pick(...PS.f_check)[0] + " · " + pick(...PS.f_pdf)[0] : P("sub")));
+  c.append(svgEl(STAR_SVG), tx); c.onclick = () => openPro();
+  return c;
+}
+
+$("proBtn").onclick = () => openPro();
+$("openChecker").onclick = openChecker;
+readPro(); paintProBtn();
+
 window.onBack = () => {
+  if (!$("proSheet").hidden) { closeProSheet(); return true; }
   if (!$("bookSheet").hidden) { closeBook(); return true; }
   if (!$("customize").hidden) { closeCustomize(); return true; }
   if (!$("pad").hidden) { setPad(false); return true; }

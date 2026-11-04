@@ -29,6 +29,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var web: WebView
     private var cameraUri: Uri? = null
     private lateinit var account: Account
+    private lateinit var pro: Pro
     private val recognizer by lazy { TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS) }
 
     private val takePicture =
@@ -83,6 +84,8 @@ class MainActivity : AppCompatActivity() {
         cameraUri = savedInstanceState?.getString("cameraUri")?.let { Uri.parse(it) }
         account = Account(this) { code -> js(code) }
         account.start()
+        pro = Pro(this) { code -> js(code) }
+        pro.start()
         web.loadUrl("file:///android_asset/index.html")
     }
 
@@ -107,6 +110,20 @@ class MainActivity : AppCompatActivity() {
         @JavascriptInterface fun signInGoogle() = runOnUiThread { account.signInGoogle() }
         @JavascriptInterface fun signOut() = runOnUiThread { account.signOut() }
         @JavascriptInterface fun deleteAccount() = runOnUiThread { account.deleteAccount() }
+
+        // ---- Pro ----
+        @JavascriptInterface fun proState(): String = pro.state()
+        @JavascriptInterface fun buyPro() = runOnUiThread { pro.buy() }
+        @JavascriptInterface fun managePro() = runOnUiThread { pro.manage() }
+        @JavascriptInterface fun openStore() = runOnUiThread { pro.openStore() }
+        @JavascriptInterface fun openUrl(url: String) = runOnUiThread { if (url.startsWith("https://")) pro.open(url) }
+        /** Opens Android's print screen for the page (people pick "Save as PDF" there). */
+        @JavascriptInterface fun printPage(title: String) = runOnUiThread {
+            try {
+                val pm = getSystemService(android.content.Context.PRINT_SERVICE) as android.print.PrintManager
+                pm.print(title, web.createPrintDocumentAdapter(title), android.print.PrintAttributes.Builder().build())
+            } catch (e: Exception) {}
+        }
         @JavascriptInterface fun saveProblem(json: String): String = account.save(json)
         @JavascriptInterface fun updateProblem(id: String, json: String) = account.update(id, json)
         @JavascriptInterface fun deleteProblem(id: String) = account.delete(id)
@@ -170,6 +187,16 @@ class MainActivity : AppCompatActivity() {
             .addOnFailureListener {
                 js("onOcrError('read')")
             }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::pro.isInitialized) pro.refresh()
+    }
+
+    override fun onDestroy() {
+        if (::pro.isInitialized) pro.end()
+        super.onDestroy()
     }
 
     private fun js(code: String) = web.post { web.evaluateJavascript(code, null) }

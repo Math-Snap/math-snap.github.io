@@ -172,6 +172,14 @@
     }
   }
 
+  // Pro is sold only in the Google Play app; here it shows the store link instead.
+  const STORE = "https://play.google.com/store/apps/details?id=com.mathsnap";
+  B.proState = () => JSON.stringify({ pro: false, price: "", play: false, ready: false, web: true });
+  B.buyPro = () => { try { window.open(STORE, "_blank", "noopener"); } catch (e) {} };
+  B.openStore = B.buyPro;
+  B.managePro = () => {};
+  B.openUrl = url => { if (/^https:\/\//.test(url)) try { window.open(url, "_blank", "noopener"); } catch (e) {} };
+  B.printPage = () => { try { window.print(); } catch (e) {} };
   window.Android = B;
 
   // counting phones: one anonymous ID per installed copy, sent at most once a day (no personal details)

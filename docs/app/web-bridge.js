@@ -172,6 +172,14 @@
     }
   }
 
+  // Pro is sold only in the Google Play app; here it shows the store link instead.
+  const STORE = "https://play.google.com/store/apps/details?id=com.mathsnap";
+  B.proState = () => JSON.stringify({ pro: false, price: "", play: false, ready: false, web: true });
+  B.buyPro = () => { try { window.open(STORE, "_blank", "noopener"); } catch (e) {} };
+  B.openStore = B.buyPro;
+  B.managePro = () => {};
+  B.openUrl = url => { if (/^https:\/\//.test(url)) try { window.open(url, "_blank", "noopener"); } catch (e) {} };
+  B.printPage = () => { try { window.print(); } catch (e) {} };
   window.Android = B;
 
   // counting phones: one anonymous ID per installed copy, sent at most once a day (no personal details)
@@ -186,7 +194,7 @@
       const tr = [{ fieldPath: "last", setToServerValue: "REQUEST_TIME" }, { fieldPath: "opens", increment: { integerValue: "1" } }];
       if (!localStorage.getItem("installSent")) tr.push({ fieldPath: "first", setToServerValue: "REQUEST_TIME" });
       fetch("https://firestore.googleapis.com/v1/" + base + ":commit", { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ writes: [{ update: { name: base + "/installs/" + id, fields: { platform: { stringValue: ios ? "ios" : "web" }, version: { stringValue: "7.6" } } },
+        body: JSON.stringify({ writes: [{ update: { name: base + "/installs/" + id, fields: { platform: { stringValue: ios ? "ios" : "web" }, version: { stringValue: "8.0" } } },
           updateMask: { fieldPaths: ["platform", "version"] }, updateTransforms: tr }] }) })
         .then(r => { if (r.ok) { localStorage.setItem("pingDay", day); localStorage.setItem("installSent", "1"); } }).catch(() => {});
     }
