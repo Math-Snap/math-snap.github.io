@@ -17,7 +17,7 @@
   const D = window.MathSnapDesktop || null;
   if (D) {
     B.isDesktop = true; B.noGoogle = true;
-    if (D.checkUpdates) B.checkUpdates = () => D.checkUpdates();
+    if (D.checkUpdates && !D.store) B.checkUpdates = () => D.checkUpdates();
     if (D.onUpdate) D.onUpdate(s => call("onUpdateStatus", s));
   }
 

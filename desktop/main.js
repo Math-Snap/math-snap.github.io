@@ -126,7 +126,8 @@ async function askRestart(info){
   if (response === 0) setImmediate(() => updater.quitAndInstall(false, true));
 }
 function checkUpdates(){
-  if (!app.isPackaged || SMOKE) return;
+  // the Microsoft Store version is updated by the Store itself
+  if (!app.isPackaged || SMOKE || process.windowsStore) return;
   try { updater = require("electron-updater").autoUpdater; } catch (e) { return; }
   updater.autoDownload = true;
   updater.autoInstallOnAppQuit = true;
@@ -140,6 +141,7 @@ function checkUpdates(){
 }
 ipcMain.handle("check-updates", async () => {
   const current = app.getVersion();
+  if (process.windowsStore) return { state: "store", current };
   if (!updater) return { state: "dev", current };
   if (downloaded) { askRestart(downloaded); return { state: "ready", version: downloaded.version, current }; }
   try {

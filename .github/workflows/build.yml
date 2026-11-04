@@ -116,6 +116,16 @@ jobs:
         working-directory: desktop
         run: npx electron-builder --win nsis --x64 --publish never
 
+      - name: Build the Microsoft Store package (once the Store name is reserved)
+        working-directory: desktop
+        shell: bash
+        run: |
+          if [ -z "$(node -p "require('./package.json').build.appx.identityName")" ]; then
+            echo "No Microsoft Store identity yet, skipping the Store package."
+          else
+            npx electron-builder --win appx --x64 --publish never
+          fi
+
       - name: Check the installer can update itself
         working-directory: desktop
         shell: bash
@@ -132,6 +142,7 @@ jobs:
             desktop/dist/MathSnap-Setup.exe
             desktop/dist/MathSnap-Setup.exe.blockmap
             desktop/dist/latest.yml
+            desktop/dist/MathSnap-Store.appx
 
   release:
     # published only when BOTH the Android app and the Windows app built, so every

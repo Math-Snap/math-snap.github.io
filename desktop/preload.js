@@ -3,6 +3,7 @@ const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("MathSnapDesktop", {
   platform: process.platform,
+  store: !!process.windowsStore,
   savePdf: title => ipcRenderer.invoke("save-pdf", String(title || "Math Snap")),
   openExternal: url => ipcRenderer.invoke("open-external", String(url || "")),
   version: () => ipcRenderer.invoke("version"),

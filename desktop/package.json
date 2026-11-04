@@ -64,6 +64,19 @@
         "provider": "generic",
         "url": "https://github.com/eitan1234f/Math-snap/releases/latest/download"
       }
-    ]
+    ],
+    "appx": {
+      "identityName": "",
+      "publisher": "",
+      "publisherDisplayName": "",
+      "applicationId": "MathSnap",
+      "displayName": "Math Snap",
+      "backgroundColor": "#3346E0",
+      "languages": [
+        "he-IL",
+        "en-US"
+      ],
+      "artifactName": "MathSnap-Store.appx"
+    }
   }
 }
