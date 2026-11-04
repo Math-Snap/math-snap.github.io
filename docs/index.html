@@ -16,7 +16,7 @@
 <meta name="theme-color" content="#3346E0">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 28'%3E%3Crect width='28' height='28' rx='8' fill='%233346E0'/%3E%3Cpath d='M5 10V7.5A2.5 2.5 0 0 1 7.5 5H10M18 5h2.5A2.5 2.5 0 0 1 23 7.5V10M23 18v2.5a2.5 2.5 0 0 1-2.5 2.5H18M10 23H7.5A2.5 2.5 0 0 1 5 20.5V18M10 12h8M10 16h8' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E">
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"MobileApplication","name":"Math Snap","alternateName":"פותר תרגילים Math Snap","operatingSystem":"Android","applicationCategory":"EducationalApplication","inLanguage":["he","en"],
+{"@context":"https://schema.org","@type":"MobileApplication","sameAs":["https://www.youtube.com/@Math-SnapApp","https://www.tiktok.com/@zexor739"],"name":"Math Snap","alternateName":"פותר תרגילים Math Snap","operatingSystem":"Android","applicationCategory":"EducationalApplication","inLanguage":["he","en"],
  "description":"פותר תרגילים במתמטיקה לכיתות ט׳ עד י״ב: מצלמים תרגיל ומקבלים את כל השלבים, כולל נגזרות, אינטגרלים, סדרות וגאומטריה עם טענה ונימוק.","offers":{"@type":"Offer","price":"0","priceCurrency":"ILS"},"url":"https://math-snap.github.io/"}
 </script>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -331,6 +331,17 @@ h2{font:800 clamp(30px,4.2vw,46px)/1.1 var(--display);letter-spacing:-.015em;mar
 .faq details[open] summary::after{transform:rotate(45deg)}
 .faq p{margin:12px 0 0;color:var(--muted)}
 kbd{font:600 13px/1 var(--body);border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;padding:2px 6px;background:var(--surface)}
+.socials{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;max-width:760px;margin:28px auto 0}
+.social{display:flex;align-items:center;gap:16px;padding:20px 22px;border-radius:22px;background:var(--surface);box-shadow:var(--shadow);text-decoration:none;color:var(--ink);transition:transform .15s ease}
+.social:hover{transform:translateY(-2px)}
+.social svg{width:52px;height:52px;flex:none;padding:12px;border-radius:16px;color:#fff}
+.social.tt svg{background:#111}
+.social.yt svg{background:#FF0033}
+.social span{display:flex;flex-direction:column;gap:2px;min-width:0}
+.social b{font-size:20px}
+.social small{color:var(--muted);font-size:15px;text-align:right}
+.ficon{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--surface);box-shadow:var(--shadow);color:var(--ink)}
+.ficon svg{width:17px;height:17px}
 footer{padding-block:40px 60px;color:var(--muted);font-size:14px}
 footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:center}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
@@ -548,6 +559,16 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
     </div>
   </section>
 
+  <section class="band" id="social" style="padding-top:0">
+    <div class="wrap">
+      <div class="head"><p class="kicker">סרטונים והדרכות</p><h2>עקבו אחרינו</h2><p class="sub">טיפים, הדגמות ופיצ'רים חדשים, בסרטונים קצרים.</p></div>
+      <div class="socials">
+        <a class="social tt" href="https://www.tiktok.com/@zexor739" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.6 3c.3 2.2 1.6 3.7 3.9 3.9v3.1c-1.4.1-2.6-.3-3.9-1.1v5.9c0 4.4-4.4 7.1-8.2 5.3-3.4-1.6-4-6.4-1.1-8.8 1.2-1 2.6-1.4 4.2-1.2v3.2c-.4-.1-.8-.2-1.2-.1-2 .3-2.6 3-.9 4.1 1.7 1.1 3.9-.1 3.9-2.2V3z"/></svg><span><b>TikTok</b><small dir="ltr">@zexor739</small></span></a>
+        <a class="social yt" href="https://www.youtube.com/@Math-SnapApp" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M23 7.2a3 3 0 0 0-2.1-2.1C19 4.6 12 4.6 12 4.6s-7 0-8.9.5A3 3 0 0 0 1 7.2 31 31 0 0 0 .5 12 31 31 0 0 0 1 16.8a3 3 0 0 0 2.1 2.1c1.9.5 8.9.5 8.9.5s7 0 8.9-.5a3 3 0 0 0 2.1-2.1c.4-1.6.5-3.2.5-4.8s-.1-3.2-.5-4.8zM9.8 15.1V8.9L15.5 12z"/></svg><span><b>YouTube</b><small dir="ltr">@Math-SnapApp</small></span></a>
+      </div>
+    </div>
+  </section>
+
   <section class="band" id="download" style="padding-top:0">
     <div class="wrap">
       <div class="dl">
@@ -581,7 +602,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
 </main>
 
 <footer>
-  <div class="wrap"><span>Math Snap · נבנה עם Claude</span><span style="display:flex;gap:18px"><a href="privacy.html">מדיניות פרטיות</a><a href="#top">חזרה למעלה ↑</a></span></div>
+  <div class="wrap"><span>Math Snap · נבנה עם Claude</span><span style="display:flex;gap:18px;align-items:center"><a class="ficon" href="https://www.tiktok.com/@zexor739" target="_blank" rel="noopener" aria-label="TikTok"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.6 3c.3 2.2 1.6 3.7 3.9 3.9v3.1c-1.4.1-2.6-.3-3.9-1.1v5.9c0 4.4-4.4 7.1-8.2 5.3-3.4-1.6-4-6.4-1.1-8.8 1.2-1 2.6-1.4 4.2-1.2v3.2c-.4-.1-.8-.2-1.2-.1-2 .3-2.6 3-.9 4.1 1.7 1.1 3.9-.1 3.9-2.2V3z"/></svg></a><a class="ficon" href="https://www.youtube.com/@Math-SnapApp" target="_blank" rel="noopener" aria-label="YouTube"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M23 7.2a3 3 0 0 0-2.1-2.1C19 4.6 12 4.6 12 4.6s-7 0-8.9.5A3 3 0 0 0 1 7.2 31 31 0 0 0 .5 12 31 31 0 0 0 1 16.8a3 3 0 0 0 2.1 2.1c1.9.5 8.9.5 8.9.5s7 0 8.9-.5a3 3 0 0 0 2.1-2.1c.4-1.6.5-3.2.5-4.8s-.1-3.2-.5-4.8zM9.8 15.1V8.9L15.5 12z"/></svg></a><a href="privacy.html">מדיניות פרטיות</a><a href="#top">חזרה למעלה ↑</a></span></div>
 </footer>
 </div>
 
