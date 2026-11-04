@@ -18,19 +18,22 @@
   try { he = (localStorage.getItem("lang") || ((navigator.language || "").match(/^(he|iw)/) ? "he" : "en")) === "he"; } catch (e) {}
 
   const APK = "https://github.com/eitan1234f/Math-snap/releases/latest/download/MathSnap.apk";
+  const EXE = "https://github.com/eitan1234f/Math-snap/releases/latest/download/MathSnap-Setup.exe";
   const GUIDE = "../#install";
   const S = he ? {
     title: "מתקינים את Math Snap", sub: "Math Snap עובדת אחרי התקנה בטלפון. זה לוקח פחות מדקה.",
     iosSteps: ["לוחצים על <b>שיתוף</b> בתחתית המסך", "בוחרים <b>הוספה למסך הבית</b>", "לוחצים <b>הוספה</b>, ופותחים את Math Snap מהאייקון"],
     notSafari: "כדי להתקין באייפון, פותחים את הדף הזה ב-<b>Safari</b>.", copy: "העתקת הכתובת", copied: "הועתק",
     androidTxt: "באנדרואיד מתקינים את האפליקציה המלאה, עם סורק מהיר שעובד גם בלי אינטרנט.", apk: "הורדת האפליקציה לאנדרואיד",
-    pcTxt: "פותחים את הדף בטלפון ומתקינים משם.", install: "התקנה במחשב", guide: "מדריך התקנה מלא",
+    pcTxt: "מתקינים את Math Snap במחשב ישר מהדפדפן: בלי להוריד קובץ ובלי אזהרות. היא תיפתח בחלון משלה ותופיע בתפריט התחל.", install: "התקנה במחשב", guide: "מדריך התקנה מלא",
+    pcHow: "לא רואים כפתור? ב-Chrome או ב-Edge לוחצים על סמל ההתקנה בסוף שורת הכתובת, או בתפריט ⋮ על <b>התקנת Math Snap</b>.", pcExe: "מעדיפים קובץ התקנה? MathSnap-Setup.exe",
   } : {
     title: "Install Math Snap", sub: "Math Snap runs once it is installed on your phone. It takes under a minute.",
     iosSteps: ["Tap <b>Share</b> at the bottom of the screen", "Choose <b>Add to Home Screen</b>", "Tap <b>Add</b>, then open Math Snap from its icon"],
     notSafari: "To install on iPhone, open this page in <b>Safari</b>.", copy: "Copy the address", copied: "Copied",
     androidTxt: "On Android you install the full app, with a fast scanner that also works offline.", apk: "Download the Android app",
-    pcTxt: "Open this page on your phone and install it from there.", install: "Install on this computer", guide: "Full install guide",
+    pcTxt: "Install Math Snap on this computer straight from the browser: no file to download and no warnings. It opens in its own window and appears in the Start menu.", install: "Install on this computer", guide: "Full install guide",
+    pcHow: "No button? In Chrome or Edge, click the install icon at the end of the address bar, or open the ⋮ menu and choose <b>Install Math Snap</b>.", pcExe: "Prefer a setup file? MathSnap-Setup.exe",
   };
 
   const css = `
@@ -46,7 +49,7 @@
 #msGate li::before{content:counter(s);flex:none;width:30px;height:30px;border-radius:10px;background:#E4E8FF;color:#3346E0;display:grid;place-items:center;font-weight:800}
 #msGate li svg{flex:none;width:22px;height:22px;color:#3346E0;margin-inline-start:auto}
 #msGate a.b,#msGate button.b{appearance:none;border:0;cursor:pointer;display:inline-flex;justify-content:center;align-items:center;gap:8px;width:100%;
-  padding:15px 18px;border-radius:16px;background:#3346E0;color:#fff;font:600 17px/1 inherit;font-family:inherit;text-decoration:none}
+  padding:15px 18px;border-radius:16px;background:#3346E0;color:#fff;font:600 17px/1.2 Rubik,system-ui,sans-serif;text-decoration:none}
 #msGate .ghost{background:transparent!important;color:#3346E0!important;box-shadow:inset 0 0 0 1.5px #C9D0F5}
 #msGate .arrow{position:fixed;bottom:max(10px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);color:#3346E0;animation:msb 1.4s ease-in-out infinite}
 #msGate .arrow svg{width:34px;height:34px}
@@ -59,6 +62,7 @@
   const share = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-8"/></svg>';
   const plus = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8v8M8 12h8"/></svg>';
 
+  if (!ios && !android) S.sub = he ? "זה לוקח פחות מדקה." : "It takes under a minute.";
   let body = "";
   if (ios && safari) {
     body = `<ol><li><span>${S.iosSteps[0]}</span>${share}</li><li><span>${S.iosSteps[1]}</span>${plus}</li><li><span>${S.iosSteps[2]}</span></li></ol>
@@ -68,7 +72,8 @@
   } else if (android) {
     body = `<p>${S.androidTxt}</p><a class="b" href="${APK}">${S.apk}</a>`;
   } else {
-    body = `<p>${S.pcTxt}</p><button class="b" type="button" id="msInstall" hidden>${S.install}</button>`;
+    body = `<p>${S.pcTxt}</p><button class="b" type="button" id="msInstall" hidden>${S.install}</button><p id="msHow">${S.pcHow}</p>
+      <a class="b ghost" href="${EXE}">${S.pcExe}</a>`;
   }
 
   const gate = document.createElement("div");
@@ -92,7 +97,7 @@
   window.addEventListener("beforeinstallprompt", e => {
     e.preventDefault();
     const b = document.getElementById("msInstall"); if (!b) return;
-    b.hidden = false;
+    b.hidden = false; const how = document.getElementById("msHow"); if (how) how.hidden = true;
     b.onclick = async () => { e.prompt(); try { await e.userChoice; } catch (x) {} };
   });
   // once installed from this tab, the app opens on its own; this tab can stay on the install screen
