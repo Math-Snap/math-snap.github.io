@@ -358,7 +358,8 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
         <h1>מצלמים תרגיל.<br>מקבלים את <span class="hl">כל השלבים</span>.</h1>
         <p class="lead">Math Snap הוא פותר תרגילים במתמטיקה שעובד בלי אינטרנט. מכיתה ט׳ ועד י״ב: משוואות, אי-שוויונים, לוגריתמים, נגזרות וחקירת פונקציה, אינטגרלים, סדרות, טריגונומטריה וגאומטריה, וכל שלב מגיע עם הסבר. בגאומטריה מקבלים הוכחה מלאה בטבלת טענה ונימוק, בדיוק כמו בכיתה.</p>
         <div class="ctas">
-          <a class="btn primary" href="https://github.com/eitan1234f/Math-snap/releases/latest/download/MathSnap.apk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>הורדה לאנדרואיד</a>
+          <a class="btn primary" href="https://github.com/eitan1234f/Math-snap/releases/latest/download/MathSnap-Setup.exe" id="heroWin"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5.5 10.5 4.4v7.1H3zM11.5 4.3 21 3v8.5h-9.5zM3 12.5h7.5v7.1L3 18.5zM11.5 12.5H21V21l-9.5-1.3z"/></svg>ל-Windows</a>
+          <a class="btn ghost" href="https://github.com/eitan1234f/Math-snap/releases/latest/download/MathSnap.apk" id="heroAndroid"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>לאנדרואיד</a>
           <a class="btn ghost" href="#install" id="heroIphone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg>לאייפון</a>
         </div>
         <div class="meta">
@@ -603,16 +604,20 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
   const isWin = /Windows NT/.test(navigator.userAgent);
   const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   document.getElementById("heroIphone").addEventListener("click", () => showGuide("ios"));
-  if (isIOS) { showGuide("ios"); document.getElementById("heroIphone").hidden = true; }
+  // the three buttons keep their order (Windows, Android, iPhone); the one for this device is highlighted
+  const isAndroid = /Android/i.test(navigator.userAgent);
+  const mine = isIOS ? "heroIphone" : isAndroid ? "heroAndroid" : "heroWin";
+  ["heroWin", "heroAndroid", "heroIphone"].forEach(id => { const a = document.getElementById(id); a.classList.toggle("primary", id === mine); a.classList.toggle("ghost", id !== mine); });
+  if (isIOS) { showGuide("ios"); document.getElementById("heroIphone").href = "app/"; }
 
   // on an iPhone or iPad, the main buttons open the iPhone version
   if (isIOS) {
-    document.querySelectorAll('.hero a[href$="MathSnap.apk"], .dl a[href$="MathSnap.apk"]').forEach(a => { a.href = "app/"; a.lastChild.textContent = "התקנה באייפון"; });
+    document.querySelectorAll('.dl a[href$="MathSnap.apk"]').forEach(a => { a.href = "app/"; a.lastChild.textContent = "התקנה באייפון"; });
   }
   // on a Windows computer, the main buttons download the Windows app
   if (isWin) {
     showGuide("win");
-    document.querySelectorAll('.hero a[href$="MathSnap.apk"], .dl a[href$="MathSnap.apk"]').forEach(a => { a.href = "https://github.com/eitan1234f/Math-snap/releases/latest/download/MathSnap-Setup.exe"; a.lastChild.textContent = "הורדה ל-Windows"; });
+    document.querySelectorAll('.dl a[href$="MathSnap.apk"]').forEach(a => { a.href = "https://github.com/eitan1234f/Math-snap/releases/latest/download/MathSnap-Setup.exe"; a.lastChild.textContent = "הורדה ל-Windows"; });
     const sm = document.querySelector(".dl small"); if (sm) sm.firstChild.textContent = "ל-Windows 10 ו-11";
   }
 
