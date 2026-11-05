@@ -211,7 +211,7 @@ table.proof{width:100%;border-collapse:collapse;font-size:14px;line-height:1.5}
 
 /* bottom navigation */
 .bottomnav{position:fixed;inset:auto 0 0 0;z-index:10;background:var(--surface);box-shadow:0 -1px 0 var(--line),0 -8px 24px rgba(20,27,45,.06);
-  display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:8px max(12px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
+  display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:8px max(12px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
 .bottomnav button{border:0;background:none;color:var(--muted);font:600 13px/1 var(--sans);display:flex;flex-direction:column;align-items:center;gap:6px;padding:6px 0}
 .bottomnav .pill{width:64px;height:32px;border-radius:999px;display:grid;place-items:center;transition:background .2s ease}
 .bottomnav svg{width:22px;height:22px}
@@ -419,8 +419,8 @@ body.noscroll{overflow:hidden}
 @media (min-width:1000px){
   .wrap{max-width:1280px;display:grid;grid-template-columns:minmax(380px,470px) minmax(0,1fr);align-items:start;column-gap:24px;row-gap:16px;padding:18px 32px 40px;padding-inline-start:124px}
   .appbar{grid-column:1/-1}
-  #solvePanel,#geoPanel,#toolPanel,#bankPanel{grid-column:1}
-  #results,#geoResults{grid-column:2;grid-row:2/span 4}
+  #solvePanel,#geoPanel,#toolPanel,#bankPanel,#sciPanel{grid-column:1}
+  #results,#geoResults,#sciResults{grid-column:2;grid-row:2/span 4}
   #mePanel{grid-column:1/-1;max-width:760px;width:100%}
   .bottomnav{inset:0 auto 0 0;inset-inline-start:0;inset-inline-end:auto;width:96px;grid-template-columns:1fr;align-content:start;gap:10px;padding:96px 0 24px;box-shadow:1px 0 0 var(--line)}
   html[dir="rtl"] .bottomnav{box-shadow:-1px 0 0 var(--line)}
@@ -552,7 +552,8 @@ table.proof tr.prolocked{filter:none;opacity:.8}
   .appbar,.bottomnav,.bookwrap,.overlay,.protools,.prolock,.resbar,.savebar,#proToast,#welcome{display:none!important}
   body[data-print="solve"] .wrap > :not(#results){display:none!important}
   body[data-print="geo"] .wrap > :not(#geoResults){display:none!important}
-  #results,#geoResults{box-shadow:none!important;background:#fff!important}
+  body[data-print="sci"] .wrap > :not(#sciResults){display:none!important}
+  #results,#geoResults,#sciResults{box-shadow:none!important;background:#fff!important}
   .steps li{animation:none!important;break-inside:avoid}
 }
 </style>
@@ -638,6 +639,17 @@ table.proof tr.prolocked{filter:none;opacity:.8}
     <ol class="bank" id="bankList"></ol>
   </section>
 
+  <!-- SCIENCE: physics, chemistry, units -->
+  <section id="sciPanel" class="panel" hidden>
+    <div class="phead"><h2 id="sciTitle"></h2><p id="sciSub"></p></div>
+    <div class="chips" id="sciSubj"></div>
+    <div class="chips wrapchips" id="sciTopics"></div>
+    <div id="sciBody" style="display:flex;flex-direction:column;gap:12px"></div>
+    <div><p class="exlabel" id="sciExLbl"></p><div class="chips" id="sciEx"></div></div>
+    <button class="btn" id="sciGo" type="button"><span id="sciGoLbl"></span><svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+  </section>
+  <section id="sciResults" class="panel" hidden aria-live="polite"></section>
+
   <!-- MINE: account, history, favorites -->
   <div id="mePanel" hidden style="display:flex;flex-direction:column;gap:16px"></div>
 </div>
@@ -651,12 +663,14 @@ table.proof tr.prolocked{filter:none;opacity:.8}
 <nav class="bottomnav" role="tablist">
   <button role="tab" id="tabSolve" aria-selected="true" type="button"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 7h8M8 12h2M14 12h2M8 16h2M14 16h2"/></svg></span><span data-t="tabSolve"></span></button>
   <button role="tab" id="tabGeo" aria-selected="false" type="button"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18L12 4z"/><path d="M12 20v-5"/></svg></span><span data-t="tabGeo"></span></button>
+  <button role="tab" id="tabSci" aria-selected="false" type="button"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6l-5.6 9.6A1.6 1.6 0 0 0 5.8 21h12.4a1.6 1.6 0 0 0 1.4-2.4L14 9V3"/><path d="M7 15h10"/></svg></span><span id="tabSciLbl"></span></button>
   <button role="tab" id="tabMe" aria-selected="false" type="button"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span><span data-t="tabMe"></span></button>
 </nav>
 
 <script src="math.js"></script>
 <script src="solver.js"></script>
 <script src="pro-core.js"></script>
+<script src="science.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 const hasBridge = typeof window.Android !== "undefined";
@@ -812,7 +826,9 @@ function setLang(l){
 
 // ---------- tabs ----------
 function tab(which){
-  const geo = which === "geo", me = which === "me", sol = which === "solve";
+  const geo = which === "geo", me = which === "me", sol = which === "solve", sci = which === "sci";
+  $("tabSci").setAttribute("aria-selected", String(sci));
+  $("sciPanel").hidden = !sci; $("sciResults").hidden = !sci || !$("sciResults").childElementCount; if (sci) renderSci();
   $("tabSolve").setAttribute("aria-selected", String(sol));
   $("tabGeo").setAttribute("aria-selected", String(geo));
   $("tabMe").setAttribute("aria-selected", String(me));
@@ -824,6 +840,7 @@ function tab(which){
 $("tabSolve").onclick = () => tab("solve");
 $("tabGeo").onclick = () => tab("geo");
 $("tabMe").onclick = () => tab("me");
+$("tabSci").onclick = () => tab("sci");
 
 // ---------- photo ----------
 let statusKey = "", statusBad = false, photoFor = "solve", geoKey = "", geoBad = false;
@@ -2903,6 +2920,7 @@ function when(ms){
   return d.toLocaleDateString(lang === "he" ? "he-IL" : "en-GB", {day:"numeric", month:"short"});
 }
 function reopen(h){
+  if (h.kind === "sci") { reopenSci(h); return; }
   if (h.kind === "geo" && h.tool && SH[h.tool]) {
     tab("geo");
     $("shape").value = h.tool; buildFields(false);
@@ -2975,7 +2993,7 @@ function renderMe(){
 function historyItem(h){
   const it = el("div", "hitem");
   const hd = el("div", "hhead");
-  hd.append(svgEl(h.kind === "geo" ? ICON.tri : ICON.calc), el("span", null, (h.kind === "geo" ? T("kindGeo") : T("kindSolve")) + " · " + when(h.created) + (h.pending ? " · " + T("waiting") : "")), el("span", "sp"));
+  hd.append(svgEl(h.kind === "geo" ? ICON.tri : ICON.calc), el("span", null, (h.kind === "geo" ? T("kindGeo") : h.kind === "sci" ? pick("Science", "מדעים") : T("kindSolve")) + " · " + when(h.created) + (h.pending ? " · " + T("waiting") : "")), el("span", "sp"));
   const st = el("button", "star"); st.type = "button"; st.setAttribute("aria-pressed", String(!!h.fav)); st.setAttribute("aria-label", h.fav ? T("favOn") : T("addFav"));
   st.append(svgEl(ICON.star)); st.onclick = () => { setFav(h.id, !h.fav); renderMe(); };
   hd.append(st); it.append(hd);
@@ -4028,6 +4046,137 @@ function renderWelcome(){
   const skip = el("button", "skip", T("wSkip")); skip.type = "button"; skip.onclick = () => { hideWelcome(); tab("solve"); };
   box.append(lg, hero, h, el("p", "lead", T("welcomeLead")), acts, skip);
 }
+
+// ---------- SCIENCE: physics, chemistry, units ----------
+const SCI_SUBJ = [["phys", ["Physics", "פיזיקה"]], ["chem", ["Chemistry", "כימיה"]], ["units", ["Units", "המרת יחידות"]]];
+const CHEM_EXTRA = [{ id: "mm", s: "chem", l: ["Molar mass", "מסה מולרית"] }, { id: "bal", s: "chem", l: ["Balance a reaction", "איזון תגובה"] }];
+const BAL_EX = ["H2 + O2 -> H2O", "CH4 + O2 -> CO2 + H2O", "Fe + O2 -> Fe2O3", "Al + HCl -> AlCl3 + H2", "C3H8 + O2 -> CO2 + H2O"];
+const MM_EX = ["H2O", "H2SO4", "C6H12O6", "Ca(OH)2", "CuSO4·5H2O", "NaCl"];
+const UNIT_EX = [["length", "km", "m", 5], ["speed", "km/h", "m/s", 72], ["temp", "°C", "°F", 100], ["area", "dunam", "m²", 3], ["mass", "lb", "kg", 10]];
+let sci = { subj: "phys", topic: "speed", vals: {}, text: "", cat: "length", from: "km", to: "m", x: "" };
+try { Object.assign(sci, JSON.parse(localStorage.getItem("sci") || "{}")); } catch (e) {}
+const sciSave = () => { try { localStorage.setItem("sci", JSON.stringify({ subj: sci.subj, topic: sci.topic })); } catch (e) {} };
+const sciTopics = s => s === "chem" ? [...Science.TOPICS.filter(t => t.s === "chem"), ...CHEM_EXTRA] : Science.TOPICS.filter(t => t.s === s);
+const sciTopic = () => Science.TOPICS.find(t => t.id === sci.topic);
+
+function sciRead(){   // keep what is typed before re-drawing
+  document.querySelectorAll("#sciBody [data-k]").forEach(i => { sci.vals[i.dataset.k] = i.value; });
+  const tx = $("sciText"); if (tx) sci.text = tx.value;
+  if ($("sciCat")) { sci.cat = $("sciCat").value; sci.from = $("sciFrom").value; sci.to = $("sciTo").value; sci.x = $("sciX").value; }
+}
+function sciField(labelText, input){ const l = el("label", null, labelText); l.append(input); return l; }
+function sciInput(k, value, ph){ const i = document.createElement("input"); i.type = "text"; i.inputMode = "decimal"; i.autocomplete = "off"; i.spellcheck = false; i.dir = "ltr"; i.dataset.k = k; i.value = value ?? ""; if (ph) i.placeholder = ph; i.onkeydown = e => { if (e.key === "Enter") solveSci(); }; return i; }
+function renderSci(keep){
+  if (!$("sciPanel")) return;
+  if (keep !== false) sciRead();
+  $("tabSciLbl").textContent = pick("Science", "מדעים");
+  $("sciTitle").textContent = pick("Physics & Chemistry", "פיזיקה וכימיה");
+  $("sciSub").textContent = pick("Pick a topic, fill in what you know and get every step", "בוחרים נושא, ממלאים את מה שידוע ומקבלים את כל השלבים");
+  $("sciGoLbl").textContent = T("solve");
+  $("sciExLbl").textContent = T("tryOne");
+  const sb = $("sciSubj"); sb.innerHTML = "";
+  for (const [k, l] of SCI_SUBJ) sb.append(chip(pick(...l), "", () => { sciRead(); sci.subj = k; sci.topic = k === "units" ? "units" : sciTopics(k)[0].id; sci.vals = {}; sci.text = ""; sciSave(); clearSci(); renderSci(false); }, sci.subj === k));
+  const tb = $("sciTopics"); tb.innerHTML = ""; tb.hidden = sci.subj === "units";
+  if (sci.subj !== "units") for (const t of sciTopics(sci.subj)) tb.append(chip(pick(...t.l), "", () => { sciRead(); sci.topic = t.id; sci.vals = {}; sci.text = ""; sciSave(); clearSci(); renderSci(false); }, sci.topic === t.id));
+  const body = $("sciBody"); body.innerHTML = "";
+  const ex = $("sciEx"); ex.innerHTML = "";
+  const tp = sciTopic();
+  if (sci.subj === "units") {
+    const cat = document.createElement("select"); cat.id = "sciCat";
+    for (const [k, c] of Object.entries(Science.UNITS)) { const o = new Option(pick(...c.l), k); cat.append(o); }
+    cat.value = sci.cat;
+    const units = Object.keys(Science.UNITS[sci.cat].u);
+    const mk = (id, v) => { const s = document.createElement("select"); s.id = id; s.dir = "ltr"; units.forEach(u => s.append(new Option(Science.uName(u), u))); s.value = units.includes(v) ? v : units[0]; return s; };
+    const from = mk("sciFrom", sci.from), to = mk("sciTo", units.includes(sci.to) && sci.to !== from.value ? sci.to : units.find(u => u !== from.value));
+    const x = sciInput("x", sci.x); x.id = "sciX"; delete x.dataset.k;
+    cat.onchange = () => { sci.cat = cat.value; const u = Object.keys(Science.UNITS[sci.cat].u); sci.from = u[0]; sci.to = u[1]; renderSci(false); };
+    const row = el("div", "fields"); row.append(sciField(pick("Value", "ערך"), x), sciField(pick("From", "מ-"), from), sciField(pick("To", "אל"), to));
+    body.append(sciField(pick("What to convert", "מה ממירים"), cat), row);
+    UNIT_EX.forEach(([c, f, t, v]) => { const ch = chip(v + " " + Science.uName(f) + " → " + Science.uName(t), "", () => { Object.assign(sci, { cat: c, from: f, to: t, x: String(v) }); renderSci(false); solveSci(false, true); }); ch.dir = "ltr"; ex.append(ch); });
+  } else if (sci.topic === "mm" || sci.topic === "bal") {
+    const bal = sci.topic === "bal";
+    const i = document.createElement("input"); i.type = "text"; i.id = "sciText"; i.dir = "ltr"; i.autocomplete = "off"; i.spellcheck = false; i.autocapitalize = "off";
+    i.style.fontFamily = "var(--mono)"; i.value = sci.text || (bal ? BAL_EX[0] : MM_EX[1]);
+    i.placeholder = bal ? "H2 + O2 -> H2O" : "H2SO4"; i.onkeydown = e => { if (e.key === "Enter") solveSci(); };
+    body.append(sciField(bal ? pick("The reaction (use -> for the arrow)", "התגובה (החץ נכתב ->)") : pick("Chemical formula", "נוסחה כימית"), i));
+    body.append(el("p", "tip", bal ? pick("Write the substances with + between them. I'll find the coefficients.", "כותבים את החומרים עם + ביניהם, ואני אמצא את המקדמים.") : pick("Capital letter for every element: NaCl, not nacl. Brackets work too: Ca(OH)2", "אות גדולה לכל יסוד: NaCl ולא nacl. אפשר גם סוגריים: Ca(OH)2")));
+    (bal ? BAL_EX : MM_EX).forEach(x => { const c = chip(Science.sub(x.replace("->", "→")), "math", () => { sci.text = x; renderSci(false); solveSci(false, true); }); c.dir = "ltr"; ex.append(c); });
+  } else if (tp) {
+    if (tp.formula !== undefined) {
+      const i = document.createElement("input"); i.type = "text"; i.id = "sciText"; i.dir = "ltr"; i.autocomplete = "off"; i.spellcheck = false; i.autocapitalize = "off"; i.style.fontFamily = "var(--mono)";
+      i.value = sci.text !== "" && sci.text != null ? sci.text : tp.formula; i.placeholder = tp.formula;
+      body.append(sciField(pick("Substance (chemical formula), for the molar mass", "החומר (נוסחה כימית), בשביל המסה המולרית"), i));
+    }
+    const box = el("div", "fields");
+    for (const vr of tp.vars) {
+      const v = sci.vals[vr[0]] !== undefined ? sci.vals[vr[0]] : (vr[5] !== undefined ? String(vr[5]) : "");
+      box.append(sciField(pick(vr[1], vr[2]) + (vr[3] ? " (" + vr[3] + ")" : "") + (pick(vr[1], vr[2]) !== vr[4] ? "  " + vr[4] : ""), sciInput(vr[0], v, "?")));
+    }
+    body.append(box);
+    body.append(el("p", "tip", pick("Leave empty what you want to find. Formulas: ", "השאירו ריק את מה שרוצים למצוא. נוסחאות: ") + tp.eqs.map(e => pick(...e.n)).join("  ·  ")));
+    const c = chip(Object.entries(tp.ex).map(([k, v]) => tp.vars.find(x => x[0] === k)[4] + " = " + v).join(", "), "", () => { sci.vals = {}; for (const [k, v] of Object.entries(tp.ex)) sci.vals[k] = String(v); sci.text = ""; renderSci(false); solveSci(false, true); });
+    c.dir = "ltr"; ex.append(c);
+  }
+}
+function clearSci(){ const o = $("sciResults"); o.innerHTML = ""; o.hidden = true; }
+function solveSci(quiet, noSave){
+  sciRead();
+  const out = $("sciResults"); out.innerHTML = "";
+  let r, input;
+  try {
+    if (sci.subj === "units") { r = Science.convert(sci.cat, sci.from, sci.to, sci.x, lang); input = sci.x + " " + sci.from + " → " + sci.to; }
+    else if (sci.topic === "mm") { r = Science.molarMass(sci.text, lang); input = sci.text; }
+    else if (sci.topic === "bal") { r = Science.balance(sci.text, lang); input = sci.text; }
+    else {
+      const tp = sciTopic(), vals = {};
+      for (const vr of tp.vars) vals[vr[0]] = (sci.vals[vr[0]] ?? "").trim() === "" ? null : sci.vals[vr[0]];
+      r = Science.solveTopic(tp.id, vals, lang, tp.formula !== undefined ? sci.text || tp.formula : undefined);
+      input = pick(...tp.l) + "\n" + tp.vars.filter(vr => vals[vr[0]] !== null).map(vr => vr[4] + " = " + vals[vr[0]]).join(",  ") + (tp.formula !== undefined ? "  (" + (sci.text || tp.formula) + ")" : "");
+    }
+  } catch (e) { console.error(e); r = { error: T("crash") }; }
+  const box = el("div", "result");
+  const title = sci.subj === "units" ? pick(...Science.UNITS[sci.cat].l) : pick(...(sciTopic() || CHEM_EXTRA.find(t => t.id === sci.topic)).l);
+  { const t = dirOf(el("div", "prob", title), title); t.style.fontFamily = "var(--sans)"; box.append(t); }
+  if (r.error) box.append(dirOf(el("div", "err", r.error), r.error));
+  else {
+    const a = el("div", "ans"); a.append(el("small", null, T("answer")));
+    const shown = r.found ? r.found.map(f => f.sym + " = " + Science.format(f.value) + (f.unit ? " " + f.unit : "")) : [r.answer];
+    { const d = el("div", null, shown.map(plain).join("\n")); d.dir = "ltr"; a.append(d); }
+    box.append(a);
+    if (r.missing && r.missing.length) box.append(el("p", "hint", pick("Not enough to find: ", "אין מספיק נתונים כדי למצוא: ") + r.missing.join(", ")));
+    const ol = el("ol", "steps"), pro = isPro(); let locked = 0;
+    r.steps.forEach(([c, why], k) => {
+      const li = el("li"); li.style.setProperty("--i", Math.min(k, 12));
+      const m = el("div", "math", c); m.dir = "ltr"; li.append(m);
+      const w = dirOf(el("div", "why", why), why);
+      if (!pro && k >= FREE_STEPS) { w.classList.add("prolocked"); w.setAttribute("aria-hidden", "true"); locked++; }
+      li.append(w); ol.append(li);
+    });
+    box.append(ol);
+    if (locked) box.append(proLockBar(P("lockExplain", locked), "explain"));
+    try { applyStepper(box, ol.children, [a]); } catch (e) {}
+  }
+  const rb = el("div", "resbar"); rb.append(stepToggle(() => solveSci(true, true))); out.append(rb);
+  out.append(box);
+  if (!r.error) {
+    out.append(proTools("sci", false));
+    if (!quiet) {
+      let id = null;
+      if (!noSave) id = saveProblem({ kind: "sci", input, answer: plain(r.found ? r.found.map(f => f.sym + " = " + Science.format(f.value) + (f.unit ? " " + f.unit : "")).join("   ;   ") : r.answer), tool: sci.subj + ":" + sci.topic, vals: JSON.stringify({ v: sci.vals, text: sci.text, cat: sci.cat, from: sci.from, to: sci.to, x: sci.x }) });
+      out.prepend(saveBar(id));
+    }
+  }
+  out.hidden = $("sciPanel").hidden;
+  if (!quiet) out.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+function reopenSci(h){
+  const [subj, topic] = String(h.tool || "phys:speed").split(":");
+  let v = {}; try { v = JSON.parse(h.vals || "{}"); } catch (e) {}
+  Object.assign(sci, { subj, topic, vals: v.v || {}, text: v.text || "", cat: v.cat || "length", from: v.from || "km", to: v.to || "m", x: v.x || "" });
+  tab("sci"); renderSci(false); solveSci(false, true);
+}
+$("sciGo").onclick = () => solveSci();
+document.addEventListener("langchange", () => { renderSci(); if ($("sciResults").childElementCount) solveSci(true); });
 
 // start
 applyUI();
