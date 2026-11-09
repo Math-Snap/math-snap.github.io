@@ -38,7 +38,7 @@ jobs:
           curl -fsSL -o app/src/main/assets/math.js https://cdn.jsdelivr.net/npm/mathjs@12.4.3/lib/browser/math.js
 
       - name: Test the solver
-        run: node tests/solver.test.js && node tests/pro.test.js && node tests/science.test.js
+        run: node tests/solver.test.js && node tests/pro.test.js && node tests/science.test.js && node tests/daily.test.js
 
       - name: Build the APK
         run: gradle assembleDebug
@@ -65,6 +65,12 @@ jobs:
         id: ver
         run: echo "name=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)" >> "$GITHUB_OUTPUT"
 
+      - name: Write version.json (the Android app compares it to know if there is an update)
+        run: |
+          code=$(grep -oP 'versionCode = \K[0-9]+' app/build.gradle.kts)
+          echo "{\"versionCode\": $code, \"versionName\": \"${{ steps.ver.outputs.name }}\"}" > version.json
+          cat version.json
+
       - name: Keep the Android files for the release
         uses: actions/upload-artifact@v4
         with:
@@ -72,6 +78,7 @@ jobs:
           path: |
             MathSnap.apk
             MathSnap-PlayStore.aab
+            version.json
           if-no-files-found: ignore
 
   windows:
@@ -166,6 +173,7 @@ jobs:
           fail_on_unmatched_files: false
           files: |
             out/MathSnap.apk
+            out/version.json
             out/MathSnap-PlayStore.aab
             out/MathSnap-Setup.exe
             out/MathSnap-Setup.exe.blockmap

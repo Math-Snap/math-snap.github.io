@@ -556,6 +556,39 @@ table.proof tr.prolocked{filter:none;opacity:.8}
   #results,#geoResults,#sciResults{box-shadow:none!important;background:#fff!important}
   .steps li{animation:none!important;break-inside:avoid}
 }
+
+/* periodic table */
+.ptwrap{overflow-x:auto;margin:0 -6px;padding:2px 6px 6px}
+.ptable{display:grid;grid-template-columns:repeat(18,minmax(0,1fr));gap:2px}
+@media (max-width:520px){.pcell{border-radius:3px;padding:0}.pcell i{display:none}.pcell b{font-size:8.5px;letter-spacing:-.3px}.ptable{gap:1.5px}}
+.pcell{display:flex;flex-direction:column;align-items:center;justify-content:center;aspect-ratio:1;border:0;border-radius:7px;padding:1px;cursor:pointer;color:var(--ink);font:inherit;line-height:1}
+.pcell i{font-style:normal;font-size:8px;opacity:.65}.pcell b{font-size:13px}
+.pcell.on{outline:2.5px solid var(--ink);outline-offset:1px;transform:scale(1.08)}
+.ptgap{height:8px}
+.k-alkali{background:rgba(239,68,68,.22)}.k-alkaline{background:rgba(249,115,22,.22)}.k-transition{background:rgba(234,179,8,.22)}.k-metal{background:rgba(148,163,184,.28)}
+.k-metalloid{background:rgba(20,184,166,.24)}.k-nonmetal{background:rgba(34,197,94,.24)}.k-halogen{background:rgba(6,182,212,.24)}.k-noble{background:rgba(139,92,246,.25)}.k-fblock{background:rgba(236,72,153,.2)}
+.elcard{display:flex;gap:14px;align-items:flex-start;background:var(--surface-2);border-radius:16px;padding:14px}
+.elbig{min-width:86px;height:96px;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.elbig i{font-style:normal;font-size:12px;opacity:.7}.elbig b{font-size:34px;line-height:1}.elbig small{font-size:12px;opacity:.8}
+.elinfo{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}.elinfo h3{margin:0 0 4px;font-size:18px}
+.elrow{display:flex;justify-content:space-between;gap:10px;font-size:14px}.elrow span{color:var(--muted)}
+/* daily challenge */
+.dailybtn .dfire{font-size:18px}.dailybtn .dbadge{margin-inline-start:auto;background:var(--warn);color:#fff;border-radius:99px;padding:2px 9px;font-size:12px;font-weight:700}
+.dailybtn.pulse{box-shadow:0 0 0 0 rgba(249,115,22,.5);animation:dpulse 2s infinite}
+@keyframes dpulse{70%{box-shadow:0 0 0 10px rgba(249,115,22,0)}100%{box-shadow:0 0 0 0 rgba(249,115,22,0)}}
+.daily{display:flex;flex-direction:column;gap:14px}
+.dtop{display:flex;justify-content:space-between;align-items:center;gap:8px}.dsub{background:var(--pen-soft);color:var(--pen);border-radius:99px;padding:3px 10px;font-size:13px;font-weight:700}.dstreak{font-weight:700}
+.dq{font-size:20px;font-weight:700;line-height:1.4;margin:0}
+.dopts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dopt{border:2px solid var(--line,rgba(127,127,127,.25));background:var(--surface);color:var(--ink);border-radius:14px;padding:14px 8px;font:inherit;font-size:17px;font-weight:700;cursor:pointer}
+.dopt.right{border-color:var(--ok);background:rgba(34,197,94,.15)}.dopt.wrong{border-color:var(--danger,#ef4444);background:rgba(239,68,68,.12)}
+.dmsg{font-size:18px;font-weight:800;margin:0}.dmsg.ok{color:var(--ok)}.dmsg.no{color:var(--warn)}.dnext{color:var(--muted);margin:0}
+@media (prefers-reduced-motion:reduce){.dailybtn.pulse{animation:none}}
+
+.updbar{position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:40;display:flex;align-items:center;gap:10px;background:var(--ink);color:var(--bg);border-radius:16px;padding:10px 10px 10px 16px;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:520px;margin:0 auto}
+.updbar span{flex:1;min-width:0;font-weight:600}
+.updgo{border:0;border-radius:12px;background:var(--pen);color:#fff;font:inherit;font-weight:700;padding:9px 14px;cursor:pointer;min-width:72px}
+.updx{border:0;background:transparent;color:inherit;font-size:16px;padding:6px 8px;cursor:pointer;opacity:.7}
 </style>
 </head>
 <body>
@@ -591,6 +624,7 @@ table.proof tr.prolocked{filter:none;opacity:.8}
       <div class="padkeys" id="padKeys"></div>
     </div>
     <p class="deskhint" id="deskHint"></p>
+    <button class="formbtn dailybtn" id="openDaily" type="button"><span class="dfire">🔥</span><span id="dailyLbl"></span><span class="dbadge" id="dailyStreak" hidden></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button>
     <div><p class="exlabel" data-t="tryOne"></p><div class="chips" id="solveChips"></div></div>
     <button class="formbtn" id="openBook" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M8 7h6M8 11h4"/></svg><span data-t="formulas"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button>
     <button class="formbtn" id="openChecker" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg><span data-t="checkMine"></span><span class="protag mini">PRO</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button>
@@ -671,6 +705,7 @@ table.proof tr.prolocked{filter:none;opacity:.8}
 <script src="solver.js"></script>
 <script src="pro-core.js"></script>
 <script src="science.js"></script>
+<script src="daily.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 const hasBridge = typeof window.Android !== "undefined";
@@ -3983,6 +4018,40 @@ if (keyPro && keyPro.key && Date.now() - (keyPro.checked || 0) > 864e5) setTimeo
     else say(pick("Couldn't check for updates. Check the internet and try again.", "לא הצלחתי לבדוק עדכונים. בדקו את האינטרנט ונסו שוב."));
   };
 })();
+// ---------- Android app from the website: check for updates and install them ----------
+(function(){
+  const b = $("updBtn");
+  if (!b || !(hasBridge && !Android.isDesktop && typeof Android.canSelfUpdate === "function")) return;
+  let can = false; try { can = Android.canSelfUpdate(); } catch (e) {}
+  if (!can) return;
+  b.hidden = false;
+  const label = () => { const t = pick("Check for updates", "בדיקת עדכונים"); b.setAttribute("aria-label", t); b.title = t; };
+  label(); document.addEventListener("langchange", label);
+  let bar = null, ver = "";
+  const offer = () => {   // a small bar at the bottom: "Version 8.4 is out · Update"
+    if (bar) bar.remove();
+    bar = el("div", "updbar"); bar.setAttribute("role", "status");
+    const t = pick("A new version is out", "יצאה גרסה חדשה") + (ver ? " (" + ver + ")" : "");
+    bar.append(dirOf(el("span", null, t), t));
+    const go = el("button", "updgo", pick("Update", "לעדכן")); go.type = "button";
+    go.onclick = () => { go.disabled = true; go.textContent = pick("Downloading…", "מוריד…"); b.classList.add("spin"); Android.installUpdate(); };
+    const no = el("button", "updx", "✕"); no.type = "button"; no.setAttribute("aria-label", pick("Later", "אחר כך")); no.onclick = () => { bar.remove(); bar = null; };
+    bar.append(go, no); document.body.append(bar);
+  };
+  window.onUpdateStatus = s => {
+    if (!s) return;
+    b.classList.remove("spin");
+    if (s.state === "available") { ver = s.version || ""; b.classList.add("dot"); offer(); }
+    else if (s.state === "latest") { if (!s.quiet) proToast(pick("You have the newest version", "יש לך את הגרסה הכי חדשה") + (s.current ? " (" + s.current + ")" : "")); }
+    else if (s.state === "downloading") { b.classList.add("spin"); const g = bar && bar.querySelector(".updgo"); if (g && s.percent >= 0) g.textContent = s.percent + "%"; }
+    else if (s.state === "installing") { if (bar) bar.remove(); bar = null; proToast(pick("Tap Install to finish the update", "לחצו 'התקנה' כדי לסיים את העדכון")); }
+    else if (s.state === "error" && !s.quiet) { if (bar) { const g = bar.querySelector(".updgo"); if (g) { g.disabled = false; g.textContent = pick("Try again", "לנסות שוב"); } } proToast(pick("Couldn't update. Check the internet and try again.", "לא הצלחתי לעדכן. בדקו את האינטרנט ונסו שוב.")); }
+  };
+  b.onclick = () => { if (b.classList.contains("spin")) return; b.classList.add("spin"); proToast(pick("Checking for updates…", "בודק אם יש עדכון…")); Android.checkUpdate(false); };
+  // check by itself once a day, quietly
+  let last = 0; try { last = +localStorage.getItem("updCheck") || 0; } catch (e) {}
+  if (Date.now() - last > 864e5) setTimeout(() => { try { localStorage.setItem("updCheck", String(Date.now())); } catch (e) {} Android.checkUpdate(true); }, 4000);
+})();
 // ---------- computer: Ctrl+Enter solves, paste or drop a picture to read it ----------
 (function(){
   const hint = $("deskHint");
@@ -4049,7 +4118,7 @@ function renderWelcome(){
 
 // ---------- SCIENCE: physics, chemistry, units ----------
 const SCI_SUBJ = [["phys", ["Physics", "פיזיקה"]], ["chem", ["Chemistry", "כימיה"]], ["units", ["Units", "המרת יחידות"]]];
-const CHEM_EXTRA = [{ id: "mm", s: "chem", l: ["Molar mass", "מסה מולרית"] }, { id: "bal", s: "chem", l: ["Balance a reaction", "איזון תגובה"] }];
+const CHEM_EXTRA = [{ id: "table", s: "chem", l: ["Periodic table", "טבלה מחזורית"] }, { id: "mm", s: "chem", l: ["Molar mass", "מסה מולרית"] }, { id: "bal", s: "chem", l: ["Balance a reaction", "איזון תגובה"] }];
 const BAL_EX = ["H2 + O2 -> H2O", "CH4 + O2 -> CO2 + H2O", "Fe + O2 -> Fe2O3", "Al + HCl -> AlCl3 + H2", "C3H8 + O2 -> CO2 + H2O"];
 const MM_EX = ["H2O", "H2SO4", "C6H12O6", "Ca(OH)2", "CuSO4·5H2O", "NaCl"];
 const UNIT_EX = [["length", "km", "m", 5], ["speed", "km/h", "m/s", 72], ["temp", "°C", "°F", 100], ["area", "dunam", "m²", 3], ["mass", "lb", "kg", 10]];
@@ -4081,6 +4150,7 @@ function renderSci(keep){
   const body = $("sciBody"); body.innerHTML = "";
   const ex = $("sciEx"); ex.innerHTML = "";
   const tp = sciTopic();
+  $("sciGo").hidden = sci.topic === "table"; $("sciEx").parentNode.hidden = sci.topic === "table";
   if (sci.subj === "units") {
     const cat = document.createElement("select"); cat.id = "sciCat";
     for (const [k, c] of Object.entries(Science.UNITS)) { const o = new Option(pick(...c.l), k); cat.append(o); }
@@ -4093,6 +4163,8 @@ function renderSci(keep){
     const row = el("div", "fields"); row.append(sciField(pick("Value", "ערך"), x), sciField(pick("From", "מ-"), from), sciField(pick("To", "אל"), to));
     body.append(sciField(pick("What to convert", "מה ממירים"), cat), row);
     UNIT_EX.forEach(([c, f, t, v]) => { const ch = chip(v + " " + Science.uName(f) + " → " + Science.uName(t), "", () => { Object.assign(sci, { cat: c, from: f, to: t, x: String(v) }); renderSci(false); solveSci(false, true); }); ch.dir = "ltr"; ex.append(ch); });
+  } else if (sci.topic === "table") {
+    renderTable(body);
   } else if (sci.topic === "mm" || sci.topic === "bal") {
     const bal = sci.topic === "bal";
     const i = document.createElement("input"); i.type = "text"; i.id = "sciText"; i.dir = "ltr"; i.autocomplete = "off"; i.spellcheck = false; i.autocapitalize = "off";
@@ -4153,6 +4225,7 @@ function solveSci(quiet, noSave){
       li.append(w); ol.append(li);
     });
     box.append(ol);
+    if (r.vals) sciGraphs(sci.topic, r.vals, box);
     if (locked) box.append(proLockBar(P("lockExplain", locked), "explain"));
     try { applyStepper(box, ol.children, [a]); } catch (e) {}
   }
@@ -4177,6 +4250,101 @@ function reopenSci(h){
 }
 $("sciGo").onclick = () => solveSci();
 document.addEventListener("langchange", () => { renderSci(); if ($("sciResults").childElementCount) solveSci(true); });
+
+// ---------- motion graphs for physics answers ----------
+function sciGraphs(topic, v, box){
+  const num = x => typeof x === "number" && isFinite(x);
+  const fig = (svg, cap) => { const f = el("div", "gfig"); f.append(dirOf(el("small", null, cap), cap)); f.insertAdjacentHTML("beforeend", svg); box.append(f); };
+  const range = (f, t) => { let lo = 0, hi = 0; for (let i = 0; i <= 50; i++) { const y = f(t * i / 50); lo = Math.min(lo, y); hi = Math.max(hi, y); } const pad = (hi - lo || 1) * .15; return [lo - (lo < 0 ? pad : 0), hi + pad]; };
+  const g = (e, name, t, f, shade) => plotSVG({ fns: [{ e, name }], x: [0, t], y: range(f, t), shade: shade ? { a: 0, b: t } : undefined });
+  try {
+    if (topic === "accel" && num(v.v0) && num(v.a) && num(v.t) && v.t > 0) {
+      fig(g(`${v.v0}+(${v.a})*x`, "v(t)", v.t, x => v.v0 + v.a * x, true), pick("Speed over time. The shaded area is the distance", "מהירות לפי זמן. השטח הצבוע הוא הדרך"));
+      fig(g(`${v.v0}*x+0.5*(${v.a})*x^2`, "x(t)", v.t, x => v.v0 * x + .5 * v.a * x * x), pick("Position over time", "מקום לפי זמן"));
+    } else if (topic === "fall" && num(v.h) && num(v.g) && num(v.t) && v.t > 0) {
+      fig(g(`${v.h}-0.5*(${v.g})*x^2`, "h(t)", v.t, x => v.h - .5 * v.g * x * x), pick("Height over time", "גובה לפי זמן"));
+      fig(g(`(${v.g})*x`, "v(t)", v.t, x => v.g * x, true), pick("Speed over time. The shaded area is the height it fell", "מהירות לפי זמן. השטח הצבוע הוא הגובה שנפל"));
+    } else if (topic === "speed" && num(v.v) && num(v.t) && v.t > 0) {
+      fig(g(`(${v.v})*x`, "d(t)", v.t, x => v.v * x), pick("Distance over time", "דרך לפי זמן"));
+    }
+  } catch (e) { console.error(e); }
+}
+
+// ---------- periodic table ----------
+const KIND_L = { alkali: ["Alkali metals", "מתכות אלקליות"], alkaline: ["Alkaline earth metals", "מתכות אלקליות עפרוריות"], transition: ["Transition metals", "מתכות מעבר"], metal: ["Other metals", "מתכות אחרות"],
+  metalloid: ["Metalloids", "מתכות למחצה"], nonmetal: ["Nonmetals", "אל-מתכות"], halogen: ["Halogens", "הלוגנים"], noble: ["Noble gases", "גזים אצילים"], fblock: ["Lanthanides & actinides", "לנתנידים ואקטינידים"] };
+let sciEl = 6;
+function renderTable(body){
+  const wrap = el("div", "ptwrap"); const grid = el("div", "ptable"); grid.dir = "ltr";
+  for (const e of Science.ELEMENTS) {
+    const b = el("button", "pcell k-" + e.kind); b.type = "button";
+    b.style.gridRow = e.pos[0] >= 9 ? e.pos[0] + 0 : e.pos[0]; b.style.gridColumn = e.pos[1];
+    b.append(el("i", null, String(e.z)), el("b", null, e.sym));
+    if (e.z === sciEl) b.classList.add("on");
+    b.onclick = () => { sciEl = e.z; grid.querySelectorAll(".on").forEach(x => x.classList.remove("on")); b.classList.add("on"); showEl(); };
+    grid.append(b);
+  }
+  const gap = el("div", "ptgap"); gap.style.gridRow = 8; gap.style.gridColumn = "1 / 19"; grid.append(gap);
+  wrap.append(grid); body.append(wrap);
+  const card = el("div", "elcard"); card.id = "elCard"; body.append(card);
+  function showEl(){
+    const e = Science.ELEMENTS[sciEl - 1]; card.innerHTML = "";
+    const big = el("div", "elbig k-" + e.kind); big.dir = "ltr"; big.append(el("i", null, String(e.z)), el("b", null, e.sym), el("small", null, e.mass != null ? e.mass.toFixed(1) : "—"));
+    const info = el("div", "elinfo");
+    const nm = lang === "he" && e.he ? e.he + " · " + e.en : e.en;
+    info.append(dirOf(el("h3", null, nm), nm));
+    const rows = [[pick("Atomic number", "מספר אטומי"), e.z], [pick("Atomic mass", "מסה אטומית"), e.mass != null ? e.mass.toFixed(1) + " g/mol" : "—"],
+      [pick("Group", "טור"), e.pos[0] >= 9 ? "—" : e.pos[1]], [pick("Period", "מחזור"), e.pos[0] >= 9 ? e.pos[0] - 3 : e.pos[0]], [pick("Family", "משפחה"), pick(...KIND_L[e.kind])]];
+    for (const [k, v2] of rows) { const r = el("div", "elrow"), vb = el("b", null, String(v2)); if (/^[\d.—]/.test(String(v2))) vb.dir = "ltr"; r.append(el("span", null, k), vb); info.append(r); }
+    if (e.mass != null) { const go = el("button", "linkbtn", pick("Use it in molar mass →", "← לחשב מסה מולרית")); go.type = "button"; go.onclick = () => { sci.topic = "mm"; sci.text = e.sym; sciSave(); renderSci(false); solveSci(false, true); }; info.append(go); }
+    card.append(big, info);
+  }
+  showEl();
+}
+
+// ---------- daily challenge ----------
+const todayStr = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+const dailyState = () => { try { return JSON.parse(localStorage.getItem("daily") || "null"); } catch (e) { return null; } };
+function dailyBadge(){
+  const b = $("dailyLbl"); if (!b) return;
+  const n = Daily.liveStreak(dailyState(), todayStr()), done = (dailyState() || { done: {} }).done[todayStr()] !== undefined;
+  b.textContent = pick("Daily challenge", "אתגר יומי");
+  const s = $("dailyStreak"); s.textContent = "🔥 " + n; s.hidden = !n;
+  $("openDaily").classList.toggle("pulse", !done);
+}
+function openDaily(){
+  const d = todayStr(), c = Daily.challenge(d, lang); let st = dailyState();
+  const answered = st && st.done && st.done[d] !== undefined;
+  const box = $("bookInner"); box.innerHTML = "";
+  const head = el("div", "sheethead"); const h = el("h2", null, "🔥 " + pick("Daily challenge", "אתגר יומי")); h.id = "bookTitle";
+  const x = el("button", "iconbtn"); x.type = "button"; x.setAttribute("aria-label", T("done"));
+  x.append(svgEl('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>')); x.onclick = () => { closeBook(); dailyBadge(); };
+  head.append(h, x); box.append(head);
+  const card = el("div", "daily");
+  const top = el("div", "dtop"); top.append(el("span", "dsub", c.subject), el("span", "dstreak", "🔥 " + Daily.liveStreak(st, d) + " " + pick("in a row", "ברצף")));
+  const q = dirOf(el("p", "dq", c.q), c.q);
+  const opts = el("div", "dopts"); const out = el("div", "dout");
+  card.append(top, q, opts, out); box.append(card);
+  const reveal = (chosen) => {
+    [...opts.children].forEach((b, i) => { b.disabled = true; if (i === c.answer) b.classList.add("right"); else if (i === chosen) b.classList.add("wrong"); });
+    st = dailyState(); const right = st && st.done[d];
+    const msg = right ? pick("Correct! 🎉", "נכון! 🎉") : pick("Not this time. Here is how:", "לא הפעם. ככה פותרים:");
+    out.append(dirOf(el("p", "dmsg " + (right ? "ok" : "no"), msg), msg));
+    const ol = el("ol", "steps"); c.explain.forEach(([cl, why], k) => { const li = el("li"); li.style.setProperty("--i", k); const m = el("div", "math", cl); m.dir = "ltr"; li.append(m, dirOf(el("div", "why", why), why)); ol.append(li); }); out.append(ol);
+    const n = Daily.liveStreak(st, d), best = (st && st.best) || 0;
+    const nx = pick(`Streak: ${n} 🔥 · Best: ${best}. A new question tomorrow.`, `רצף: ${n} 🔥 · שיא: ${best}. שאלה חדשה מחר.`);
+    out.append(dirOf(el("p", "dnext", nx), nx));
+    top.lastChild.textContent = "🔥 " + n + " " + pick("in a row", "ברצף");
+  };
+  c.options.forEach((o, i) => { const b = el("button", "dopt", o); b.type = "button"; b.dir = "ltr";
+    b.onclick = () => { try { localStorage.setItem("daily", JSON.stringify(Daily.record(dailyState(), d, i === c.answer))); } catch (e) {} b.classList.add("picked"); reveal(i); dailyBadge(); };
+    opts.append(b); });
+  if (answered) reveal(-1);
+  $("bookSheet").hidden = false; document.body.classList.add("noscroll");
+}
+$("openDaily").onclick = openDaily;
+document.addEventListener("langchange", dailyBadge);
+setTimeout(dailyBadge, 0);
 
 // start
 applyUI();

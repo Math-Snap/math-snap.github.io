@@ -30,6 +30,7 @@ class MainActivity : AppCompatActivity() {
     private var cameraUri: Uri? = null
     private lateinit var account: Account
     private lateinit var pro: Pro
+    private lateinit var updater: Updater
     private val recognizer by lazy { TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS) }
 
     private val takePicture =
@@ -85,6 +86,7 @@ class MainActivity : AppCompatActivity() {
         account = Account(this) { code -> js(code) }
         account.start()
         pro = Pro(this) { code -> js(code) }
+        updater = Updater(this, pro.fromPlay) { code -> js(code) }
         pro.start()
         web.loadUrl("file:///android_asset/index.html")
     }
@@ -132,6 +134,10 @@ class MainActivity : AppCompatActivity() {
         }
 
         // ---- Pro ----
+        // updates for the APK from the website (Google Play updates its own copy)
+        @JavascriptInterface fun canSelfUpdate(): Boolean = updater.canUpdate()
+        @JavascriptInterface fun checkUpdate(quiet: Boolean) = updater.check(quiet)
+        @JavascriptInterface fun installUpdate() = updater.install()
         @JavascriptInterface fun proState(): String = pro.state()
         @JavascriptInterface fun buyPro() = runOnUiThread { pro.buy() }
         @JavascriptInterface fun managePro() = runOnUiThread { pro.manage() }

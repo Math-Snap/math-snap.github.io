@@ -279,7 +279,7 @@
     if (!found.length) return { error: ERR.stuck(left.map(vr => vr[4]).join(", ")), steps };
     return {
       answer: found.map(f => f.sym + " = " + F(f.value) + (f.unit ? " " + f.unit : "")).join("   ;   "),
-      found, steps, missing: left.map(vr => vr[4]),
+      found, steps, missing: left.map(vr => vr[4]), vals: Object.assign({}, v),
     };
   }
 
@@ -456,7 +456,31 @@
     return { answer: F(x) + " " + uName(from) + " = " + F(y) + " " + uName(to), value: y, steps };
   }
 
-  const api = { TOPICS, UNITS, solveTopic, molarMass, balance, convert, parseFormula, format: F, sub, uName: u => uName(u) };
+  // ---------- periodic table ----------
+  const SYMS = "H He Li Be B C N O F Ne Na Mg Al Si P S Cl Ar K Ca Sc Ti V Cr Mn Fe Co Ni Cu Zn Ga Ge As Se Br Kr Rb Sr Y Zr Nb Mo Tc Ru Rh Pd Ag Cd In Sn Sb Te I Xe Cs Ba La Ce Pr Nd Pm Sm Eu Gd Tb Dy Ho Er Tm Yb Lu Hf Ta W Re Os Ir Pt Au Hg Tl Pb Bi Po At Rn Fr Ra Ac Th Pa U Np Pu Am Cm Bk Cf Es Fm Md No Lr Rf Db Sg Bh Hs Mt Ds Rg Cn Nh Fl Mc Lv Ts Og".split(" ");
+  const NAMES_EN = "Hydrogen Helium Lithium Beryllium Boron Carbon Nitrogen Oxygen Fluorine Neon Sodium Magnesium Aluminium Silicon Phosphorus Sulfur Chlorine Argon Potassium Calcium Scandium Titanium Vanadium Chromium Manganese Iron Cobalt Nickel Copper Zinc Gallium Germanium Arsenic Selenium Bromine Krypton Rubidium Strontium Yttrium Zirconium Niobium Molybdenum Technetium Ruthenium Rhodium Palladium Silver Cadmium Indium Tin Antimony Tellurium Iodine Xenon Caesium Barium Lanthanum Cerium Praseodymium Neodymium Promethium Samarium Europium Gadolinium Terbium Dysprosium Holmium Erbium Thulium Ytterbium Lutetium Hafnium Tantalum Tungsten Rhenium Osmium Iridium Platinum Gold Mercury Thallium Lead Bismuth Polonium Astatine Radon Francium Radium Actinium Thorium Protactinium Uranium Neptunium Plutonium Americium Curium Berkelium Californium Einsteinium Fermium Mendelevium Nobelium Lawrencium Rutherfordium Dubnium Seaborgium Bohrium Hassium Meitnerium Darmstadtium Roentgenium Copernicium Nihonium Flerovium Moscovium Livermorium Tennessine Oganesson".split(" ");
+  Object.assign(HE_EL, { Ne: "ניאון", Ar: "ארגון", Be: "בריליום", B: "בור", Sn: "בדיל", Hg: "כספית", U: "אורניום", Ni: "ניקל", Cr: "כרום", Mn: "מנגן", Co: "קובלט", Ti: "טיטניום", Pt: "פלטינה", Ba: "בריום", Sr: "סטרונציום", Kr: "קריפטון", Xe: "קסנון", Rn: "ראדון", W: "טונגסטן", Ra: "רדיום", As: "ארסן", Se: "סלניום", Rb: "רובידיום", Cs: "צסיום", Ga: "גליום", Ge: "גרמניום", Sb: "אנטימון", Bi: "ביסמוט", Cd: "קדמיום", Pu: "פלוטוניום" });
+  const NOBLE = [2, 10, 18, 36, 54, 86, 118], HALO = [9, 17, 35, 53, 85, 117], METALLOID = [5, 14, 32, 33, 51, 52], NONMETAL = [1, 6, 7, 8, 15, 16, 34];
+  function elementPos(z) {           // [row, column] in the usual 18-column table; rows 9-10 are the f-block
+    if (z === 1) return [1, 1]; if (z === 2) return [1, 18];
+    const per = [[3, 10, 2], [11, 18, 3], [19, 36, 4], [37, 54, 5], [55, 86, 6], [87, 118, 7]];
+    for (const [a, b, row] of per) if (z >= a && z <= b) {
+      const i = z - a;
+      if (row <= 3) return [row, i < 2 ? i + 1 : i + 11];
+      if (row <= 5) return [row, i + 1];
+      if (i < 2) return [row, i + 1];
+      if (i < 17) return [row + 3, i + 1];        // La..Lu / Ac..Lr go to the f-block rows (columns 3..17)
+      return [row, i - 13];                        // Hf.. / Rf.. back in the main table from column 4
+    }
+    return [0, 0];
+  }
+  function elementKind(z) {
+    if (NOBLE.includes(z)) return "noble"; if (HALO.includes(z)) return "halogen"; if (METALLOID.includes(z)) return "metalloid"; if (NONMETAL.includes(z)) return "nonmetal";
+    const [row, col] = elementPos(z); if (row >= 8) return "fblock"; if (col === 1) return "alkali"; if (col === 2) return "alkaline"; if (col >= 3 && col <= 12) return "transition"; return "metal";
+  }
+  const ELEMENTS = SYMS.map((s, i) => ({ z: i + 1, sym: s, en: NAMES_EN[i], he: HE_EL[s] || null, mass: AM[s] !== undefined ? AM[s] : null, pos: elementPos(i + 1), kind: elementKind(i + 1) }));
+
+  const api = { ELEMENTS, TOPICS, UNITS, solveTopic, molarMass, balance, convert, parseFormula, format: F, sub, uName: u => uName(u) };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   root.Science = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

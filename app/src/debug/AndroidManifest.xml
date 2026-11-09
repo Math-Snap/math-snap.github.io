@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Only the website APK (the debug build) may open Android's installer for its own updates.
+     The Google Play build doesn't get this permission: Play updates the app itself. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+</manifest>
