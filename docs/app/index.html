@@ -595,10 +595,13 @@ table.proof tr.prolocked{filter:none;opacity:.8}
 .dmsg{font-size:18px;font-weight:800;margin:0}.dmsg.ok{color:var(--ok)}.dmsg.no{color:var(--warn)}.dnext{color:var(--muted);margin:0}
 @media (prefers-reduced-motion:reduce){.dailybtn.pulse{animation:none}}
 
-.updbar{position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:40;display:flex;align-items:center;gap:10px;background:var(--ink);color:var(--bg);border-radius:16px;padding:10px 10px 10px 16px;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:520px;margin:0 auto}
-.updbar span{flex:1;min-width:0;font-weight:600}
-.updgo{border:0;border-radius:12px;background:var(--pen);color:#fff;font:inherit;font-weight:700;padding:9px 14px;cursor:pointer;min-width:72px}
-.updx{border:0;background:transparent;color:inherit;font-size:16px;padding:6px 8px;cursor:pointer;opacity:.7}
+.updcard{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;padding:6px 4px 10px}
+.updicon{font-size:44px;line-height:1}.updcard h3{margin:0;font-size:20px}
+.updrows{width:100%;display:flex;flex-direction:column;gap:6px;background:var(--surface-2);border-radius:14px;padding:12px 14px}
+.updprog{width:100%;height:10px;border-radius:99px;background:var(--surface-2);overflow:hidden}.updprog i{display:block;height:100%;background:var(--pen);border-radius:99px;transition:width .3s}
+.updpct{color:var(--muted)}.updcard .btn{width:100%}.updcard .btn:disabled{opacity:.45;cursor:default}
+.updnote{color:var(--muted);font-size:13px;margin:0}
+@media (max-width:440px){body.hasupd header h1{display:none}}
 </style>
 </head>
 <body>
@@ -4030,36 +4033,64 @@ if (keyPro && keyPro.key && Date.now() - (keyPro.checked || 0) > 864e5) setTimeo
     else say(pick("Couldn't check for updates. Check the internet and try again.", "לא הצלחתי לבדוק עדכונים. בדקו את האינטרנט ונסו שוב."));
   };
 })();
-// ---------- Android app from the website: check for updates and install them ----------
+// ---------- Android app from the website: an "Updates" pop-up with a Download button ----------
 (function(){
   const b = $("updBtn");
   if (!b || !(hasBridge && !Android.isDesktop && typeof Android.canSelfUpdate === "function")) return;
   let can = false; try { can = Android.canSelfUpdate(); } catch (e) {}
   if (!can) return;
-  b.hidden = false;
-  const label = () => { const t = pick("Check for updates", "בדיקת עדכונים"); b.setAttribute("aria-label", t); b.title = t; };
-  label(); document.addEventListener("langchange", label);
-  let bar = null, ver = "";
-  const offer = () => {   // a small bar at the bottom: "Version 8.4 is out · Update"
-    if (bar) bar.remove();
-    bar = el("div", "updbar"); bar.setAttribute("role", "status");
-    const t = pick("A new version is out", "יצאה גרסה חדשה") + (ver ? " (" + ver + ")" : "");
-    bar.append(dirOf(el("span", null, t), t));
-    const go = el("button", "updgo", pick("Update", "לעדכן")); go.type = "button";
-    go.onclick = () => { go.disabled = true; go.textContent = pick("Downloading…", "מוריד…"); b.classList.add("spin"); Android.installUpdate(); };
-    const no = el("button", "updx", "✕"); no.type = "button"; no.setAttribute("aria-label", pick("Later", "אחר כך")); no.onclick = () => { bar.remove(); bar = null; };
-    bar.append(go, no); document.body.append(bar);
-  };
+  b.hidden = false; document.body.classList.add("hasupd");
+  const label = () => { const t = pick("Updates", "עדכונים"); b.setAttribute("aria-label", t); b.title = t; };
+  label(); document.addEventListener("langchange", () => { label(); if (open) draw(); });
+  let st = { state: "checking" }, current = "", open = false;
+  const ICON = { checking: "🔄", latest: "✅", available: "⬇️", downloading: "⬇️", installing: "📦", error: "⚠️" };
+  function draw(){
+    const box = $("bookInner"); box.innerHTML = "";
+    const head = el("div", "sheethead"); const h = el("h2", null, pick("Updates", "עדכונים")); h.id = "bookTitle";
+    const x = el("button", "iconbtn"); x.type = "button"; x.setAttribute("aria-label", T("done"));
+    x.append(svgEl('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>')); x.onclick = () => { open = false; closeBook(); };
+    head.append(h, x); box.append(head);
+    const card = el("div", "updcard");
+    const msg = {
+      checking: pick("Checking for updates…", "בודק אם יש עדכון…"),
+      latest: pick("You have the newest version", "יש לך את הגרסה הכי חדשה"),
+      available: pick("A new version is available", "יש גרסה חדשה"),
+      downloading: pick("Downloading…", "מוריד…"),
+      installing: pick("Tap Install to finish", "לחצו 'התקנה' כדי לסיים"),
+      error: pick("Couldn't check. Check the internet and try again.", "לא הצלחתי לבדוק. בדקו את האינטרנט ונסו שוב."),
+    }[st.state];
+    card.append(el("div", "updicon", ICON[st.state] || "🔄"), dirOf(el("h3", null, msg), msg));
+    const rows = el("div", "updrows");
+    const row = (k, v) => { const r = el("div", "elrow"), vb = el("b", null, v); vb.dir = "ltr"; r.append(el("span", null, k), vb); rows.append(r); };
+    row(pick("Your version", "הגרסה שלך"), current || "…");
+    if (st.version) row(pick("New version", "גרסה חדשה"), st.version);
+    card.append(rows);
+    if (st.state === "downloading") { const bar = el("div", "updprog"); const fill = el("i"); fill.style.width = Math.max(0, st.percent || 0) + "%"; bar.append(fill); card.append(bar, el("small", "updpct", (st.percent >= 0 ? st.percent : 0) + "%")); }
+    const dl = el("button", "btn", pick("Download", "הורדה")); dl.type = "button";
+    dl.disabled = st.state !== "available" && st.state !== "error";
+    if (st.state === "error") dl.textContent = pick("Try again", "לנסות שוב");
+    if (st.state === "downloading") dl.textContent = pick("Downloading…", "מוריד…");
+    dl.onclick = () => {
+      if (st.state === "error") { st = { state: "checking" }; draw(); Android.checkUpdate(false); return; }
+      st = { state: "downloading", percent: 0, version: st.version }; draw(); b.classList.add("spin"); Android.installUpdate();
+    };
+    card.append(dl);
+    if (st.state === "available") card.append(el("p", "updnote", pick("Your problems and history stay. Android will ask to allow the install the first time.", "התרגילים וההיסטוריה נשמרים. בפעם הראשונה אנדרואיד ישאל אם לאפשר את ההתקנה.")));
+    box.append(card);
+  }
+  function show(){ open = true; draw(); $("bookSheet").hidden = false; document.body.classList.add("noscroll"); }
   window.onUpdateStatus = s => {
     if (!s) return;
-    b.classList.remove("spin");
-    if (s.state === "available") { ver = s.version || ""; b.classList.add("dot"); offer(); }
-    else if (s.state === "latest") { if (!s.quiet) proToast(pick("You have the newest version", "יש לך את הגרסה הכי חדשה") + (s.current ? " (" + s.current + ")" : "")); }
-    else if (s.state === "downloading") { b.classList.add("spin"); const g = bar && bar.querySelector(".updgo"); if (g && s.percent >= 0) g.textContent = s.percent + "%"; }
-    else if (s.state === "installing") { if (bar) bar.remove(); bar = null; proToast(pick("Tap Install to finish the update", "לחצו 'התקנה' כדי לסיים את העדכון")); }
-    else if (s.state === "error" && !s.quiet) { if (bar) { const g = bar.querySelector(".updgo"); if (g) { g.disabled = false; g.textContent = pick("Try again", "לנסות שוב"); } } proToast(pick("Couldn't update. Check the internet and try again.", "לא הצלחתי לעדכן. בדקו את האינטרנט ונסו שוב.")); }
+    if (s.current) current = s.current;
+    if (s.quiet && s.state !== "available") return;          // the daily check stays silent unless there is something new
+    st = Object.assign({}, s.state === "downloading" ? st : {}, s);
+    b.classList.toggle("spin", s.state === "downloading");
+    if (s.state === "available") b.classList.add("dot");
+    if (s.state === "installing" || s.state === "latest") b.classList.remove("dot");
+    if (s.state === "available" && s.quiet && !open) show();   // found by itself: show it once
+    else if (open) draw();
   };
-  b.onclick = () => { if (b.classList.contains("spin")) return; b.classList.add("spin"); proToast(pick("Checking for updates…", "בודק אם יש עדכון…")); Android.checkUpdate(false); };
+  b.onclick = () => { if (st.state !== "downloading" && st.state !== "available") { st = { state: "checking" }; Android.checkUpdate(false); } show(); };
   // check by itself once a day, quietly
   let last = 0; try { last = +localStorage.getItem("updCheck") || 0; } catch (e) {}
   if (Date.now() - last > 864e5) setTimeout(() => { try { localStorage.setItem("updCheck", String(Date.now())); } catch (e) {} Android.checkUpdate(true); }, 4000);
