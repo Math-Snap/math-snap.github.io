@@ -45,3 +45,18 @@ ok("applies no", !P.applies("משולש שווה שוקיים, זווית הרא
 ok("applies no 2", !P.applies("טרפז ABCD, AB מקביל ל-DC, זווית A שווה 110", ""));
 if (bad) { console.log(bad + " proof checks failed"); process.exit(1); }
 console.log("proof: all checks passed");
+// congruent triangles
+r = run("מקבילית ABCD, האלכסונים נחתכים בנקודה O.", "הוכיחו: AO = OC");
+ok("diagonals bisect", r.ok && r.goals[0].ok && has(r, /≅/), r);
+r = run("משולש ABC שווה שוקיים (AB = AC), D אמצע BC.", "הוכיחו: משולש ABD חופף למשולש ACD");
+ok("SSS goal", r.ok && r.goals[0].ok && has(r, /צ\.צ\.צ/) && has(r, /צלע משותפת/), r);
+r = run("משולש ABC, D על BC, AD חוצה זווית A, AD גובה.", "הוכיחו: AB = AC");
+ok("ASA", r.ok && r.goals[0].ok && has(r, /ז\.צ\.ז/), r);
+r = run("מרובע ABCD, AB = DC, AD = BC. מעבירים את האלכסון AC.", "הוכיחו: זווית B = זווית D");
+ok("SSS via diagonal", r.ok && r.goals[0].ok, r);
+r = run("משולש ABC ומשולש DEF, AB = DE, זווית A = זווית D, זווית B = זווית E.", "הוכיחו: BC = EF");
+ok("two triangles ASA", r.ok && r.goals[0].ok, r);
+r = run("Triangle ABC, AB = AC, D is the midpoint of BC.", "Prove that angle BAD = angle CAD", "en");
+ok("english SSS", r.ok && r.goals[0].ok, r);
+if (bad) { console.log(bad + " proof checks failed (congruence)"); process.exit(1); }
+console.log("proof congruence: all checks passed");

@@ -212,7 +212,7 @@
       const tr = [{ fieldPath: "last", setToServerValue: "REQUEST_TIME" }, { fieldPath: "opens", increment: { integerValue: "1" } }];
       if (!localStorage.getItem("installSent")) tr.push({ fieldPath: "first", setToServerValue: "REQUEST_TIME" });
       fetch("https://firestore.googleapis.com/v1/" + base + ":commit", { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ writes: [{ update: { name: base + "/installs/" + id, fields: { platform: { stringValue: D ? "windows" : ios ? "ios" : "web" }, version: { stringValue: "8.6" } } },
+        body: JSON.stringify({ writes: [{ update: { name: base + "/installs/" + id, fields: { platform: { stringValue: D ? "windows" : ios ? "ios" : "web" }, version: { stringValue: "8.6.1" } } },
           updateMask: { fieldPaths: ["platform", "version"] }, updateTransforms: tr }] }) })
         .then(r => { if (r.ok) { localStorage.setItem("pingDay", day); localStorage.setItem("installSent", "1"); } }).catch(() => {});
     }

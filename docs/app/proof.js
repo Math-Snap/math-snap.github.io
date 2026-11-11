@@ -9,13 +9,13 @@
   "use strict";
   const EPS = 1e-6;
   const R = v => { const r = Math.round(v * 10000) / 10000; return String(Object.is(r, -0) ? 0 : r); };
-  const LET = "[A-H]";
+  const LET = "[A-HO]";
   const sortSeg = s => s[0] < s[1] ? s : s[1] + s[0];
 
   // ---------- reading the problem ----------
   function clean(s){
     return String(s || "").replace(/[∢∠]/g, " זווית ").replace(/Δ/g, " משולש ").replace(/∥/g, " מקביל ל-")
-      .replace(/[“”"']/g, "").replace(/ו-\s*(?=[A-Ha-h])/g, " ").replace(/(?<![A-Za-z])([a-h]{1,4})(?![A-Za-z])/g, m => m.toUpperCase());
+      .replace(/[“”"']/g, "").replace(/ו-\s*(?=[A-HOa-ho])/g, " ו ").replace(/(?<![A-Za-z])([a-ho]{1,4})(?![A-Za-z])/g, m => (/^(?:a|of|be|do|he|go|oh|ah|so|no|had|has|bad|dead|each|face|head|good|food|code|add|age|ace|dog|god|odd|off|echo|deed|feed|beef|chef|hood|edge|dab|fab|cab|ebb)$/.test(m) ? m : m.toUpperCase()));
   }
   const isGoalLine = l => /(?<![א-ת])(?:הוכיחו?|להוכיח|חשבו?|מצאו?|כמה|מהי|מהו)(?![א-ת])|צ"ל|צ״ל|\bprove\b|\bshow that\b|\bfind\b|\bcalculate\b/i.test(l);
 
@@ -46,11 +46,16 @@
       P.quads.push(q);
     }
     // points on sides: "D and E are on AB and AC respectively", "D on BC", "D is the midpoint of BC"
-    for (const onM of l.matchAll(new RegExp("((?:" + LET + "(?!" + LET + ")\\s*(?:,|ו|and)?\\s*)+?)\\s*(?:is|are|lies?|lie)?\\s*(?:נמצא(?:ת|ות|ים)?\\s*)?(?:על|on)\\s*(?:ה?צלע(?:ות)?|ה?קטע|the\\s+sides?|sides?|segment)?\\s*((?:" + LET + "{2}(?!" + LET + ")\\s*(?:,|ו|and)?\\s*)+)", "g"))) {
+    for (const onM of l.matchAll(new RegExp("((?:" + LET + "(?!" + LET + ")\\s*(?:,|ו|and)?\\s*)+?)\\s*(?:is|are|lies?|lie)?\\s*(?:נמצא(?:ת|ות|ים)?\\s*)?(?:על|on)\\s*(?:ה?צלע(?:ות)?|ה?קטע|the\\s+sides?|sides?|segment)?\\s*((?:" + LET + "{2}(?!" + LET + ")(?:\\s*(?:ו|and|,\\s*(?:ו|and))\\s*)?)+)", "g"))) {
       const pts = onM[1].match(new RegExp(LET + "(?!" + LET + ")", "g")) || [], segs = onM[2].match(new RegExp(LET + "{2}", "g")) || [];
       pts.forEach((p, i) => { const s = segs[Math.min(i, segs.length - 1)]; if (s && !s.includes(p) && !P.on.some(o => o[0] === p)) P.on.push([p, s[0], s[1]]); });
     }
     const mid = l.match(new RegExp("(" + LET + ")(?!" + LET + ")\\s*(?:היא\\s+|הוא\\s+|is\\s+(?:the\\s+)?)?(?:נקודת\\s+)?(?:אמצע|midpoint\\s+of)\\s*(?:ה?צלע|the\\s+side)?\\s*(" + LET + "{2})"));
+    // "O is the intersection of AC and BD", "the diagonals meet at O"
+    const cut = l.match(new RegExp("(" + LET + ")(?!" + LET + ")\\s*(?:היא\\s+|הוא\\s+|is\\s+(?:the\\s+)?)?(?:נקודת\\s+ה?חיתוך\\s+(?:של\\s+)?|intersection\\s+(?:point\\s+)?of\\s+)(?:ה?אלכסונים\\s+|the\\s+diagonals\\s+)?(" + LET + "{2})\\s*(?:,|ו|and|עם|with)\\s*(" + LET + "{2})"));
+    if (cut) { P.on.push([cut[1], cut[2][0], cut[2][1]]); P.on.push([cut[1], cut[3][0], cut[3][1]]); }
+    const diag = l.match(new RegExp("(?:ה?אלכסונים|the\\s+diagonals)[^A-Z]{0,30}?(?:נחתכים|נפגשים|meet|intersect|cross)[^A-Z]{0,20}?(" + LET + ")(?!" + LET + ")"));
+    if (diag && P.quads.length) { const q = P.quads[P.quads.length - 1].name; P.on.push([diag[1], q[0], q[2]]); P.on.push([diag[1], q[1], q[3]]); }
     if (mid) { P.on.push([mid[1], mid[2][0], mid[2][1]]); P.segEq.push([mid[2][0] + mid[1], mid[1] + mid[2][1], "mid"]); }
     for (const m of l.matchAll(new RegExp("(" + LET + "{2})\\s*(?:is\\s+|are\\s+)?(?:מקביל(?:ה|ים|ות)?\\s*ל-?|parallel\\s+to|\\|\\|)\\s*(" + LET + "{2})", "gi"))) P.par.push([m[1], m[2]]);
     for (const m of l.matchAll(new RegExp("(?<![A-Z])(" + LET + "{2})\\s*(?:=|שווה\\s*ל-?|שווה|equals?)\\s*(" + LET + "{2})(?![A-Z0-9])", "g"))) P.segEq.push([m[1], m[2], "given"]);
@@ -62,8 +67,10 @@
   }
   function readGoal(l, P){
     const prove = /הוכיח|להוכיח|צ"ל|צ״ל|prove|show/i.test(l);
+    const cong = l.match(new RegExp("(?:משולש(?:ים)?|triangles?)\\s+(" + LET + "{3})\\s*(?:≅|חופף\\s+(?:ל-?)?(?:משולש\\s+)?|(?:,|ו|and)\\s*(?:משולש\\s+)?)(" + LET + "{3})\\s*(?:≅|חופפים|חופף|are\\s+congruent|is\\s+congruent)?")) || l.match(new RegExp("Δ?(" + LET + "{3})\\s*≅\\s*Δ?(" + LET + "{3})"));
+    if (prove && cong && (/≅|חופ|congruent/.test(l))) { P.goals.push({ kind: "cong", a: cong[1], b: cong[2] }); return; }
     const trap = l.match(new RegExp("(" + LET + "{4})\\s*(?:הוא|היא|is\\s+(?:an?\\s+)?)?\\s*(טרפז\\s+שווה[\\s-]*שוקיים|isosceles\\s+trapezoid|טרפז|trapezoid|מקבילית|parallelogram|מלבן|rectangle|מעוין|rhombus|ריבוע|square)")) || l.match(new RegExp("(טרפז\\s+שווה[\\s-]*שוקיים|isosceles\\s+trapezoid|טרפז|trapezoid|מקבילית|parallelogram)\\s+(" + LET + "{4})"));
-    if (prove && trap) { const [nm, w] = /^[A-H]{4}$/.test(trap[1]) ? [trap[1], trap[2]] : [trap[2], trap[1]]; P.goals.push({ kind: /שווה|isosceles/.test(w) ? "isoTrap" : /טרפז|trapez/.test(w) ? "trap" : "para", name: nm }); return; }
+    if (prove && trap) { const [nm, w] = /^[A-HO]{4}$/.test(trap[1]) ? [trap[1], trap[2]] : [trap[2], trap[1]]; P.goals.push({ kind: /שווה|isosceles/.test(w) ? "isoTrap" : /טרפז|trapez/.test(w) ? "trap" : "para", name: nm }); return; }
     const tri = l.match(new RegExp("(?:משולש|triangle)\\s+(" + LET + "{3})[^A-Z]*?(שוו(?:ה|י)[\\s-]*שוקיים|isosceles|שוו(?:ה|י)[\\s-]*צלעות|equilateral|ישר[\\s-]*ה?זווית|right)"));
     if (prove && tri) { P.goals.push({ kind: /שוקיים|isosceles/.test(tri[2]) ? "isoTri" : /צלעות|equilateral/.test(tri[2]) ? "equiTri" : "rightTri", name: tri[1] }); return; }
     const par = l.match(new RegExp("(" + LET + "{2})\\s*(?:מקביל(?:ה|ים|ות)?\\s*ל-?|parallel\\s+to|\\|\\|)\\s*(" + LET + "{2})"));
@@ -108,6 +115,9 @@
       }
     }
     // points on segments: generic positions, so nothing coincides by accident
+    for (const [d, a, b] of P.on) { const other = P.on.find(o => o[0] === d && (o[1] !== a || o[2] !== b)); if (!other || X[d] || !X[a] || !X[b] || !X[other[1]] || !X[other[2]]) continue;
+      const [c, e] = [X[other[1]], X[other[2]]], den = (X[b][0] - X[a][0]) * (e[1] - c[1]) - (X[b][1] - X[a][1]) * (e[0] - c[0]); if (Math.abs(den) < 1e-9) continue;
+      const t = ((c[0] - X[a][0]) * (e[1] - c[1]) - (c[1] - X[a][1]) * (e[0] - c[0])) / den; place(d, X[a][0] + (X[b][0] - X[a][0]) * t, X[a][1] + (X[b][1] - X[a][1]) * t); }
     const T = [0.42, 0.58, 0.36, 0.64, 0.47];
     for (let pass = 0; pass < 3; pass++) P.on.forEach(([d, a, b], i) => {
       if (X[d] || !X[a] || !X[b]) return;
@@ -169,7 +179,8 @@
     const drawn = new Set();
     const addSeg = (a, b) => { if (a !== b && X[a] && X[b]) drawn.add(sortSeg(a + b)); };
     for (const t of P.tris.concat(P.quads)) for (let i = 0; i < t.name.length; i++) addSeg(t.name[i], t.name[(i + 1) % t.name.length]);
-    for (const m of clean(givens + " " + ask).matchAll(/(?<![A-Z])([A-H]{2})(?![A-Z])/g)) addSeg(m[1][0], m[1][1]);
+    for (const m of clean(givens + " " + ask).matchAll(/(?<![A-Z])([A-HO]{2})(?![A-Z])/g)) addSeg(m[1][0], m[1][1]);
+    for (const m of clean(givens + " " + ask).matchAll(/(?:משולש(?:ים)?|triangles?|Δ)\s*([A-HO]{3})(?![A-Z])/g)) { addSeg(m[1][0], m[1][1]); addSeg(m[1][1], m[1][2]); addSeg(m[1][0], m[1][2]); }
     for (const [a, b] of P.par) { addSeg(a[0], a[1]); addSeg(b[0], b[1]); }
     for (const s of P.bis.concat(P.heights, P.medians)) addSeg(s[0], s[1]);
     for (const [d, a, b] of P.on) if (X[d] && X[a] && X[b]) { addSeg(a, d); addSeg(d, b); }
@@ -197,6 +208,7 @@
     for (const q of P.quads) {
       const [a, b, c, d] = q.name;
       if (q.kind === "para" || q.kind === "rect" || q.kind === "square") { setPar(LN(a, b), LN(d, c), a + b + " ∥ " + d + c, W("Given: " + q.name + " is a parallelogram", "נתון: " + q.name + " מקבילית"), []); setPar(LN(a, d), LN(b, c), a + d + " ∥ " + b + c, W("Given: " + q.name + " is a parallelogram", "נתון: " + q.name + " מקבילית"), []); }
+      if (q.kind === "para" || q.kind === "rect" || q.kind === "square") { setSegEq(a + b, d + c, a + b + " = " + d + c, W("In a parallelogram, opposite sides are equal", "במקבילית צלעות נגדיות שוות"), []); setSegEq(a + d, b + c, a + d + " = " + b + c, W("In a parallelogram, opposite sides are equal", "במקבילית צלעות נגדיות שוות"), []); }
       if (q.kind === "rect" || q.kind === "square") for (let i = 0; i < 4; i++) { const v = q.name[i], k = AK(v, q.name[(i + 3) % 4], q.name[(i + 1) % 4], "∢" + v); setVal(k, 90, keyName[k] + " = 90°", W("Given: all the angles of a rectangle are 90°", "נתון: במלבן כל הזוויות 90°"), []); }
       if (q.kind === "square") { setSegEq(a + b, b + c, a + b + " = " + b + c, W("Given: a square", "נתון: ריבוע"), []); setSegEq(b + c, c + d, b + c + " = " + c + d, W("Given: a square", "נתון: ריבוע"), []); setSegEq(c + d, d + a, c + d + " = " + d + a, W("Given: a square", "נתון: ריבוע"), []); }
     }
@@ -216,6 +228,7 @@
     const R_BASE = W("In an isosceles triangle, the base angles are equal", "במשולש שווה שוקיים זוויות הבסיס שוות");
     const R_CONV = W("If two angles of a triangle are equal, the sides opposite them are equal (the triangle is isosceles)", "אם במשולש שתי זוויות שוות, הצלעות שמולן שוות (המשולש שווה שוקיים)");
     const vOf = k => (angVal[k] ? angVal[k].v : null);
+    const PERMS = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]], congruent = {}, commonFacts = {};
     const eqClass = k => { const seen = new Set([k]), q = [k]; while (q.length) { const x = q.shift(); for (const y in angEq[x] || {}) if (!seen.has(y)) { seen.add(y); q.push(y); } } return [...seen]; };
     const triAngles = t => { const [a, b, c] = t; return { [a]: AK(a, b, c), [b]: AK(b, a, c), [c]: AK(c, a, b) }; };
     // triangles we know about: the declared ones, plus any three points that are joined by the declared sides
@@ -239,6 +252,52 @@
           if (se) setAngEq(A[p], A[q], keyName[A[p]] + " = " + keyName[A[q]], R_BASE + " (" + apex + p + " = " + apex + q + ")", se);
           const ae = eqPath(angEq, A[p], A[q]) || (vOf(A[p]) != null && vOf(A[p]) === vOf(A[q]) ? [angVal[A[p]], angVal[A[q]]] : null);
           if (ae) setSegEq(apex + p, apex + q, apex + p + " = " + apex + q, R_CONV + " (" + keyName[A[p]] + " = " + keyName[A[q]] + ")", ae);
+        }
+      }
+      // two pairs of equal angles in two triangles: the third pair is equal too
+      for (const t1 of tris) for (const t2 of tris) {
+        if (t1 === t2) continue;
+        const A1 = triAngles(t1), A2 = triAngles(t2);
+        for (const perm of PERMS) { const m = [0, 1, 2].map(i => [t1[i], t2[perm[i]]]);
+          const paths = m.map(([u, v]) => eqPath(angEq, A1[u], A2[v]) || (vOf(A1[u]) != null && vOf(A1[u]) === vOf(A2[v]) ? [angVal[A1[u]], angVal[A2[v]]] : null));
+          const miss = paths.map((p, i) => (p ? -1 : i)).filter(i => i >= 0);
+          if (miss.length === 1) { const i = miss[0], [u, v] = m[i]; setAngEq(A1[u], A2[v], keyName[A1[u]] + " = " + keyName[A2[v]], W("The third angles of the triangles are equal (the angles add up to 180° in both)", "הזוויות השלישיות במשולשים שוות (סכום הזוויות בשניהם 180°)"), paths.filter(Boolean).flat()); } }
+      }
+      // congruent triangles: SSS, SAS, ASA, and hypotenuse-leg; then the matching parts are equal
+      for (const t1 of tris) for (const t2 of tris) {
+        if (t1 >= t2 || [...t1].sort().join("") === [...t2].sort().join("")) continue;
+        const A1 = triAngles(t1), A2 = triAngles(t2);
+        for (const perm of PERMS) {
+          const m = [0, 1, 2].map(i => [t1[i], t2[perm[i]]]), key = "≅" + t1 + ":" + m.map(x => x[1]).join("");
+          if (congruent[key]) continue;
+          const common = {};
+          const side = (i, j) => { const s1 = m[i][0] + m[j][0], s2 = m[i][1] + m[j][1]; if (segK(s1) === segK(s2)) { const k = segK(s1); if (!common[k]) common[k] = commonFacts[k] = commonFacts[k] || add("common", {}, s1 + " = " + s1, W("Common side", "צלע משותפת"), []); return [common[k]]; } return segEqual(s1, s2); };
+          const ang = i => eqPath(angEq, A1[m[i][0]], A2[m[i][1]]) || (vOf(A1[m[i][0]]) != null && vOf(A1[m[i][0]]) === vOf(A2[m[i][1]]) ? [angVal[A1[m[i][0]]], angVal[A2[m[i][1]]]] : null);
+          const S = [side(0, 1), side(1, 2), side(0, 2)], G = [ang(0), ang(1), ang(2)];   // S[0]: side 01, S[1]: side 12, S[2]: side 02; G[i]: angle at vertex i
+          let why = null, deps = null;
+          if (S.every(Boolean)) { why = W("SSS", "צ.צ.צ"); deps = S.flat(); }
+          else if (G[0] && S[0] && S[2]) { why = W("SAS", "צ.ז.צ"); deps = [...S[0], ...G[0], ...S[2]]; }
+          else if (G[1] && S[0] && S[1]) { why = W("SAS", "צ.ז.צ"); deps = [...S[0], ...G[1], ...S[1]]; }
+          else if (G[2] && S[1] && S[2]) { why = W("SAS", "צ.ז.צ"); deps = [...S[1], ...G[2], ...S[2]]; }
+          else if (G[0] && G[1] && S[0]) { why = W("ASA", "ז.צ.ז"); deps = [...G[0], ...S[0], ...G[1]]; }
+          else if (G[1] && G[2] && S[1]) { why = W("ASA", "ז.צ.ז"); deps = [...G[1], ...S[1], ...G[2]]; }
+          else if (G[0] && G[2] && S[2]) { why = W("ASA", "ז.צ.ז"); deps = [...G[0], ...S[2], ...G[2]]; }
+          else { // right triangles: hypotenuse and a leg
+            for (let i = 0; i < 3 && !why; i++) { if (vOf(A1[m[i][0]]) !== 90 || vOf(A2[m[i][1]]) !== 90) continue;
+              const [j, k] = [0, 1, 2].filter(x => x !== i), hyp = segEqual(m[j][0] + m[k][0], m[j][1] + m[k][1]), leg = segEqual(m[i][0] + m[j][0], m[i][1] + m[j][1]) || segEqual(m[i][0] + m[k][0], m[i][1] + m[k][1]);
+              if (hyp && leg) { why = W("hypotenuse and leg (right triangles)", "יתר וניצב (משולשים ישרי זווית)"); deps = [angVal[A1[m[i][0]]], angVal[A2[m[i][1]]], ...hyp, ...leg]; } }
+          }
+          if (!why) continue;
+          const nm2 = m.map(x => x[1]).join("");
+          const cf = add("cong", { a: t1, b: nm2 }, "Δ" + t1 + " ≅ Δ" + nm2, W("Congruent triangles: " + why, "משולשים חופפים: " + why), deps);
+          congruent[key] = cf; congruent["≅" + nm2 + ":" + t1] = cf;
+          const CP = W("Matching parts of congruent triangles are equal (Δ" + t1 + " ≅ Δ" + nm2 + ")", "במשולשים חופפים צלעות וזוויות מתאימות שוות (Δ" + t1 + " ≅ Δ" + nm2 + ")");
+          for (const [i, j] of [[0, 1], [1, 2], [0, 2]]) setSegEq(m[i][0] + m[j][0], m[i][1] + m[j][1], m[i][0] + m[j][0] + " = " + m[i][1] + m[j][1], CP, [cf]);
+          for (let i = 0; i < 3; i++) { const k1 = A1[m[i][0]], k2 = A2[m[i][1]];
+            if (vOf(k1) != null && vOf(k2) == null) setVal(k2, vOf(k1), keyName[k2] + " = " + keyName[k1] + " = " + R(vOf(k1)) + "°", CP, [cf, angVal[k1]]);
+            else if (vOf(k2) != null && vOf(k1) == null) setVal(k1, vOf(k2), keyName[k1] + " = " + keyName[k2] + " = " + R(vOf(k2)) + "°", CP, [cf, angVal[k2]]);
+            else setAngEq(k1, k2, keyName[k1] + " = " + keyName[k2], CP, [cf]); }
+          break;
         }
       }
       // a ray inside an angle: the two parts add up to the whole
@@ -348,6 +407,8 @@
       else if (g.kind === "isoTri" || g.kind === "equiTri") { const [a, b, c] = g.name, pairs = [[a + b, a + c], [b + a, b + c], [c + a, c + b]].map(([s, t]) => [s, t, segEqual(s, t)]).filter(x => x[2]);
         if ((g.kind === "isoTri" && pairs.length) || pairs.length >= 2) { r.ok = true; pairs.forEach(x => r.deps.push(...x[2])); r.claims.push(["Δ" + g.name + " " + (g.kind === "isoTri" ? W("is isosceles", "שווה שוקיים") : W("is equilateral", "שווה צלעות")), W("A triangle with two equal sides is isosceles (" + pairs[0][0] + " = " + pairs[0][1] + ")", "משולש בעל שתי צלעות שוות הוא שווה שוקיים (" + pairs[0][0] + " = " + pairs[0][1] + ")")]); }
         r.answer = "Δ" + g.name + " " + (g.kind === "isoTri" ? W("is isosceles", "שווה שוקיים") : W("is equilateral", "שווה צלעות")); r.title = W("To prove", "צריך להוכיח"); }
+      else if (g.kind === "cong") { const f = congruent["≅" + g.a + ":" + g.b] || Object.values(congruent).find(c => [...c.a].sort().join("") === [...g.a].sort().join("") && [...c.b].sort().join("") === [...g.b].sort().join("")) || Object.values(congruent).find(c => [...c.b].sort().join("") === [...g.a].sort().join("") && [...c.a].sort().join("") === [...g.b].sort().join(""));
+        if (f) { r.ok = true; r.deps = [f]; } r.answer = "Δ" + g.a + " ≅ Δ" + g.b; r.title = W("To prove", "צריך להוכיח"); }
       else if (g.kind === "rightTri") { const [a, b, c] = g.name, A = triAngles(g.name), v = Object.keys(A).find(k => vOf(A[k]) === 90); if (v) { r.ok = true; r.deps = [angVal[A[v]]]; } r.answer = "Δ" + g.name + " " + W("is right-angled", "ישר-זווית"); r.title = W("To prove", "צריך להוכיח"); }
       else if (g.kind === "trap" || g.kind === "isoTrap" || g.kind === "para") { const q = quadKind(g.name);
         const want = g.kind, got = q.kind; const ok = got === want || (want === "trap" && got === "isoTrap");
@@ -391,11 +452,11 @@
   // does this look like a problem for this engine (several shapes, named points on sides, something to prove)?
   function applies(givens, ask){
     const t = clean(givens + "\n" + ask);
-    const letters = new Set(t.match(/(?<![A-Z])[A-H](?![A-Z])|[A-H]{2,4}/g)?.join("").split("") || []);
-    const onSide = new RegExp("[A-H](?![A-H])[^.\\n]{0,30}(?:נמצא|על\\s+(?:ה?צלע|ה?קטע)|\\bon\\s+(?:the\\s+)?(?:side|segment)|אמצע|midpoint)").test(t);
+    const letters = new Set(t.match(/(?<![A-Z])[A-HO](?![A-Z])|[A-HO]{2,4}/g)?.join("").split("") || []);
+    const onSide = new RegExp("[A-HO](?![A-HO])[^.\\n]{0,30}(?:נמצא|על\\s+(?:ה?צלע|ה?קטע)|\\bon\\s+(?:the\\s+)?(?:side|segment)|אמצע|midpoint)").test(t);
     const twoShapes = (t.match(/משולש|triangle|מרובע|טרפז|מקבילית|quadrilateral|trapezoid|parallelogram/gi) || []).length >= 2;
-    const proveSomething = /הוכיח|להוכיח|prove|show that/i.test(t) && /[A-H]{2,4}/.test(t);
-    const special = /חוצ(?:ה|ת)\s+(?:את\s+)?(?:ה)?זווית|bisect|תיכון|median|גובה\s+(?:ל|ב)|altitude/i.test(t) && /[A-H]{2}/.test(t);
+    const proveSomething = /הוכיח|להוכיח|prove|show that/i.test(t) && /[A-HO]{2,4}/.test(t);
+    const special = /חוצ(?:ה|ת)\s+(?:את\s+)?(?:ה)?זווית|bisect|תיכון|median|גובה\s+(?:ל|ב)|altitude|חופפ|חופף|congruen|≅|אלכסונ|diagonal|חיתוך|intersect/i.test(t) && /[A-HO]{2}/.test(t);
     return onSide || twoShapes || proveSomething || special || letters.size > 4;
   }
 
