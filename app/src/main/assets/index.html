@@ -2587,7 +2587,7 @@ $("calc").onclick = () => { geoFromText = false; geoFocus = null; calcGeo(); };
 
 // ---------- the question: what to find ----------
 function askTargets(){
-  const extra = ($("geoText").value.match(/(?:(?<![א-ת])(?:מצא|חשב|הוכח|מהו|מהי|כמה)|\b(?:find|calculate|what is))[^\n]*/gi) || []).join(" ");
+  const extra = ($("geoText").value.match(/(?:(?<![א-ת])(?:מצא|חשב|הוכח|הוכיח|מהו|מהי|כמה)|\b(?:find|calculate|what is|prove))[^\n]*/gi) || []).join(" ");
   const t = " " + $("geoAsk").value + " " + extra + " ";
   if (!t.trim()) return [];
   const out = [];
@@ -2828,7 +2828,8 @@ function showDetected(d){
 }
 function readGivens(){
   geoFocus = null; geoRightIso = false;
-  const text = $("geoText").value;
+  // lines that state what to prove or find describe the goal, not the givens (a "trapezoid" to prove is not a given trapezoid)
+  const text = $("geoText").value.split("\n").filter(l => !/הוכיח|להוכיח|צ"ל|צ״ל|\bprove\b|\bshow that\b/i.test(l)).join("\n");
   if (!text.trim()) { setGeoStatus("noGivens", true); clearGeo(); return; }
   let plan = null; try { plan = understand(text); } catch (e) { plan = null; }
   if (plan && SH[plan.tool]) {
