@@ -709,6 +709,7 @@ table.proof tr.prolocked{filter:none;opacity:.8}
 <script src="pro-core.js"></script>
 <script src="science.js"></script>
 <script src="daily.js"></script>
+<script src="proof.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 const hasBridge = typeof window.Android !== "undefined";
@@ -2531,30 +2532,50 @@ function buildFields(keep){
   $("unitRow").hidden = !!s.noUnit;
 }
 $("shape").onchange = () => { buildFields(false); $("geoResults").innerHTML=""; $("geoResults").hidden=true; };
+// a two-column proof with its figure (from a shape tool or from the problem engine)
+function showProof(r, quiet, again){
+  const out=$("geoResults"); out.innerHTML="";
+  const box=el("div","result");
+  if (r.svg !== "") { const fig=el("div","fig"); fig.innerHTML = r.svg !== undefined ? r.svg : trapSVG(r.angles, r.par, r.computed); box.append(fig); }
+  const a=el("div","ans"); a.append(el("small",null,r.title), dirOf(el("div",null,r.answer), r.answer)); box.append(a);
+  box.append(proofTable(r.rows));
+  // without Pro, the first rows of the proof are shown and the rest are blurred
+  const lockedRows = [...box.querySelectorAll("table.proof tbody tr")].slice(FREE_PROOF_ROWS);
+  if (!isPro() && lockedRows.length) { lockedRows.forEach(tr => { tr.classList.add("prolocked"); tr.setAttribute("aria-hidden", "true"); }); box.append(proLockBar(P("lockProof", lockedRows.length), "proof")); }
+  const tg = askTargets(); let ab = null; if (tg.length && !r.noAsk) { ab = askBox(r, tg); if (ab) box.prepend(ab); }
+  const rb = el("div", "resbar"); rb.append(stepToggle(again));
+  if (r.rows.length > 2) out.append(rb);
+  out.append(box);
+  linkProof(box);
+  applyStepper(box, box.querySelectorAll("table.proof tbody tr:not(.prolocked)"), [a, ...(ab ? [ab] : []), ...box.querySelectorAll('.fig text[style*="--ok)"]')]);
+  out.append(proTools("geo", false));
+  afterGeo(quiet, plain(r.answer));
+  out.hidden = $("geoPanel").hidden;
+  if (!quiet) out.scrollIntoView({behavior:"smooth",block:"start"});
+}
+// problems with several shapes and named points (points on sides, something to prove): the proof engine
+function tryProofEngine(quiet){
+  const text = $("geoText").value, ask = $("geoAsk").value;
+  if (typeof Proof === "undefined" || !Proof.applies(text, ask)) return false;
+  let r = null; try { r = Proof.solve(text, ask, lang); } catch (e) { return false; }
+  if (!r || !r.ok) return false;
+  // the reasons are Hebrew sentences with pieces of math inside: keep each piece left-to-right
+  const iso = w => w.replace(/\(?[∢Δ]?[A-Z][A-Z∢Δ∥=°0-9().+−÷· -]*[A-Z0-9°)](?=[\s,.:;]|$)/g, m => LRI(m));
+  r.rows = r.rows.map(([c, w]) => [LRI(c), lang === "he" ? iso(w) : w]); r.answer = r.answer.split("\n").map(x => LRI(x)).join("\n"); r.noAsk = true;
+  setGeoStatus("");
+  const box = $("geoDetected"), txt = T("detected", pick("Geometry problem: proof", "בעיה גאומטרית: הוכחה"), r.goals.map(g => g.text).join(" ,  "));
+  box.textContent = txt; dirOf(box, txt); box.hidden = false;
+  lastDetected = { G: null, tool: "proofEngine" };
+  showProof(r, quiet, () => tryProofEngine(true));
+  return true;
+}
 function calcGeo(quiet){
   const s=SH[$("shape").value], v={}, out=$("geoResults"); out.innerHTML="";
   try {
     if (s.kind==="proof") {
       const v={};
       for (const [k,,,kind] of s.f) { const raw=$("g_"+k).value.trim(); v[k] = raw==="" ? null : kind==="text" ? raw : parseFloat(raw); if (raw!=="" && kind!=="text" && isNaN(v[k])) throw TW().nan; }
-      const r = s.calc(v), W=TW();
-      const box=el("div","result");
-      if (r.svg !== "") { const fig=el("div","fig"); fig.innerHTML = r.svg !== undefined ? r.svg : trapSVG(r.angles, r.par, r.computed); box.append(fig); }
-      const a=el("div","ans"); a.append(el("small",null,r.title), dirOf(el("div",null,r.answer), r.answer)); box.append(a);
-      box.append(proofTable(r.rows));
-      // without Pro, the first rows of the proof are shown and the rest are blurred
-      const lockedRows = [...box.querySelectorAll("table.proof tbody tr")].slice(FREE_PROOF_ROWS);
-      if (!isPro() && lockedRows.length) { lockedRows.forEach(tr => { tr.classList.add("prolocked"); tr.setAttribute("aria-hidden", "true"); }); box.append(proLockBar(P("lockProof", lockedRows.length), "proof")); }
-      const tg = askTargets(); let ab = null; if (tg.length) { ab = askBox(r, tg); if (ab) box.prepend(ab); }
-      const rb = el("div", "resbar"); rb.append(stepToggle(() => calcGeo(true)));
-      if (r.rows.length > 2) out.append(rb);
-      out.append(box);
-      linkProof(box);
-      applyStepper(box, box.querySelectorAll("table.proof tbody tr:not(.prolocked)"), [a, ...(ab ? [ab] : []), ...box.querySelectorAll('.fig text[style*="--ok)"]')]);
-      out.append(proTools("geo", false));
-      afterGeo(quiet, plain(r.answer));
-      out.hidden = $("geoPanel").hidden;
-      if (!quiet) out.scrollIntoView({behavior:"smooth",block:"start"});
+      showProof(s.calc(v), quiet, () => calcGeo(true));
       return;
     }
     for (const [k,en,he] of s.f) { const x=parseFloat($("g_"+k).value); if (!(x>0)) throw T("positive", pick(en,he)); v[k]=x; }
@@ -2831,6 +2852,7 @@ function readGivens(){
   // lines that state what to prove or find describe the goal, not the givens (a "trapezoid" to prove is not a given trapezoid)
   const text = $("geoText").value.split("\n").filter(l => !/הוכיח|להוכיח|צ"ל|צ״ל|\bprove\b|\bshow that\b/i.test(l)).join("\n");
   if (!text.trim()) { setGeoStatus("noGivens", true); clearGeo(); return; }
+  if (tryProofEngine(false)) return;
   let plan = null; try { plan = understand(text); } catch (e) { plan = null; }
   if (plan && SH[plan.tool]) {
     setGeoStatus("");

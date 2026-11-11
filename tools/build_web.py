@@ -18,7 +18,7 @@ OUT = ROOT / "docs/app"
 OUT.mkdir(parents=True, exist_ok=True)
 (OUT / "fonts").mkdir(exist_ok=True)
 
-for name in ["solver.js", "pro-core.js", "science.js", "daily.js", "math.js"]:
+for name in ["solver.js", "pro-core.js", "science.js", "daily.js", "proof.js", "math.js"]:
     shutil.copy(ASSETS / name, OUT / name)
 for f in (ASSETS / "fonts").iterdir():
     shutil.copy(f, OUT / "fonts" / f.name)
@@ -58,7 +58,7 @@ if ("serviceWorker" in navigator && location.protocol.startsWith("http") && !win
 
 # offline cache name changes whenever the app changes, so phones pick up updates
 h = hashlib.sha1()
-for name in ["index.html", "solver.js", "pro-core.js", "science.js", "daily.js", "web-bridge.js", "install-gate.js", "manifest.webmanifest"]:
+for name in ["index.html", "solver.js", "pro-core.js", "science.js", "daily.js", "proof.js", "web-bridge.js", "install-gate.js", "manifest.webmanifest"]:
     h.update((OUT / name).read_bytes())
 sw = (WEB / "sw.js").read_text(encoding="utf-8").replace("__VERSION__", h.hexdigest()[:10])
 (OUT / "sw.js").write_text(sw, encoding="utf-8")
