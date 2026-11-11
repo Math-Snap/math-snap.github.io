@@ -1739,7 +1739,8 @@ const R_BASE = () => g2("In an isosceles triangle, the base angles are equal","�
 function isoAngles(v){
   angRange(v,["A","B"]);
   if (v.A==null && v.B==null) throw g2("Enter the vertex angle ∢A or a base angle ∢B.","הכניסו את זווית הראש ∢A או זווית בסיס ∢B.");
-  const rows=[[isoGiven(), GV()], givenRow(v,["A","B"])];
+  const rows=[[isoGiven(), GV()]];
+  if (geoRightIso && v.A === 90) rows.push([LRI("∢A = 90°"), g2("The triangle is right-angled and isosceles, so the right angle is the vertex angle, between the two equal legs","המשולש ישר-זווית ושווה שוקיים, ולכן הזווית הישרה היא זווית הראש, בין שתי השוקיים השוות")]); else rows.push(givenRow(v,["A","B"]));
   let A=v.A, B=v.B, computed;
   if (A!=null && B!=null) {
     if (Math.abs(A+2*B-180)>1e-9) throw g2("These angles don't fit: in an isosceles triangle ∢A + 2·∢B must be 180°.","הזוויות לא מתאימות: במשולש שווה שוקיים ∢A + 2·∢B חייב להיות 180°.");
@@ -2457,7 +2458,7 @@ function understand(raw){
   // circle with no central angle: area and circumference
   if ((has(/מעגל|עיגול|circle/i) || radius != null) && !has(/מרכזית|central|קשת|\barc\b|גזרה|sector/i) && G.al == null && radius != null) return { tool: "circle", vals: { r: radius } };
   // triangles from numbers without letters
-  const tri = has(/משולש|triangle/i), right = has(/ישר[\s-]*זווית|right/i) || Rl.rleg || Rl.hyp;
+  const tri = has(/משולש|triangle/i), right = has(/ישר[\s-]*ה?זווית|right/i) || Rl.rleg || Rl.hyp;
   if ((tri || right) && !G.letters.has("D") && !has(/שווה[\s-]*שוקיים|isosceles/i)) {
     if (Rl.rleg && Rl.rleg.length >= 2) return { tool: "triSolve", vals: { a: Rl.rleg[0], b: Rl.rleg[1], C: 90 } };
     if (Rl.hyp && (Rl.rleg || L("BC") != null || L("AC") != null)) return { tool: "triSolve", vals: { c: Rl.hyp[0], a: Rl.rleg ? Rl.rleg[0] : L("BC"), b: Rl.rleg ? null : L("AC"), C: 90, A: a.A, B: a.B } };
@@ -2598,7 +2599,7 @@ $("calc").onclick = () => { geoFromText = false; geoFocus = null; calcGeo(); };
 
 // ---------- the question: what to find ----------
 function askTargets(){
-  const extra = ($("geoText").value.match(/(?:מצא|חשב|הוכח|find|calculate|what is|מהו|מהי|כמה)[^\n]*/gi) || []).join(" ");
+  const extra = ($("geoText").value.match(/(?:(?<![א-ת])(?:מצא|חשב|הוכח|מהו|מהי|כמה)|\b(?:find|calculate|what is))[^\n]*/gi) || []).join(" ");
   const t = " " + $("geoAsk").value + " " + extra + " ";
   if (!t.trim()) return [];
   const out = [];
@@ -2623,7 +2624,7 @@ function askBox(r, targets){
   const box = el("div", "askbox"); box.append(el("small", null, T("askAns")));
   const miss = [];
   for (const tg of targets) {
-    const names = /^[A-D]{2}$/.test(tg) ? [tg, tg[1] + tg[0]] : [tg];
+    const names = /^[A-D]{2}$/.test(tg) ? [tg, tg[1] + tg[0]] : /^∢[A-DO]{3}$/.test(tg) ? [tg, "∢" + tg[2]] : [tg];
     let hit = null;
     for (const x of texts) {
       for (const nm of names) {
@@ -2646,13 +2647,14 @@ function askBox(r, targets){
 function givensFromWords(raw){
   let t = " " + String(raw).replace(/\n/g, " , ") + " ";
   const shape = /דלתון|\bkite/i.test(t) ? "kite" : /טרפז|trapez/i.test(t) ? "trap" : /שווה[\s-]*שוקיים|isosceles/i.test(t) ? "iso"
-    : /ישר[\s-]*זווית|right[\s-]*(?:angled\s+)?triangle|\bright\b|יתר|hypotenuse/i.test(t) ? "right" : /מעגל|circle|רדיוס|radius|מרכזית|central/i.test(t) ? "circle"
+    : /ישר[\s-]*ה?זווית|right[\s-]*(?:angled\s+)?triangle|\bright\b|יתר|hypotenuse/i.test(t) ? "right" : /מעגל|circle|רדיוס|radius|מרכזית|central/i.test(t) ? "circle"
     : /דומים|similar/i.test(t) ? "sim" : /משולש|triangle/i.test(t) ? "tri" : null;
   const ask = /האם|\bis\s+(it|abcd|abc)\b/i.test(t);
   const NUM = "(\\d+(?:\\.\\d+)?)";
   const IS = "\\s*(?:=|:|שוו(?:ה|ים|ות)?\\s*(?:ל-?\\s*)?|הוא|היא|is|equals?)?\\s*";
+  const rightIso = /ישר[\s-]*ה?זווית|right[\s-]*(?:angled|angle)|\bright\b/i.test(t) && /שוו(?:ה|י)[\s-]*שוקיים|isosceles/i.test(t);
   t = t.replace(/שוו(?:ה|י)[\s-]*(?:שוקיים|צלעות)|isosceles|equilateral/gi, " ");
-  t = t.replace(/ישר[\s-]*זווית|right[\s-]*(?:angled\s+)?(?=triangle)/gi, " ");
+  t = t.replace(/ישר[\s-]*ה?זווית|right[\s-]*(?:angled\s+)?(?=triangle)/gi, " ");
   t = t.replace(new RegExp("(?:ו|ה|וה)?רדיוס" + IS + NUM, "g"), " r = $1 ").replace(new RegExp("\\bradius" + IS + NUM, "gi"), " r = $1 ");
   t = t.replace(new RegExp("(?:ו|ה|וה)?זווית\\s+(?:ה)?מרכזית" + IS + NUM, "g"), " α = $1 ").replace(new RegExp("central\\s+angle" + IS + NUM, "gi"), " α = $1 ");
   t = t.replace(new RegExp("(?:ו|ה|וה)?יתר" + IS + NUM, "g"), " AB = $1 ").replace(new RegExp("\\bhypotenuse" + IS + NUM, "gi"), " AB = $1 ");
@@ -2677,7 +2679,7 @@ function givensFromWords(raw){
   t = t.replace(/[֐-׿"'״׳]+/g, " ");
   // "∢A 110" or "AB 13" without "=": add it
   t = t.replace(/(∢\s*[A-DO]{1,3}|(?<![A-Z])[A-D]{2}(?![A-Z])|(?<![A-Z])S(?![A-Z]))\s+(?=\d)/g, "$1 = ");
-  return { t, shape, ask };
+  return { t, shape, ask, rightIso };
 }
 function parseGivens(raw){
   const W = givensFromWords(raw);
@@ -2686,7 +2688,7 @@ function parseGivens(raw){
     .replace(/[∠≮<]/g, "∢").replace(/\b[4K](?=[A-D]{1,3}\s*=)/g, "∢")   // the angle sign is often read as < or 4
     .replace(/(\|\||II|ll|\/\/|‖)/g, "∥").replace(/[−–—]/g, "-")
     .replace(/[׳']/g, "").replace(/(\d)\s*[oº˚]/g, "$1°");
-  const G = { ang:{}, ang3:{}, len:{}, eq:[], par:[], letters:new Set(), shape:W.shape, ask:W.ask };
+  const G = { ang:{}, ang3:{}, len:{}, eq:[], par:[], letters:new Set(), shape:W.shape, ask:W.ask, rightIso:W.rightIso };
   const CANON = {BAC:"BAC",CAB:"BAC",DAC:"BAC",CAD:"BAC",BCA:"BCA",ACB:"BCA",DCA:"BCA",ACD:"BCA",ABD:"ABD",DBA:"ABD",ADB:"ABD",BDA:"ABD",CBD:"CBD",DBC:"CBD",CDB:"CBD",BDC:"CBD"};
   const ANG3 = /∢\s*([A-DO]{3})\s*=\s*(\d+(?:\.\d+)?)\s*(°)?/g;
   for (const m of t.matchAll(ANG3)) {
@@ -2717,6 +2719,8 @@ function parseGivens(raw){
   const rr = t.match(/(?<![A-Za-z])r\s*=\s*(\d+(?:\.\d+)?)/); if (rr) G.r = parseFloat(rr[1]);
   const al = t.match(/α\s*=\s*(\d+(?:\.\d+)?)/); if (al) G.al = parseFloat(al[1]);
   for (const m of t.matchAll(/([A-D]{2})\s*∥\s*([A-D]{2})/g)) { G.par.push([m[1], m[2]]); [...m[1]+m[2]].forEach(c => G.letters.add(c)); }
+  // "isosceles right triangle": the right angle is the vertex angle, between the two equal legs
+  if (G.rightIso && G.ang.A == null && G.ang.B == null && G.ang.C == null) G.ang.A = 90;
   return G;
 }
 const sameSeg = (a, b) => a === b || a === b.split("").reverse().join("");
@@ -2750,7 +2754,9 @@ function pickTool(G){
   if (lenOf(G,"BC") != null && (lenOf(G,"AB") != null || lenOf(G,"AC") != null)) return "isoHeight";
   return null;
 }
+let geoRightIso = false;
 function fillFor(tool, G){
+  geoRightIso = !!G.rightIso;
   const vals = {};
   const a = G.ang;
   if (tool === "isoAngles") { vals.A = a.A; vals.B = a.B ?? a.C; }
@@ -2833,7 +2839,7 @@ function showDetected(d){
   box.textContent = txt; dirOf(box, txt); box.hidden = false;
 }
 function readGivens(){
-  geoFocus = null;
+  geoFocus = null; geoRightIso = false;
   const text = $("geoText").value;
   if (!text.trim()) { setGeoStatus("noGivens", true); clearGeo(); return; }
   let plan = null; try { plan = understand(text); } catch (e) { plan = null; }
