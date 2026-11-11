@@ -124,6 +124,16 @@
       const t = P.segEq.some(([u, v, why]) => why === "mid" && (sortSeg(u) === sortSeg(a + d) || sortSeg(v) === sortSeg(a + d))) ? 0.5 : T[i % T.length];
       place(d, X[a][0] + (X[b][0] - X[a][0]) * t, X[a][1] + (X[b][1] - X[a][1]) * t);
     });
+    // equal segments from one point along two sides (AD = AE with D on AB, E on AC): put the points at the same distance
+    const eqs = P.segEq.map(([u, v]) => [u, v]).concat(P.tris.filter(t => t.iso).map(t => { const o = [...t.name].filter(ch => ch !== t.apex); return [t.apex + o[0], t.apex + o[1]]; }));
+    for (const [u, v] of eqs) {
+      const x = [...u].find(ch => v.includes(ch)); if (!x) continue;
+      const d = u.replace(x, ""), e = v.replace(x, ""), od = P.on.find(o => o[0] === d), oe = P.on.find(o => o[0] === e);
+      if (!od || !oe || !X[x] || !X[d] || !X[e]) continue;
+      const far = o => (o[1] === x ? o[2] : o[1]); if (!od.includes(x) || !oe.includes(x) || !X[far(od)] || !X[far(oe)]) continue;
+      const len = k => Math.hypot(X[far(k)][0] - X[x][0], X[far(k)][1] - X[x][1]), L = 0.46 * Math.min(len(od), len(oe));
+      for (const [pt, o] of [[d, od], [e, oe]]) { const f = far(o), r = L / len(o); X[pt] = [X[x][0] + (X[f][0] - X[x][0]) * r, X[x][1] + (X[f][1] - X[x][1]) * r]; }
+    }
     // any other triangle or quadrilateral vertex that is still missing
     for (const t of P.tris) { const miss = [...t.name].filter(ch => !X[ch]), have = [...t.name].filter(ch => X[ch]);
       if (miss.length === 1 && have.length === 2) { const [a, b] = have.map(k => X[k]); place(miss[0], (a[0] + b[0]) / 2 - (b[1] - a[1]) * 0.6, (a[1] + b[1]) / 2 + (b[0] - a[0]) * 0.6); } }
