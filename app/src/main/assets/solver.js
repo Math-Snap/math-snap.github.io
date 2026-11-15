@@ -671,6 +671,209 @@
     return { answer: n + " = " + out, steps };
   }
 
+  // ---------- factoring polynomials (common factor, the three short-multiplication formulas, trinomials, grouping) ----------
+  // The order follows the classroom rules: 1) take out a common factor, 2) count the pterms:
+  // 2 pterms → third formula (a² − b²); 3 pterms → first/second formula if it is a perfect square, otherwise a trinomial;
+  // 4 pterms → grouping. 3) check by multiplying back.
+  const isHeF = () => LANG === "he";
+  const LW = (en, he) => (isHeF() ? he : en);
+  // a polynomial is a Map from a monomial key ("x2y1", "" for a constant) to an integer coefficient
+  const mkey = m => Object.keys(m).filter(v => m[v]).sort().map(v => v + m[v]).join("");
+  const mparse = k => { const o = {}; for (const [, v, e] of k.matchAll(/([a-z])(\d+)/g)) o[v] = +e; return o; };
+  function padd(a, b, s) { const r = new Map(a); for (const [k, c] of b) { const v = (r.get(k) || 0) + (s || 1) * c; if (v) r.set(k, v); else r.delete(k); } return r; }
+  function pmul(a, b) { let r = new Map(); for (const [k1, c1] of a) for (const [k2, c2] of b) { const m = mparse(k1), n = mparse(k2); for (const v in n) m[v] = (m[v] || 0) + n[v]; r = padd(r, new Map([[mkey(m), c1 * c2]])); } return r; }
+  const pconst = c => (c ? new Map([["", c]]) : new Map());
+  function toPoly(node) {   // mathjs node → polynomial with integer coefficients, or null
+    node = unparen(node);
+    if (node.type === "ConstantNode") { const v = Number(node.value); return Number.isInteger(v) ? pconst(v) : null; }
+    if (node.type === "SymbolNode") return /^[a-z]$/.test(node.name) ? new Map([[node.name + "1", 1]]) : null;
+    if (node.type !== "OperatorNode") return null;
+    const A = node.args.map(toPoly); if (A.some(x => !x)) return null;
+    if (node.fn === "unaryMinus") return padd(new Map(), A[0], -1);
+    if (node.fn === "unaryPlus") return A[0];
+    if (node.fn === "add") return padd(A[0], A[1]);
+    if (node.fn === "subtract") return padd(A[0], A[1], -1);
+    if (node.fn === "multiply") return pmul(A[0], A[1]);
+    if (node.fn === "pow") { const e = constVal(node.args[1]); if (!e || !isInt(e) || e.n < 0 || e.n > 12) return null; let r = pconst(1); for (let i = 0; i < e.n; i++) r = pmul(r, A[0]); return r; }
+    return null;
+  }
+  const pdeg = k => Object.values(mparse(k)).reduce((s, e) => s + e, 0);
+  const pvars = p => [...new Set([...p.keys()].flatMap(k => Object.keys(mparse(k))))].sort();
+  function pterms(p) {   // highest degree first; for equal degree, the higher power of the first letter first
+    const vs = pvars(p);
+    return [...p.entries()].sort((a, b) => pdeg(b[0]) - pdeg(a[0]) || vs.reduce((d, v) => d || (mparse(b[0])[v] || 0) - (mparse(a[0])[v] || 0), 0));
+  }
+  function fmonoS(k, c, first) {   // one term, with its sign
+    const m = mparse(k), vs = Object.keys(m).sort().map(v => v + (m[v] > 1 ? sup(m[v]) : "")).join("");
+    const a = Math.abs(c), body = vs ? (a === 1 ? vs : a + vs) : String(a);
+    return first ? (c < 0 ? "−" : "") + body : (c < 0 ? " − " : " + ") + body;
+  }
+  const fpolyS = p => { const ts = pterms(p); return ts.length ? ts.map(([k, c], i) => fmonoS(k, c, i === 0)).join("") : "0"; };
+  const fwrapP = p => (p.size > 1 ? "(" + fpolyS(p) + ")" : fpolyS(p));
+  const isSquareInt = n => n >= 0 && Number.isInteger(Math.sqrt(n)) && Math.round(Math.sqrt(n)) ** 2 === n;
+  function sqrtMono(k, c) {   // √(c·x^2a…) as [key, coef], or null
+    if (!isSquareInt(c)) return null; const m = mparse(k), r = {};
+    for (const v in m) { if (m[v] % 2) return null; r[v] = m[v] / 2; }
+    return [mkey(r), Math.round(Math.sqrt(c))];
+  }
+  const fmonoP = (k, c) => new Map([[k, c]]);
+  const NN = x => (x < 0 ? "(−" + Math.abs(x) + ")" : String(x));
+  const sqW = q => (/^[a-z]$|^\d+$/.test(q) ? q : "(" + q + ")");
+  const gS = (k, c) => (!k && c === -1 ? "−" : fpolyS(fmonoP(k, c)));
+  const kdiv = (k1, k2) => { const a = mparse(k1), b = mparse(k2), r = {}; for (const v of new Set([...Object.keys(a), ...Object.keys(b)])) { const e = (a[v] || 0) - (b[v] || 0); if (e < 0) return null; r[v] = e; } return mkey(r); };
+  const kmul = (k1, k2) => { const a = mparse(k1), b = mparse(k2); for (const v in b) a[v] = (a[v] || 0) + b[v]; return mkey(a); };
+
+  function commonFactor(p) {   // [key, coef] of the greatest common factor (sign follows the first term)
+    const ts = pterms(p); let g = 0; for (const [, c] of ts) g = gcd(g, c);
+    if (ts[0][1] < 0) g = -g;
+    const vs = pvars(p), m = {}; for (const v of vs) m[v] = Math.min(...ts.map(([k]) => mparse(k)[v] || 0));
+    return [mkey(m), g];
+  }
+  function divMono(p, k, c) { const r = new Map(); for (const [k2, c2] of p) r.set(kdiv(k2, k), c2 / c); return r; }
+
+  // factor a polynomial that has no common factor left; returns a list of factor polynomials
+  function factorRest(p, steps, depth) {
+    const ts = pterms(p), n = ts.length;
+    if (depth > 6 || n < 2 || Math.max(...ts.map(([k]) => pdeg(k))) < 2) return [p];
+    const say = (claim, why) => steps.push([claim, why]);
+    // inside a factor, a common factor can appear again (e.g. after a formula)
+    const [gk, gc] = commonFactor(p);
+    if (gk || gc !== 1) { const q = divMono(p, gk, gc); say(fpolyS(p) + " = " + gS(gk, gc) + fwrapP(q), LW("Take out the common factor", "מוציאים גורם משותף")); return [fmonoP(gk, gc), ...factorRest(q, steps, depth + 1)]; }
+    if (n === 2) {
+      const [[k1, c1], [k2, c2]] = ts;
+      const pos = c1 > 0 ? [k1, c1] : [k2, c2], negt = c1 > 0 ? [k2, c2] : [k1, c1];
+      if (c1 * c2 < 0) {
+        const A = sqrtMono(pos[0], pos[1]), B = sqrtMono(negt[0], -negt[1]);
+        if (A && B) {
+          const Ap = fmonoP(...A), Bp = fmonoP(...B), plus = padd(Ap, Bp), minus = padd(Ap, Bp, -1);
+          say(fpolyS(p) + " = " + sqW(fpolyS(Ap)) + "² − " + sqW(fpolyS(Bp)) + "²", LW("2 terms with a minus between two squares → third formula: a² − b² = (a + b)(a − b)", "2 מחוברים, מינוס בין שני ריבועים → נוסחה שלישית: a² − b² = (a + b)(a − b)"));
+          say(fpolyS(p) + " = " + fwrapP(plus) + fwrapP(minus), LW("a = " + fpolyS(Ap) + ", b = " + fpolyS(Bp), "a = " + fpolyS(Ap) + ", b = " + fpolyS(Bp)));
+          return [...factorRest(plus, steps, depth + 1), ...factorRest(minus, steps, depth + 1)];
+        }
+      } else if (sqrtMono(k1, Math.abs(c1)) && sqrtMono(k2, Math.abs(c2)) && c1 > 0) say(fpolyS(p), LW("A sum of two squares (a² + b²) can't be factored", "סכום של שני ריבועים (a² + b²) לא מתפרק"));
+      return [p];
+    }
+    if (n === 3) {
+      const [[k1, a], [k2, b], [k3, c]] = ts;
+      const U = sqrtMono(k1, 1), V = sqrtMono(k3, 1);
+      if (!U || !V || kmul(U[0], V[0]) !== k2) return [p];
+      const Uk = U[0], Vk = V[0], Up = fmonoP(Uk, 1), Vp = fmonoP(Vk, 1);
+      const sa = isSquareInt(a) ? Math.sqrt(a) : null, sc = isSquareInt(c) ? Math.sqrt(c) : null;
+      if (sa && sc && Math.abs(b) === 2 * sa * sc) {
+        const A = fmonoP(Uk, sa), B = fmonoP(Vk, sc), first = b > 0;
+        say(LW("3 terms", "3 מחוברים") + ": " + fpolyS(p), first ? LW("All the terms are positive → first formula: (a + b)² = a² + 2ab + b²", "כל המחוברים חיוביים → נוסחה ראשונה: (a + b)² = a² + 2ab + b²") : LW("The middle term is negative → second formula: (a − b)² = a² − 2ab + b²", "האיבר האמצעי שלילי → נוסחה שנייה: (a − b)² = a² − 2ab + b²"));
+        say("a = √" + fpolyS(fmonoP(k1, a)).replace(/^(.+)$/, "($1)") + " = " + fpolyS(A) + " ,  b = √" + ("(" + fpolyS(fmonoP(k3, c)) + ")") + " = " + fpolyS(B), LW("The first and last terms are squares", "האיבר הראשון והאחרון הם ריבועים"));
+        say("2ab = 2 · " + fwrapP(A) + " · " + fwrapP(B) + " = " + fpolyS(fmonoP(k2, 2 * sa * sc)) + " ✓", LW("The middle term is " + (first ? "2ab" : "−2ab") + ", so the formula fits", "האיבר האמצעי הוא " + (first ? "2ab" : "‎−2ab") + ", אז הנוסחה מתאימה"));
+        const base = padd(A, B, first ? 1 : -1);
+        say(fpolyS(p) + " = " + fwrapP(base) + "²", first ? LW("First formula", "נוסחה ראשונה") : LW("Second formula", "נוסחה שנייה"));
+        const inner = factorRest(base, steps, depth + 1); return [...inner, ...inner];
+      }
+      // a trinomial: two numbers whose product is a·c and whose sum is b
+      say(LW("3 terms", "3 מחוברים") + ": " + fpolyS(p), LW("Not a perfect square (the middle term isn't ±2ab) → factor the trinomial", "לא ריבוע שלם (האיבר האמצעי הוא לא ‎±2ab) → פירוק טרינום"));
+      const ac = a * c; let pair = null;
+      for (let i = 1; i <= Math.abs(ac) && i <= 100000 && !pair; i++) { if (ac % i) continue; for (const x of [i, -i]) { const y = ac / x; if (x + y === b) { pair = [x, y]; break; } } }
+      const ux = q => (q === 1 ? "" : q === -1 ? "−" : String(q));
+      if (pair) {
+        let [x, y] = pair;
+        if (a === 1) {
+          say(LW("Two numbers with product " + NN(c) + " and sum " + NN(b) + ": " + NN(x) + " and " + NN(y), "שני מספרים שמכפלתם " + NN(c) + " וסכומם " + NN(b) + ": " + NN(x) + " ו-" + NN(y)), LW("x² + bx + c = (x + p)(x + q) where p·q = c and p + q = b", "x² + bx + c = (x + p)(x + q) כאשר p·q = c ו-p + q = b"));
+          say(NN(x) + " · " + NN(y) + " = " + NN(c) + " ,  " + NN(x) + " + " + NN(y) + " = " + NN(b) + " ✓", LW("Check the two numbers", "בודקים את שני המספרים"));
+          const f1 = padd(Up, fmonoP(Vk, x)), f2 = padd(Up, fmonoP(Vk, y));
+          say(fpolyS(p) + " = " + fwrapP(f1) + fwrapP(f2), LW("Trinomial factored", "פירוק הטרינום"));
+          return [...factorRest(f1, steps, depth + 1), ...factorRest(f2, steps, depth + 1)];
+        }
+        // a ≠ 1: split the middle term and group
+        say("a · c = " + NN(a) + " · " + NN(c) + " = " + NN(ac), LW("Multiply the first and last coefficients", "כופלים את המקדם הראשון באחרון"));
+        say(LW("Two numbers with product " + NN(ac) + " and sum " + NN(b) + ": " + NN(x) + " and " + NN(y), "שני מספרים שמכפלתם " + NN(ac) + " וסכומם " + NN(b) + ": " + NN(x) + " ו-" + NN(y)), LW("They split the middle term", "הם מפצלים את האיבר האמצעי"));
+        const split = [[k1, a], [k2, x], [k2, y], [k3, c]];
+        say(fpolyS(p) + " = " + split.map(([k, q], i) => fmonoS(k, q, i === 0)).join(""), LW("Split " + fpolyS(fmonoP(k2, b)) + " into " + fpolyS(fmonoP(k2, x)) + " and " + fpolyS(fmonoP(k2, y)), "מפצלים את " + fpolyS(fmonoP(k2, b)) + " ל-" + sqW(fpolyS(fmonoP(k2, x))) + " ו-" + sqW(fpolyS(fmonoP(k2, y)))));
+        const g1 = new Map([[k1, a], [k2, x]]), g2 = new Map([[k2, y], [k3, c]]);
+        const [h1k, h1c] = commonFactor(g1), q1 = divMono(g1, h1k, h1c);
+        let [h2k, h2c] = commonFactor(g2), q2 = divMono(g2, h2k, h2c);
+        if (fpolyS(q2) !== fpolyS(q1)) { h2c = -h2c; q2 = divMono(g2, h2k, h2c); }
+        const H1 = fmonoP(h1k, h1c), H2 = fmonoP(h2k, h2c);
+        say(fpolyS(H1) + fwrapP(q1) + (h2c < 0 ? " − " + fpolyS(fmonoP(h2k, -h2c)) : " + " + fpolyS(H2)) + fwrapP(q2), LW("Grouping: a common factor from each pair", "פירוק בקבוצות: גורם משותף מכל זוג"));
+        const other = padd(H1, H2);
+        say(fpolyS(p) + " = " + fwrapP(q1) + fwrapP(other), LW("Take out the common bracket " + fwrapP(q1), "מוציאים את הסוגריים המשותפים " + fwrapP(q1)));
+        return [...factorRest(q1, steps, depth + 1), ...factorRest(other, steps, depth + 1)];
+      }
+      // no whole numbers: the roots of ax² + bx + c
+      if (Vk) return [p];
+      const D = b * b - 4 * a * c;
+      say("Δ = b² − 4ac = " + NN(b) + "² − 4 · " + NN(a) + " · " + NN(c) + " = " + String(D).replace("-", "−"), LW("No whole numbers fit, so we use the roots: ax² + bx + c = a(x − x₁)(x − x₂)", "אין מספרים שלמים שמתאימים, אז משתמשים בשורשים: ax² + bx + c = a(x − x₁)(x − x₂)"));
+      if (D < 0) { say(fpolyS(p), LW("Δ < 0: there are no roots, so the trinomial can't be factored", "Δ < 0: אין שורשים, ולכן אי אפשר לפרק את הטרינום")); return [p]; }
+      const v = Object.keys(mparse(Uk))[0] || "x";
+      const r = (sg) => { const num = String(-b).replace("-", "−") + " " + (sg > 0 ? "+" : "−") + " √" + D; return "(" + num + ") / " + (2 * a); };
+      const x1 = (-b + Math.sqrt(D)) / (2 * a), x2 = (-b - Math.sqrt(D)) / (2 * a);
+      say(v + "₁,₂ = (−b ± √Δ) / 2a  →  " + v + "₁ = " + r(1) + " ≈ " + round(x1) + " ,  " + v + "₂ = " + r(-1) + " ≈ " + round(x2), LW("The quadratic formula", "נוסחת השורשים"));
+      const lead = a === 1 ? "" : String(a), rr = sg => "(" + String(-b).replace("-", "−") + (sg > 0 ? " + " : " − ") + "√" + D + ")/" + (2 * a);
+      const out = isSquareInt(D) ? null : lead + "(" + v + " − " + rr(1) + ")(" + v + " − " + rr(-1) + ")";
+      if (!out) return [p];
+      steps.push([fpolyS(p) + " = " + out, LW("a(x − x₁)(x − x₂)", "a(x − x₁)(x − x₂)")]);
+      const fake = new Map([["~" + out, 1]]); fake.raw = out; return [fake];
+    }
+    if (n === 4) {   // grouping
+      for (const [i, j, k, l] of [[0, 1, 2, 3], [0, 2, 1, 3], [0, 3, 1, 2]]) {
+        const g1 = new Map([ts[i], ts[j]]), g2 = new Map([ts[k], ts[l]]);
+        const [h1k, h1c] = commonFactor(g1), q1 = divMono(g1, h1k, h1c);
+        let [h2k, h2c] = commonFactor(g2), q2 = divMono(g2, h2k, h2c);
+        if (fpolyS(q2) !== fpolyS(q1)) { h2c = -h2c; q2 = divMono(g2, h2k, h2c); }
+        if (fpolyS(q2) !== fpolyS(q1)) continue;
+        say(LW("4 terms", "4 מחוברים") + ": " + fpolyS(g1) + (pterms(g2)[0][1] < 0 ? "" : " + ") + fpolyS(g2).replace(/^−/, " − "), LW("4 terms → grouping in pairs", "4 מחוברים → פירוק בקבוצות (בזוגות)"));
+        const H1 = fmonoP(h1k, h1c), H2 = fmonoP(h2k, h2c);
+        say(fpolyS(H1) + fwrapP(q1) + (h2c < 0 ? " − " + fpolyS(fmonoP(h2k, -h2c)) : " + " + fpolyS(H2)) + fwrapP(q2), LW("A common factor from each pair", "גורם משותף מכל זוג"));
+        const other = padd(H1, H2);
+        say(fpolyS(p) + " = " + fwrapP(q1) + fwrapP(other), LW("Take out the common bracket " + fwrapP(q1), "מוציאים את הסוגריים המשותפים " + fwrapP(q1)));
+        return [...factorRest(q1, steps, depth + 1), ...factorRest(other, steps, depth + 1)];
+      }
+    }
+    return [p];
+  }
+
+  function factorPoly(s) {
+    let node; try { node = M().parse(s); } catch (e) { return null; }
+    const P = toPoly(node); if (!P || P.size < 2 || !pvars(P).length) return null;
+    const steps = [];
+    const [gk, gc] = commonFactor(P);
+    let factors = [];
+    steps.push([fpolyS(P), LW("Step 1: is there a common factor? (always check first)", "שלב 1: האם יש גורם משותף? (בודקים תמיד קודם)")]);
+    let rest = P;
+    if (gk || gc !== 1) {
+      rest = divMono(P, gk, gc);
+      const G = fmonoP(gk, gc);
+      steps.push([fpolyS(P) + " = " + gS(gk, gc) + fwrapP(rest), gc === -1 && !gk ? LW("The first term is negative: take out −1 (change every sign)", "המחובר הראשון שלילי: מוציאים מינוס (הופכים את כל הסימנים)") : LW("Take out the common factor " + fpolyS(G) + " (divide every term by it)", "מוציאים גורם משותף " + fpolyS(G) + " (מחלקים בו כל מחובר)")]);
+      factors.push(G);
+    } else steps.push([fpolyS(P), LW("No common factor", "אין גורם משותף")]);
+    const before = steps.length;
+    const more = factorRest(rest, steps, 0);
+    if (steps.length === before && more.length === 1) { steps.push([fpolyS(rest), (Math.max(...[...rest.keys()].map(pdeg)) <= 1 ? LW("First-degree expression: it doesn't factor any further", "ביטוי ממעלה ראשונה: לא מתפרק יותר") : LW(pterms(rest).length + " terms, and none of the formulas fits", pterms(rest).length + " מחוברים, ואף נוסחה לא מתאימה"))]); }
+    factors.push(...more);
+    // write equal factors as a power, numbers and monomials first
+    const cnt = new Map(), order = [];
+    let negs = 0;
+    for (const f of factors) { let key = f.raw || fpolyS(f); if (key === "1") continue; if (key === "−1") { negs++; continue; } if (!cnt.has(key)) { cnt.set(key, { f, n: 0 }); order.push(key); } cnt.get(key).n++; }
+    if (order.length <= 1 && cnt.size && [...cnt.values()][0].n === 1 && !(gk || gc !== 1) && !factors.some(f => f.raw)) return { answer: LW("Can't be factored", "לא ניתן לפרק") + ": " + fpolyS(P), steps };
+    order.sort((x, y) => (cnt.get(x).f.size === 1 ? 0 : 1) - (cnt.get(y).f.size === 1 ? 0 : 1));
+    const show = order.map(key => { const { f, n } = cnt.get(key); const b = f.raw ? key : f.size > 1 ? "(" + key + ")" : key; return n > 1 ? (f.size > 1 || f.raw ? b : "(" + b + ")") + sup(n) : b; });
+    let ans = (negs % 2 ? "−" : "") + show.join("");
+    ans = ans.replace(/^−−/, "");
+    // the check: multiply back
+    if (!factors.some(f => f.raw)) {
+      let back = pconst(1); for (const f of factors) back = pmul(back, f);
+      const ok = fpolyS(back) === fpolyS(P);
+      steps.push([ans + " = " + fpolyS(back) + (ok ? " ✓" : ""), LW("Check: multiply back and get the original expression", "בדיקה: כופלים בחזרה ומקבלים את הביטוי המקורי")]);
+    }
+    return { answer: fpolyS(P) + " = " + ans, steps };
+  }
+  // all the factors (divisors) of a whole number, in pairs
+  function divisors(n) {
+    const pairs = []; for (let i = 1; i * i <= n; i++) if (n % i === 0) pairs.push([i, n / i]);
+    const all = [...new Set(pairs.flatMap(x => x))].sort((a, b) => a - b);
+    const steps = pairs.map(([a, b]) => [a + " · " + b + " = " + n, LW(a + " divides " + n, n + " מתחלק ב-" + a)]);
+    steps.push([all.join(", "), LW("All the factors of " + n + " (" + all.length + ")", "כל הגורמים (המחלקים) של " + n + " (" + all.length + ")")]);
+    return { answer: LW("Factors of ", "הגורמים של ") + n + ": " + all.join(", "), steps };
+  }
+
   // ---------- power laws (monomials) ----------
   function unparen(n) { while (n.type === "ParenthesisNode") n = n.content; return n; }
   function constVal(node) { // exponent / constant as exact value, or null
@@ -2277,7 +2480,7 @@
     s = s.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹⁻]+/g, m => "^(" + m.split("").map(c => "0123456789-"["⁰¹²³⁴⁵⁶⁷⁸⁹⁻".indexOf(c)]).join("") + ")");
     s = s.replace(/(\d+(?:\.\d+)?)\s*%\s*of\b/gi, "($1/100)*").replace(/%/g, "/100");
     s = s.replace(/[֐-׿][֐-׿"'״׳]*\s*:?/g, " ");
-    s = s.replace(/\b[a-z]{2,}\b\s*:?/gi, w => { const x = w.replace(/[\s:]/g, ""); return WORDS_OK.test(x) || (x.length <= 3 && /^[a-z]+$/.test(x) && !COMMONW.test(x) && !/:/.test(w)) ? w : " "; });
+    s = s.replace(/\b[a-z]{2,}\b\s*:?/gi, (w, at, all) => { const x = w.replace(/[\s:]/g, ""); const opN = /[-+*/^=(]\s*$/.test(all.slice(0, at)) && /^\s*[-+*/^=)]/.test(all.slice(at + w.length)) || /[-+]\s*$/.test(all.slice(0, at)) && /^\s*$/.test(all.slice(at + w.length)); return WORDS_OK.test(x) || (x.length <= 3 && /^[a-z]+$/.test(x) && (!COMMONW.test(x) || opN) && !/:/.test(w)) ? w : " "; });
     s = s.replace(/^\s*(\(?\d{1,2}[.)]|\(?[a-hA-H][.)])\s+/, " ");
     s = s.replace(/^\s*[a-z]\s*:(?=.*[=<>])/i, " ");
     s = s.replace(/^[\s:]+/, "");
@@ -2312,6 +2515,7 @@
     if (r.steps) r.steps = r.steps.map(([c, w]) => [fix(c), w]);
     return r;
   }
+  const plainA = x => String(x).replace(/[\s⁦-⁩]/g, "").replace(/·/g, "");
   function solveOne(raw) { return tidy(solveOne_(raw)); }
   function solveOne_(raw) {
     RANGE = null;
@@ -2335,9 +2539,14 @@
         return Object.assign({ problem: display }, equation(parts[0], parts[1]));
       }
       const fracLit = x => x.replace(/(^|[^\d.\/])(\d+)\/(\d+)(?![\d.\/])/g, "$1frac($2,$3)");
+      const FACW = /פרק|פירוק|לפרק|גורמ|factor/i, PRIMEW = /ראשוני|prime/i, DIVW = /מחלק|divisor|גורמים\s+של|factors\s+of|כל\s+הגורמים/i;
+      if (/^\d+$/.test(s) && Number(s) >= 1 && Number(s) <= 1e12 && DIVW.test(raw) && !PRIMEW.test(raw)) return Object.assign({ problem: display }, divisors(Number(s)));
       if (/^\d+$/.test(s) && Number(s) >= 2 && Number(s) <= 1e12) return Object.assign({ problem: display }, factorize(Number(s)));
       const vars = symbols(M().parse(s));
+      if (vars.length && FACW.test(raw)) { const f = factorPoly(s); if (f) return Object.assign({ problem: display }, f); }
       let r = vars.length ? algebra(s) : powers(s);
+      // an expression that is already simplified: factoring is the useful answer
+      if (vars.length && r && plainA(r.answer) === plainA(display)) { const f = factorPoly(s); if (f && !/^(?:Can't be factored|לא ניתן לפרק)/.test(f.answer) && !/√/.test(f.answer)) return Object.assign({ problem: display }, f); }
       if (!r) r = arithmetic(fracLit(s));
       return { problem: display, answer: r.answer, steps: r.steps };
     } catch (e) {
