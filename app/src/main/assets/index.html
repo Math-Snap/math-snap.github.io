@@ -591,6 +591,12 @@ table.proof tr.prolocked{filter:none;opacity:.8}
 .updprog{width:100%;height:10px;border-radius:99px;background:var(--surface-2);overflow:hidden}.updprog i{display:block;height:100%;background:var(--pen);border-radius:99px;transition:width .3s}
 .updpct{color:var(--muted)}.updcard .btn{width:100%}.updcard .btn:disabled{opacity:.45;cursor:default}
 .updnote{color:var(--muted);font-size:13px;margin:0}
+#updPop{position:fixed;inset:0;z-index:300;display:grid;place-items:center;padding:24px max(16px,env(safe-area-inset-left,0px));background:rgba(8,12,24,.45);animation:updfade .2s ease}
+#updPop .card{width:min(360px,100%);background:var(--surface);color:var(--ink);border-radius:var(--r);box-shadow:0 24px 60px rgba(0,0,0,.3);padding:26px 22px 20px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;animation:updpop .28s cubic-bezier(.2,1.4,.4,1)}
+#updPop h2{margin:0;font-size:21px}#updPop p{margin:0;color:var(--muted)}#updPop .ver{direction:ltr;unicode-bidi:isolate;font-weight:800;color:var(--pen)}
+#updPop .row{display:flex;gap:10px;width:100%;margin-top:8px}#updPop .row .btn{flex:1}
+@keyframes updfade{from{opacity:0}}@keyframes updpop{from{transform:scale(.85);opacity:0}}
+@media (prefers-reduced-motion:reduce){#updPop,#updPop .card{animation:none}}
 @media (max-width:440px){body.hasupd header h1{display:none}}
 </style>
 </head>
@@ -3681,8 +3687,8 @@ function licenseApi(action, params){
 }
 window.onLicense = (id, json) => { const f = window.__lic && window.__lic[id]; if (f) { delete window.__lic[id]; let r; try { r = JSON.parse(json); } catch (e) { r = { error: "bad" }; } f(r); } };
 const keyMatches = r => !!(r && r.meta && (!PRO_WEB.storeId || r.meta.store_id === PRO_WEB.storeId) && (!PRO_WEB.productId || r.meta.product_id === PRO_WEB.productId));
-// ---- Pro codes: three words like TIGER-PIZZA-ROCKET (giveaways). Only salted hashes live here.
-const PRO_CODE_HASHES = new Set(["5eca551bea09db651ae24d953e352edb", "14e1511f355eca723bcc09d06a86c08a", "c6e1c81dc50152575884442e09f8290c", "5ca6651c23e83baa99bbf49be22a3fee", "d57565811f4492111811b76da91cef25", "fe6bd44a302b7d90bab6aa5b260a24dc", "4460fd507606ed6ed277b269cc5bae0c", "23ea25209a11248cca2d236ac1e355a3", "b1b1802820a37c8c8b05a6213ebed8e6", "960e2cd73534c070e0657a38cadb144f", "465139a47ac8daccdec171405e94dbbc", "ff605cff9597d69e630dec38265580f2", "bc8e8e4922fffa2e8fcb567d3edae711", "e191a0695ea28e0e7f0ff7da83badca7", "63987cbdbf9fac7c31c238e2c9c2ec3b", "f88ca126f85357dbd8087626d4feebfe", "4c157d5766a4176ba769abbb8c6633aa", "5d8f2e1e36b338e5e030bae2c8185e8c", "fb109e573d326e4db7c0d0cfc0e0c0b8", "4f35bbc673e07753950f96ba3fd756bd", "9e4913685d235bceb2a64962eb8b4b21", "1b678bee9a06e01118d688617fac7285", "38067b8b7b7a4ad47bff85990901d969", "19d02f68c0bda08e23acc3ebe341ba8d", "7514c05a75c915882cf1192d6bca10f6", "764c1cf3a46a261b2fda094a181ed6ae", "5ecde75b0c228747f918f47f28f9e843", "4cbcb546dac7ea8c977fe11726d45ade", "9bb07311694a81527decff64352753b3", "7cb853f1bc21ebd4234d76365f32cbe5"]);
+// ---- Pro codes: 12 random letters like KQTM-WZRA-HPXN (giveaways). Only salted hashes live here.
+const PRO_CODE_HASHES = new Set(["fafa66dffc6f9d8855c9e2fd49fbb497", "0ebe60aeb8792412247bd6cdc9164eab", "27432fe5be8f616bb0584ea4be34ed11", "a03155e6506c7deadb6323c38e61bbd0", "b9ed9be3936c9b9732607ecf9b27d3ca", "3a9ce3be63c23405cfde00b978765123", "f0ed4037a95e8886c10e6e30f5e2aaff", "9f0ab470ca48e6eecf0c244b65f6ab8b", "265048a67d5f96be4d2ad13926f2a22b", "20977fc2185ed8cb6553d356a012a8b6", "757104ce9796f0ae14b5a29691217beb", "ab1a27391fafa7d296ed840bd8ea1174", "691917239e849fbaf5a72e2a4111a74f", "9c206c70d58c1041cb2e8adfcaeeb8a0", "a60efe8dddcae5fb40259df8a64bf00b", "4b7aa61d27124c29998b64b7d55b7a6d", "973e9f555c15f4a3dab48ee30c4a3b22", "c5832b11717d3aefcc636497445e6feb", "815ef582f1f26c442148f05533db7ef0", "f99ad1a203b57ac9aa19d330fd33eb57", "03594da6ab6884c4848f4f06f31828ba", "ee3d10726e7b97586d435aa60ee90e10", "1437dd0e79860f40861d35b5643edfa7", "55312bfa4111f28990cafd1b296866d1", "2c89846ed8089e8f80b4c86164898c16", "22b46000bc250f5b3ad31624f25e9c5e", "46a95046a297f2a92f06c33e30468eaf", "d30a543ff86e8dce53755da4f14273b1", "97a8296c54cd91ab97c0aceb4dabfd04", "3e05104d2703fbf5f7eb8fb169a12dd0"]);
 function sha256(bytes){
   const K = [0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
   const n = bytes.length, L = ((n + 9 + 63) >> 6) << 6, m = new Uint8Array(L); m.set(bytes); m[n] = 0x80;
@@ -3701,12 +3707,12 @@ function sha256(bytes){
   }
   const out = new Uint8Array(32), ov = new DataView(out.buffer); [a0, b0, c0, d0, e0, f0, g0, h0].forEach((v, i) => ov.setUint32(i * 4, v)); return out;
 }
-const normCode = c => String(c || "").toUpperCase().replace(/[^A-Z]+/g, "-").replace(/^-|-$/g, "");
+const normCode = c => { const x = String(c || "").toUpperCase().replace(/[^A-Z]/g, ""); return x.length === 12 ? x.match(/.{4}/g).join("-") : x; };
 function codeHash(code){ let x = new TextEncoder().encode("mathsnap-pro-v1:" + code); for (let i = 0; i < 3000; i++) x = sha256(x); return [...x].map(b => b.toString(16).padStart(2, "0")).join("").slice(0, 32); }
 let codePro = (() => { try { return JSON.parse(localStorage.getItem("proCode") || "null"); } catch (e) { return null; } })();
 const codeActive = () => !!(codePro && codePro.code && PRO_CODE_HASHES.has(codePro.h));
 function tryProCode(raw){
-  const c = normCode(raw); if (!/^[A-Z]{3,}-[A-Z]{3,}-[A-Z]{3,}$/.test(c)) return null;
+  if (/[0-9]/.test(String(raw || ""))) return null; const c = normCode(raw); if (!/^[A-Z]{4}-[A-Z]{4}-[A-Z]{4}$/.test(c)) return null;
   const h = codeHash(c); if (!PRO_CODE_HASHES.has(h)) return "codeBad";
   codePro = { code: c, h, at: Date.now() }; try { localStorage.setItem("proCode", JSON.stringify(codePro)); } catch (e) {}
   return "ok";
@@ -3791,7 +3797,7 @@ const PS = {
   termsWeb: ["Renews every month until you cancel. After paying you get a Pro key by email: enter it below. It works on Windows, iPhone and Android.", "המנוי מתחדש כל חודש עד שמבטלים. אחרי התשלום מגיע במייל קוד Pro: מקלידים אותו כאן למטה. הוא עובד ב-Windows, באייפון ובאנדרואיד."],
   soon: ["Buying Pro on this device is coming very soon. Already have a Pro key? Enter it below.", "קנייה של Pro במכשיר הזה תגיע ממש בקרוב. כבר יש לכם קוד Pro? הקלידו אותו כאן למטה."],
   keyHave: ["Have a Pro key?", "יש לכם קוד Pro?"],
-  codeBad: ["That code isn't right. Check the three words and try again.", "הקוד לא נכון. בדקו את שלוש המילים ונסו שוב."],
+  codeBad: ["That code isn't right. Check the letters and try again.", "הקוד לא נכון. בדקו את האותיות ונסו שוב."],
   codeOn: [c => "Pro code " + c + " is active on this device.", c => "קוד Pro " + c + " פעיל במכשיר הזה."],
   keyGo: ["Activate", "הפעלה"],
   keyChecking: ["Checking the key…", "בודק את הקוד…"],
@@ -3880,7 +3886,7 @@ function sheetHead(box, title){
 function openPro(feature){ proFocus = feature || null; renderPaywall(proFocus); openProSheet("pay"); }
 function keyForm(codesOnly){
   const kb = el("form", "keybox"); kb.noValidate = true;
-  const lbl = el("label", null, P("keyHave")); const ki = document.createElement("input"); ki.type = "text"; ki.dir = "ltr"; ki.placeholder = "TIGER-PIZZA-ROCKET"; ki.autocomplete = "off"; ki.spellcheck = false; ki.setAttribute("autocapitalize", "off"); ki.id = "proKeyIn";
+  const lbl = el("label", null, P("keyHave")); const ki = document.createElement("input"); ki.type = "text"; ki.dir = "ltr"; ki.placeholder = "ABCD-EFGH-JKLM"; ki.autocomplete = "off"; ki.spellcheck = false; ki.setAttribute("autocapitalize", "off"); ki.id = "proKeyIn";
   lbl.htmlFor = "proKeyIn";
   const go = el("button", "btn quiet", P("keyGo")); go.type = "submit";
   const msg = el("p", "keymsg"); msg.hidden = true;
@@ -4145,13 +4151,26 @@ if (keyPro && keyPro.key && Date.now() - (keyPro.checked || 0) > 864e5) setTimeo
     b.classList.toggle("spin", s.state === "downloading");
     if (s.state === "available") b.classList.add("dot");
     if (s.state === "installing" || s.state === "latest") b.classList.remove("dot");
-    if (s.state === "available" && s.quiet && !open) show();   // found by itself: show it once
+    if (s.state === "available" && s.quiet && !open) ask(s.version);   // found by itself when the app opens: ask
     else if (open) draw();
   };
+  // the pop-up when the app opens: "a new version is out, download it?"
+  function ask(v){
+    if ($("updPop")) return;
+    const pop = el("div"); pop.id = "updPop"; pop.setAttribute("role", "alertdialog"); pop.setAttribute("aria-modal", "true"); pop.setAttribute("aria-labelledby", "updPopT");
+    const card = el("div", "card"); const h = el("h2", null, pick("A new version is out! 🎉", "יצאה גרסה חדשה! 🎉")); h.id = "updPopT";
+    const p = el("p"); p.append(pick("Version ", "גרסה "), el("span", "ver", v || ""), pick(" is ready. Download it now?", " מוכנה. להוריד אותה עכשיו?"));
+    const row = el("div", "row"); const yes = el("button", "btn", pick("Download", "הורדה")); yes.type = "button"; const no = el("button", "btn quiet", pick("Later", "אחר כך")); no.type = "button";
+    const close = () => { pop.remove(); document.removeEventListener("keydown", esc); };
+    const esc = e => { if (e.key === "Escape") close(); };
+    yes.onclick = () => { close(); st = { state: "downloading", percent: 0, version: v }; show(); b.classList.add("spin"); Android.installUpdate(); };
+    no.onclick = close; pop.onclick = e => { if (e.target === pop) close(); };
+    row.append(yes, no); card.append(el("div", "updicon", "⬇️"), h, p, row, el("p", "updnote", pick("Your problems and history stay.", "התרגילים וההיסטוריה נשמרים."))); pop.append(card);
+    document.body.append(pop); document.addEventListener("keydown", esc); setTimeout(() => yes.focus(), 50);
+  }
   b.onclick = () => { if (st.state !== "downloading" && st.state !== "available") { st = { state: "checking" }; Android.checkUpdate(false); } show(); };
-  // check by itself once a day, quietly
-  let last = 0; try { last = +localStorage.getItem("updCheck") || 0; } catch (e) {}
-  if (Date.now() - last > 864e5) setTimeout(() => { try { localStorage.setItem("updCheck", String(Date.now())); } catch (e) {} Android.checkUpdate(true); }, 4000);
+  // check by itself every time the app opens, quietly: it only speaks up when there is a new version
+  setTimeout(() => Android.checkUpdate(true), 2500);
 })();
 // ---------- computer: Ctrl+Enter solves, paste or drop a picture to read it ----------
 (function(){
