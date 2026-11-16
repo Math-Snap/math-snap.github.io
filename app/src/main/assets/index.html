@@ -3681,7 +3681,39 @@ function licenseApi(action, params){
 }
 window.onLicense = (id, json) => { const f = window.__lic && window.__lic[id]; if (f) { delete window.__lic[id]; let r; try { r = JSON.parse(json); } catch (e) { r = { error: "bad" }; } f(r); } };
 const keyMatches = r => !!(r && r.meta && (!PRO_WEB.storeId || r.meta.store_id === PRO_WEB.storeId) && (!PRO_WEB.productId || r.meta.product_id === PRO_WEB.productId));
+// ---- Pro codes: three words like TIGER-PIZZA-ROCKET (giveaways). Only salted hashes live here.
+const PRO_CODE_HASHES = new Set(["5eca551bea09db651ae24d953e352edb", "14e1511f355eca723bcc09d06a86c08a", "c6e1c81dc50152575884442e09f8290c", "5ca6651c23e83baa99bbf49be22a3fee", "d57565811f4492111811b76da91cef25", "fe6bd44a302b7d90bab6aa5b260a24dc", "4460fd507606ed6ed277b269cc5bae0c", "23ea25209a11248cca2d236ac1e355a3", "b1b1802820a37c8c8b05a6213ebed8e6", "960e2cd73534c070e0657a38cadb144f", "465139a47ac8daccdec171405e94dbbc", "ff605cff9597d69e630dec38265580f2", "bc8e8e4922fffa2e8fcb567d3edae711", "e191a0695ea28e0e7f0ff7da83badca7", "63987cbdbf9fac7c31c238e2c9c2ec3b", "f88ca126f85357dbd8087626d4feebfe", "4c157d5766a4176ba769abbb8c6633aa", "5d8f2e1e36b338e5e030bae2c8185e8c", "fb109e573d326e4db7c0d0cfc0e0c0b8", "4f35bbc673e07753950f96ba3fd756bd", "9e4913685d235bceb2a64962eb8b4b21", "1b678bee9a06e01118d688617fac7285", "38067b8b7b7a4ad47bff85990901d969", "19d02f68c0bda08e23acc3ebe341ba8d", "7514c05a75c915882cf1192d6bca10f6", "764c1cf3a46a261b2fda094a181ed6ae", "5ecde75b0c228747f918f47f28f9e843", "4cbcb546dac7ea8c977fe11726d45ade", "9bb07311694a81527decff64352753b3", "7cb853f1bc21ebd4234d76365f32cbe5"]);
+function sha256(bytes){
+  const K = [0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+  const n = bytes.length, L = ((n + 9 + 63) >> 6) << 6, m = new Uint8Array(L); m.set(bytes); m[n] = 0x80;
+  const dv = new DataView(m.buffer); dv.setUint32(L - 4, n * 8); dv.setUint32(L - 8, Math.floor(n / 0x20000000));
+  let [a0, b0, c0, d0, e0, f0, g0, h0] = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+  const w = new Uint32Array(64), r = (x, k) => (x >>> k) | (x << (32 - k));
+  for (let o = 0; o < L; o += 64) {
+    for (let i = 0; i < 16; i++) w[i] = dv.getUint32(o + i * 4);
+    for (let i = 16; i < 64; i++) w[i] = (w[i - 16] + (r(w[i - 15], 7) ^ r(w[i - 15], 18) ^ (w[i - 15] >>> 3)) + w[i - 7] + (r(w[i - 2], 17) ^ r(w[i - 2], 19) ^ (w[i - 2] >>> 10))) | 0;
+    let a = a0, b = b0, c = c0, d = d0, e = e0, f = f0, g = g0, h = h0;
+    for (let i = 0; i < 64; i++) {
+      const t1 = (h + (r(e, 6) ^ r(e, 11) ^ r(e, 25)) + ((e & f) ^ (~e & g)) + K[i] + w[i]) | 0, t2 = ((r(a, 2) ^ r(a, 13) ^ r(a, 22)) + ((a & b) ^ (a & c) ^ (b & c))) | 0;
+      h = g; g = f; f = e; e = (d + t1) | 0; d = c; c = b; b = a; a = (t1 + t2) | 0;
+    }
+    a0 = (a0 + a) | 0; b0 = (b0 + b) | 0; c0 = (c0 + c) | 0; d0 = (d0 + d) | 0; e0 = (e0 + e) | 0; f0 = (f0 + f) | 0; g0 = (g0 + g) | 0; h0 = (h0 + h) | 0;
+  }
+  const out = new Uint8Array(32), ov = new DataView(out.buffer); [a0, b0, c0, d0, e0, f0, g0, h0].forEach((v, i) => ov.setUint32(i * 4, v)); return out;
+}
+const normCode = c => String(c || "").toUpperCase().replace(/[^A-Z]+/g, "-").replace(/^-|-$/g, "");
+function codeHash(code){ let x = new TextEncoder().encode("mathsnap-pro-v1:" + code); for (let i = 0; i < 3000; i++) x = sha256(x); return [...x].map(b => b.toString(16).padStart(2, "0")).join("").slice(0, 32); }
+let codePro = (() => { try { return JSON.parse(localStorage.getItem("proCode") || "null"); } catch (e) { return null; } })();
+const codeActive = () => !!(codePro && codePro.code && PRO_CODE_HASHES.has(codePro.h));
+function tryProCode(raw){
+  const c = normCode(raw); if (!/^[A-Z]{3,}-[A-Z]{3,}-[A-Z]{3,}$/.test(c)) return null;
+  const h = codeHash(c); if (!PRO_CODE_HASHES.has(h)) return "codeBad";
+  codePro = { code: c, h, at: Date.now() }; try { localStorage.setItem("proCode", JSON.stringify(codePro)); } catch (e) {}
+  return "ok";
+}
+function removeCode(){ codePro = null; try { localStorage.removeItem("proCode"); } catch (e) {} proChanged(); }
 async function activateKey(key){
+  const pc = tryProCode(key); if (pc) return pc;
   key = String(key || "").trim();
   if (!/^[A-Za-z0-9-]{16,}$/.test(key)) return "keyBad";
   const r = await licenseApi("activate", { license_key: key, instance_name: "Math Snap " + (Android.isDesktop ? "Windows" : hasBridge && Android.isWeb ? "Web" : "Android") });
@@ -3704,7 +3736,7 @@ async function removeKey(){
   if (keyPro && keyPro.key && keyPro.instance) licenseApi("deactivate", { license_key: keyPro.key, instance_id: keyPro.instance });
   keyPro = null; saveKey(); proChanged();
 }
-const isPro = () => !!proState.pro || isOwner() || keyActive();
+const isPro = () => !!proState.pro || isOwner() || keyActive() || codeActive();
 const PS = {
   title: ["Math Snap Pro", "Math Snap Pro"],
   sub: ["Everything to learn math, not just get answers.", "כל מה שצריך כדי ללמוד, לא רק לקבל תשובה."],
@@ -3759,6 +3791,8 @@ const PS = {
   termsWeb: ["Renews every month until you cancel. After paying you get a Pro key by email: enter it below. It works on Windows, iPhone and Android.", "המנוי מתחדש כל חודש עד שמבטלים. אחרי התשלום מגיע במייל קוד Pro: מקלידים אותו כאן למטה. הוא עובד ב-Windows, באייפון ובאנדרואיד."],
   soon: ["Buying Pro on this device is coming very soon. Already have a Pro key? Enter it below.", "קנייה של Pro במכשיר הזה תגיע ממש בקרוב. כבר יש לכם קוד Pro? הקלידו אותו כאן למטה."],
   keyHave: ["Have a Pro key?", "יש לכם קוד Pro?"],
+  codeBad: ["That code isn't right. Check the three words and try again.", "הקוד לא נכון. בדקו את שלוש המילים ונסו שוב."],
+  codeOn: [c => "Pro code " + c + " is active on this device.", c => "קוד Pro " + c + " פעיל במכשיר הזה."],
   keyGo: ["Activate", "הפעלה"],
   keyChecking: ["Checking the key…", "בודק את הקוד…"],
   keyBad: ["That key isn't valid. Check it in the email and try again.", "הקוד לא תקין. בדקו אותו במייל ונסו שוב."],
@@ -3844,6 +3878,22 @@ function sheetHead(box, title){
 
 // ---- the paywall ----
 function openPro(feature){ proFocus = feature || null; renderPaywall(proFocus); openProSheet("pay"); }
+function keyForm(codesOnly){
+  const kb = el("form", "keybox"); kb.noValidate = true;
+  const lbl = el("label", null, P("keyHave")); const ki = document.createElement("input"); ki.type = "text"; ki.dir = "ltr"; ki.placeholder = "TIGER-PIZZA-ROCKET"; ki.autocomplete = "off"; ki.spellcheck = false; ki.setAttribute("autocapitalize", "off"); ki.id = "proKeyIn";
+  lbl.htmlFor = "proKeyIn";
+  const go = el("button", "btn quiet", P("keyGo")); go.type = "submit";
+  const msg = el("p", "keymsg"); msg.hidden = true;
+  kb.append(lbl, ki, go, msg);
+  kb.onsubmit = async e => {
+    e.preventDefault(); go.disabled = true; msg.hidden = false; msg.className = "keymsg"; msg.textContent = P("keyChecking");
+    const r = codesOnly ? (tryProCode(ki.value) || "codeBad") : await activateKey(ki.value);
+    go.disabled = false;
+    if (r === "ok") { msg.className = "keymsg ok"; msg.textContent = P("info_thanks"); proChanged(); setTimeout(() => renderPaywall(proFocus), 900); }
+    else { msg.className = "keymsg bad"; msg.textContent = P(r); }
+  };
+  return kb;
+}
 function renderPaywall(feature){
   readPro();
   const box = $("proInner"); box.innerHTML = "";
@@ -3859,18 +3909,22 @@ function renderPaywall(feature){
   box.append(list);
   const foot = el("div", "profoot");
   if (isPro()) {
-    foot.append(el("p", "prohave", proState.pro || keyActive() ? P("have") : P("haveOwner")));
+    foot.append(el("p", "prohave", proState.pro || keyActive() || codeActive() ? P("have") : P("haveOwner")));
     if (proState.pro && proState.play) { const m = el("button", "btn quiet", P("manage")); m.type = "button"; m.onclick = () => { try { Android.managePro(); } catch (e) {} }; foot.append(m); }
     else if (keyActive()) {
       foot.append(el("p", "proterms", P("keyOn", "…" + keyPro.key.slice(-4))));
       const m = el("button", "btn quiet", P("manage")); m.type = "button"; m.onclick = () => { try { Android.openUrl(PRO_WEB.portal); } catch (e) {} };
       const rm = el("button", "linkbtn", P("keyRemove")); rm.type = "button"; rm.onclick = () => removeKey();
       foot.append(m, rm);
+    } else if (codeActive()) {
+      foot.append(el("p", "proterms", P("codeOn", codePro.code)));
+      const rm = el("button", "linkbtn", P("keyRemove")); rm.type = "button"; rm.onclick = () => removeCode(); foot.append(rm);
     }
   } else if (proState.play) {
     foot.append(el("p", "proprice", proState.price ? P("perMonth", proState.price) : P("monthly")));
     const b = el("button", "btn", P("subscribe")); b.type = "button"; b.onclick = () => { try { Android.buyPro(); } catch (e) {} }; foot.append(b);
     foot.append(el("p", "proterms", P("terms")));
+    foot.append(keyForm(true));
   } else {
     // Windows, iPhone and the APK from the website: subscribe on the web, then enter the Pro key
     if (PRO_WEB.checkout) {
@@ -3878,20 +3932,7 @@ function renderPaywall(feature){
       const b = el("button", "btn", P("subscribe")); b.type = "button"; b.onclick = () => { try { Android.openUrl(PRO_WEB.checkout); } catch (e) {} }; foot.append(b);
       foot.append(el("p", "proterms", P("termsWeb")));
     } else foot.append(el("p", "proterms", P("soon")));
-    const kb = el("form", "keybox"); kb.noValidate = true;
-    const lbl = el("label", null, P("keyHave")); const ki = document.createElement("input"); ki.type = "text"; ki.dir = "ltr"; ki.placeholder = "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"; ki.autocomplete = "off"; ki.spellcheck = false; ki.setAttribute("autocapitalize", "off"); ki.id = "proKeyIn";
-    lbl.htmlFor = "proKeyIn";
-    const go = el("button", "btn quiet", P("keyGo")); go.type = "submit";
-    const msg = el("p", "keymsg"); msg.hidden = true;
-    kb.append(lbl, ki, go, msg);
-    kb.onsubmit = async e => {
-      e.preventDefault(); go.disabled = true; msg.hidden = false; msg.className = "keymsg"; msg.textContent = P("keyChecking");
-      const r = await activateKey(ki.value);
-      go.disabled = false;
-      if (r === "ok") { msg.className = "keymsg ok"; msg.textContent = P("info_thanks"); proChanged(); setTimeout(() => renderPaywall(proFocus), 900); }
-      else { msg.className = "keymsg bad"; msg.textContent = P(r); }
-    };
-    foot.append(kb);
+    foot.append(keyForm(false));
   }
   box.append(foot);
   if (feature) setTimeout(() => { const on = list.querySelector("li.on"); if (on) on.scrollIntoView({ block: "nearest" }); }, 60);
