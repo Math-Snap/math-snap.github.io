@@ -2413,7 +2413,27 @@ function rolesOf(raw){
   });
   return out;
 }
+// a height in the text: "the height to side BC is 4", "height AD = 4", "AD is a height … AD = 4". It is taken out of the
+// text, so its number isn't read as a side, and comes back with the side it falls on.
+function heightIn(raw){
+  let t = String(raw), h = null, base = null, seg = null;
+  const N = "(\\d+(?:\\.\\d+)?)", S = "([A-D]{2})";
+  const toSide = new RegExp("(?:ה)?גובה\\s*(?:ה?(?:יורד|מורד)\\s*)?(?:" + S + "\\s*)?(?:לצלע|אל\\s*הצלע|על\\s*הצלע|לבסיס|ל-?)\\s*" + S + "\\s*(?:הוא|היא|שווה(?:\\s*ל-?)?|=|:)?\\s*" + N + "?");
+  const named = new RegExp("(?:ה)?גובה\\s+" + S + "\\s*(?:הוא|היא|שווה(?:\\s*ל-?)?|=|:)\\s*" + N);
+  const role = new RegExp(S + "\\s+(?:הוא\\s+)?(?:ה)?גובה(?![א-ת])");
+  const heightE = /\b(?:the\s+)?height\s+(?:to\s+(?:side\s+)?([A-D]{2})\s*)?(?:is|=)\s*(\d+(?:\.\d+)?)/i;
+  let m;
+  if ((m = t.match(toSide))) { seg = m[1] || null; base = m[2]; if (m[3]) { h = parseFloat(m[3]); t = t.replace(m[0], " "); } else t = t.replace(m[0], " גובה "); }
+  if (h == null && (m = t.match(named))) { seg = m[1]; h = parseFloat(m[2]); t = t.replace(m[0], " "); }
+  if (h == null && (m = t.match(role))) {
+    seg = m[1]; const v = t.match(new RegExp("(?<![A-Z])" + seg + "\\s*(?:=|שווה(?:\\s*ל-?)?|הוא)\\s*" + N));
+    if (v) { h = parseFloat(v[1]); t = t.replace(v[0], " "); } t = t.replace(m[0], " ");
+  }
+  if (h == null && (m = t.match(heightE))) { base = m[1] || null; h = parseFloat(m[2]); t = t.replace(m[0], " "); }
+  return h == null ? null : { h, base, seg, rest: t };
+}
 function understand(raw){
+  const HT = heightIn(raw); if (HT) raw = HT.rest;
   const t = " " + String(raw) + " ";
   const has = re => re.test(t);
   const Rl = rolesOf(raw), G = parseGivens(raw);
@@ -2432,7 +2452,14 @@ function understand(raw){
   }
   if (has(/טרפז\s+שווה[\s-]*שוקיים|isosceles\s+trapezoid/i)) return { tool: "isoTrap", vals: { A: a.A ?? a.B ?? (a.C != null ? 180 - a.C : a.D != null ? 180 - a.D : first("ang")), a: L("AB") ?? nth("base", 0), b: L("DC") ?? nth("base", 1), L: L("AD") ?? L("BC") ?? first("leg", "side"), h: first("h") } };
   if (has(/מעוי?ין|rhomb/i)) return { tool: "rhombus", vals: { d1: L("AC") ?? nth("diag", 0), d2: L("BD") ?? nth("diag", 1), s: L("AB") ?? first("side"), A: a.A ?? (a.B != null ? 180 - a.B : first("ang")) } };
-  if (has(/מקבילית|parallelogram/i)) return { tool: "paraT", vals: { A: a.A ?? a.C ?? (a.B != null ? 180 - a.B : a.D != null ? 180 - a.D : first("ang")), a: L("AB") ?? nth("side", 0) ?? first("base"), b: L("AD") ?? L("BC") ?? nth("side", 1), h: first("h") } };
+  if (has(/מקבילית|parallelogram/i)) return { tool: "paraT", vals: { A: a.A ?? a.C ?? (a.B != null ? 180 - a.B : a.D != null ? 180 - a.D : first("ang")), a: (HT && HT.base && L(HT.base)) ?? L("AB") ?? nth("side", 0) ?? first("base"), b: L("AD") ?? L("BC") ?? nth("side", 1), h: HT ? HT.h : first("h") } };
+  // a triangle with its height: area = base × height ÷ 2 (the base is the side the height falls on)
+  if (HT && has(/משולש|triangle/i) && !has(/שווה[\s-]*(?:שוקיים|צלעות)|isosceles|equilateral|ישר[\s-]*ה?זווית|right/i)) {
+    const tri = (t.match(/(?:משולש|triangle)\s+([A-D]{3})/i) || [, "ABC"])[1];
+    const side = HT.base || (HT.seg && tri.includes(HT.seg[0]) ? tri.replace(HT.seg[0], "") : null);
+    const b = (side && L(side)) ?? first("base") ?? (side ? null : nth("side", 0));
+    if (b != null) return { tool: "tri", vals: { b, h: HT.h } };
+  }
   if (has(/מלבן|rectangle/i)) return { tool: "rect", vals: { a: first("len") ?? nth("side", 0) ?? L("AB"), b: first("wid") ?? nth("side", 1) ?? L("BC") ?? L("AD") } };
   if (has(/(?:^|[^ב])ריבוע(?!ים)|\bsquare\b/i) && !has(/בריבוע|squared/i)) return { tool: "square", vals: { a: first("side", "len") ?? L("AB") } };
   if (has(/שווה[\s-]*צלעות|equilateral/i)) return { tool: "equi", vals: { a: first("side") ?? L("AB") ?? L("BC") } };

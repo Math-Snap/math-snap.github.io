@@ -58,5 +58,22 @@ r = run("משולש ABC ומשולש DEF, AB = DE, זווית A = זווית D, 
 ok("two triangles ASA", r.ok && r.goals[0].ok, r);
 r = run("Triangle ABC, AB = AC, D is the midpoint of BC.", "Prove that angle BAD = angle CAD", "en");
 ok("english SSS", r.ok && r.goals[0].ok, r);
+// "הוכח" (singular), ⊥, and heights / bisectors / medians given without "D on BC"
+r = run("משולש ABC שווה שוקיים AB=AC, AD חוצה זווית A", "הוכח כי BD = DC");
+ok("singular prove + bisector foot", r.ok && r.goals[0].ok, r);
+r = run("משולש ABC שווה שוקיים (AB = AC), D אמצע BC.", "הוכיחו: AD ⊥ BC");
+ok("perpendicular goal", r.ok && r.goals[0].ok, r);
+r = run("משולש ABC, AD ⊥ BC, AD חוצה זווית A", "הוכח: AB = AC");
+ok("perpendicular given", r.ok && r.goals[0].ok, r);
+r = run("משולש ABC, AD גובה, BD = DC", "הוכיחו: AB = AC");
+ok("height foot placed", r.ok && r.goals[0].ok, r);
+r = run("משולש ABC שווה שוקיים (AB = AC), D אמצע BC.", "הוכיחו: AD חוצה את זווית A");
+ok("bisector goal", r.ok && r.goals[0].ok, r);
+r = run("משולש ABC שווה שוקיים AB = AC, AD חוצה זווית A", "הוכיחו: AD תיכון");
+ok("median goal", r.ok && r.goals[0].ok, r);
+r = run("משולש ABC שווה שוקיים AB = AC, AD תיכון", "הראו ש-AD גובה");
+ok("height goal", r.ok && r.goals[0].ok, r);
+r = run("AB ∥ CD, זווית ABC = 50", "הוכח שזווית BCD = 50");
+ok("parallel lines without a shape", r.ok && r.goals[0].ok && has(r, /מתחלפות/), r);
 if (bad) { console.log(bad + " proof checks failed (congruence)"); process.exit(1); }
 console.log("proof congruence: all checks passed");
