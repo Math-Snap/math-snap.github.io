@@ -187,6 +187,7 @@
 .sttopics button{border:1px solid var(--line);background:var(--surface-2);color:var(--muted);border-radius:999px;padding:8px 12px;font:600 14px/1 var(--sans);cursor:pointer}
 .sttopics button[aria-pressed="true"]{background:var(--pen);border-color:var(--pen);color:var(--on-pen)}
 .sttopics button[aria-pressed="true"]::before{content:"✓ "}
+.formbtn .prtag{flex:none}
 .prtag{font-size:11px;font-weight:800;background:var(--mark);color:var(--ink);border-radius:6px;padding:2px 6px;flex:none}
 `; document.head.append(css);
 
