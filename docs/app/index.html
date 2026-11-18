@@ -601,6 +601,7 @@ table.proof tr.prolocked{filter:none;opacity:.8}
 .updprog{width:100%;height:10px;border-radius:99px;background:var(--surface-2);overflow:hidden}.updprog i{display:block;height:100%;background:var(--pen);border-radius:99px;transition:width .3s}
 .updpct{color:var(--muted)}.updcard .btn{width:100%}.updcard .btn:disabled{opacity:.45;cursor:default}
 .updnote{color:var(--muted);font-size:13px;margin:0}
+.prob.prword{font:600 18px/1.5 var(--sans);white-space:normal}
 #updPop{position:fixed;inset:0;z-index:300;display:grid;place-items:center;padding:24px max(16px,env(safe-area-inset-left,0px));background:rgba(8,12,24,.45);animation:updfade .2s ease}
 #updPop .card{width:min(360px,100%);background:var(--surface);color:var(--ink);border-radius:var(--r);box-shadow:0 24px 60px rgba(0,0,0,.3);padding:26px 22px 20px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;animation:updpop .28s cubic-bezier(.2,1.4,.4,1)}
 #updPop h2{margin:0;font-size:21px}#updPop p{margin:0;color:var(--muted)}#updPop .ver{direction:ltr;unicode-bidi:isolate;font-weight:800;color:var(--pen)}
@@ -725,6 +726,7 @@ table.proof tr.prolocked{filter:none;opacity:.8}
 <script src="math.js"></script>
 <script src="solver.js"></script>
 <script src="pro-core.js"></script>
+<script src="topics.js"></script>
 <script src="science.js"></script>
 <script src="daily.js"></script>
 <script src="proof.js"></script>
@@ -4001,15 +4003,16 @@ function renderPractice(){
   sheetHead(box, P("prTitle", S.i + 1, S.items.length));
   const dots = el("div", "prdots"); S.items.forEach((x, k) => { const d = el("i", k < S.i ? (x.ok ? "ok" : "bad") : k === S.i ? "now" : null); dots.append(d); }); box.append(dots);
   const card = el("section", "panel");
-  const pr = mathEl("div", "prob", it.result.problem || it.problem); if (!pr.classList.contains("mv")) pr.dir = "ltr"; card.append(pr);
-  const inp = document.createElement("input"); inp.type = "text"; inp.className = "prinput"; inp.dir = "ltr"; inp.placeholder = P("prPh"); inp.autocomplete = "off"; inp.setAttribute("autocapitalize", "off"); inp.spellcheck = false;
+  const ptxt = it.result.problem || it.problem;
+  const pr = it.rtl ? dirOf(el("div", "prob prword", ptxt), ptxt) : mathEl("div", "prob", ptxt); if (!it.rtl && !pr.classList.contains("mv")) pr.dir = "ltr"; card.append(pr);
+  const inp = document.createElement("input"); inp.type = "text"; inp.className = "prinput"; inp.dir = "ltr"; inp.placeholder = it.ph || P("prPh"); inp.autocomplete = "off"; inp.setAttribute("autocapitalize", "off"); inp.spellcheck = false;
   const fb = el("div", "prfb"); fb.hidden = true;
   const go = el("button", "btn", P("prCheck")); go.type = "button";
   const skip = el("button", "btn quiet", P("prSkip")); skip.type = "button";
   const check = () => {
     if (S.answered) { S.i++; S.answered = false; renderPractice(); return; }
     if (!inp.value.trim()) { inp.focus(); return; }
-    const ok = ProCore.sameAnswer(it.answer, inp.value);
+    const ok = it.check ? !!it.check(inp.value) : ProCore.sameAnswer(it.answer, inp.value);
     it.ok = ok; if (ok) S.score++; S.answered = true; inp.disabled = true;
     fb.hidden = false; fb.innerHTML = ""; fb.className = "prfb " + (ok ? "ok" : "bad");
     fb.append(el("b", null, ok ? P("prRight") : P("prWrong")));

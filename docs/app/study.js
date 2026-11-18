@@ -33,6 +33,9 @@
     noEx: ["No exercises yet. Find them in the file or add them yourself.", "עוד אין תרגילים. אפשר למצוא אותם בקובץ או להוסיף בעצמכם."],
     noPractice: ["None of these exercises can be turned into practice yet. Practice works on equations, inequalities and calculations with a number answer.",
                  "אי אפשר עדיין ליצור תרגול מהתרגילים האלה. התרגול עובד על משוואות, אי-שוויונים וחישובים עם תשובה במספרים."],
+    topics: ["Topics to practice", "נושאים לתרגול"],
+    topicsFound: ["Found in the file. Tap to add or remove topics.", "זוהו בקובץ. אפשר ללחוץ כדי להוסיף או להוריד נושאים."],
+    topicsNone: ["I didn't find topics in this file. Pick some, or practice a general mix.", "לא מצאתי נושאים בקובץ. בחרו נושאים, או שהתרגול יהיה כללי."],
     tooBig: ["That file is too big (over 40 MB).", "הקובץ גדול מדי (מעל 40MB)."],
     badPdf: ["I couldn't open this PDF.", "לא הצלחתי לפתוח את ה-PDF הזה."],
     loading: ["Opening…", "פותח…"],
@@ -179,6 +182,11 @@
 .stbusy{display:flex;align-items:center;gap:10px;color:var(--muted)}
 .stbusy i{width:18px;height:18px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--pen);animation:stspin .8s linear infinite}
 @keyframes stspin{to{transform:rotate(360deg)}}
+.sttopicbox{display:flex;flex-direction:column;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 14px}
+.sttopics{display:flex;flex-wrap:wrap;gap:8px}
+.sttopics button{border:1px solid var(--line);background:var(--surface-2);color:var(--muted);border-radius:999px;padding:8px 12px;font:600 14px/1 var(--sans);cursor:pointer}
+.sttopics button[aria-pressed="true"]{background:var(--pen);border-color:var(--pen);color:var(--on-pen)}
+.sttopics button[aria-pressed="true"]::before{content:"✓ "}
 .prtag{font-size:11px;font-weight:800;background:var(--mark);color:var(--ink);border-radius:6px;padding:2px 6px;flex:none}
 `; document.head.append(css);
 
@@ -233,7 +241,7 @@
       say(S("loading"));
       const f = { id: "f" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: p.name.replace(/\.pdf$/i, ""), kind: "pdf", blobs: [p], created: Date.now(), notes: {}, ex: [], scanned: false };
       try { const d = await openPdf(f); f.pages = d.numPages; } catch (e) { say(S("badPdf"), true); continue; }
-      try { f.ex = exercisesIn(await pdfLines(f)); f.scanned = true; } catch (e) {}
+      try { const lines = await pdfLines(f); f.ex = exercisesIn(lines); f.text = lines.join("\n").slice(0, 30000); f.topics = Topics.detect(f.text); f.scanned = true; } catch (e) {}
       await putFile(f); last = f;
     }
     if (imgs.length) {
@@ -249,11 +257,25 @@
   async function openFile(id, tabName){
     const f = await getFile(id); if (!f) return renderList();
     view = { file: f, tab: tabName || view.tab || "read" }; renderFile();
+    if (f.kind === "pdf" && f.text === undefined) {
+      try { const lines = await pdfLines(f); f.text = lines.join("\n").slice(0, 30000); if (!f.topicsEdited) f.topics = Topics.detect(f.text); if (!(f.ex || []).length) f.ex = exercisesIn(lines); await putFile(f); if (view.file === f) renderFile(); } catch (e) {}
+    }
   }
   function renderFile(){
     const f = view.file; if (io) { io.disconnect(); io = null; }
     inner.innerHTML = ""; head(f.name, () => { view.file = null; renderList(); });
     const pr = el("button", "btn", S("practice")); pr.type = "button"; pr.onclick = () => practiceFile(f); inner.append(pr);
+    const tb = el("section", "sttopicbox"); tb.append(el("b", null, S("topics")));
+    const sel = new Set(f.topics || []);
+    tb.append(el("p", "stmsg", sel.size ? S("topicsFound") : S("topicsNone")));
+    const chips = el("div", "sttopics");
+    const order = Topics.TOPICS.slice().sort((a, b) => (sel.has(b.id) ? 1 : 0) - (sel.has(a.id) ? 1 : 0));
+    order.forEach(t => {
+      const c = el("button", null, lang === "he" ? t.he : t.en); c.type = "button"; c.setAttribute("aria-pressed", String(sel.has(t.id)));
+      c.onclick = async () => { if (sel.has(t.id)) sel.delete(t.id); else sel.add(t.id); c.setAttribute("aria-pressed", String(sel.has(t.id))); f.topics = [...sel]; f.topicsEdited = true; await putFile(f); };
+      chips.append(c);
+    });
+    tb.append(chips); inner.append(tb);
     const tabs = el("div", "sttabs"); tabs.setAttribute("role", "tablist");
     [["read", S("read")], ["ex", S("exTab") + " (" + (f.ex || []).length + ")"]].forEach(([k, t]) => {
       const b = el("button", null, t); b.type = "button"; b.setAttribute("role", "tab"); b.setAttribute("aria-selected", String(view.tab === k));
@@ -311,6 +333,8 @@
         if (f.kind === "pdf") lines = await pdfLines(f);
         else for (let i = 0; i < f.blobs.length; i++) { b.lastChild.textContent = S("reading", i + 1, f.blobs.length); lines = lines.concat(await scanOne(f.blobs[i])); }
       } catch (e) {}
+      if (!f.topicsEdited) { const extra = Topics.detect(lines.join("\n")); f.topics = [...new Set((f.topics || []).concat(extra))]; }
+      if (f.kind === "pdf" && !f.text) f.text = lines.join("\n").slice(0, 30000);
       const found = exercisesIn(lines), have = new Set((f.ex || []).map(x => x.replace(/\s+/g, "")));
       f.ex = (f.ex || []).concat(found.filter(x => !have.has(x.replace(/\s+/g, "")))); f.scanned = true; await putFile(f);
       if (view.file !== f) return;
@@ -346,9 +370,17 @@
   // ---- practice like the file: new numbers for the file's own exercises, checked as usual ----
   function practiceFile(f){
     const srcs = (f.ex || []).filter(x => ProCore.canPractice(Solver.solve, x, lang));
+    const topics = f.topics || [];
     let items = [];
-    const per = Math.max(1, Math.ceil(10 / Math.max(1, srcs.length)));
-    for (const s of srcs.sort(() => Math.random() - .5)) { items = items.concat(ProCore.practice(Solver.solve, s, lang, Math.min(3, per))); if (items.length >= 10) break; }
+    // exercises like the file's own (at most half when it has topics too), then questions made up for its topics
+    const fromEx = topics.length ? 4 : 10, per = Math.max(1, Math.ceil(fromEx / Math.max(1, srcs.length)));
+    for (const s of srcs.sort(() => Math.random() - .5)) { items = items.concat(ProCore.practice(Solver.solve, s, lang, Math.min(3, per))); if (items.length >= fromEx) break; }
+    items = items.slice(0, fromEx);
+    if (items.length < 10) {
+      const env = { solve: Solver.solve, math, normalize: Solver.normalize, lang, sameAnswer: ProCore.sameAnswer, sameExpr: (a, b) => ProCore.sameExpr(math, Solver.normalize, a, b) };
+      // the file's topics; a file with no topics and no exercises gets a general mix
+      if (topics.length || !srcs.length) items = items.concat(Topics.make(topics, env, 10 - items.length));
+    }
     items = items.sort(() => Math.random() - .5).slice(0, 10);
     if (!items.length) {
       if (view.tab !== "ex") { view.tab = "ex"; renderFile(); }
