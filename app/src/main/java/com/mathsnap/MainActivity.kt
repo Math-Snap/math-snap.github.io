@@ -44,6 +44,14 @@ class MainActivity : AppCompatActivity() {
             if (uri != null) readText(uri) else js("onPhotoCancelled()")
         }
 
+    // <input type="file"> in the page (study mode: PDFs and photos of pages)
+    private var fileCallback: android.webkit.ValueCallback<Array<Uri>>? = null
+    private val pickFiles =
+        registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+            fileCallback?.onReceiveValue(uris.toTypedArray())
+            fileCallback = null
+        }
+
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,6 +63,16 @@ class MainActivity : AppCompatActivity() {
         web.settings.cacheMode = android.webkit.WebSettings.LOAD_NO_CACHE
         web.clearCache(true)
         web.addJavascriptInterface(Bridge(), "Android")
+        web.webChromeClient = object : android.webkit.WebChromeClient() {
+            override fun onShowFileChooser(view: WebView?, callback: android.webkit.ValueCallback<Array<Uri>>?, params: FileChooserParams?): Boolean {
+                fileCallback?.onReceiveValue(null)
+                fileCallback = callback
+                val types = params?.acceptTypes?.flatMap { it.split(",") }?.map { it.trim() }?.filter { it.isNotEmpty() }?.toTypedArray()
+                return try {
+                    pickFiles.launch(if (types.isNullOrEmpty()) arrayOf("*/*") else types); true
+                } catch (e: Exception) { fileCallback = null; false }
+            }
+        }
         // Android 15+ draws apps under the status and navigation bars, so the page sits inside
         // a frame padded by the bars (and by the keyboard when it is open).
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -135,6 +153,14 @@ class MainActivity : AppCompatActivity() {
 
         // ---- Pro ----
         // updates for the APK from the website (Google Play updates its own copy)
+        // study mode: read the text in a picture the page already has (a data: URL)
+        @JavascriptInterface fun scanData(dataUrl: String) = runOnUiThread {
+            try {
+                val bytes = android.util.Base64.decode(dataUrl.substringAfter(","), android.util.Base64.DEFAULT)
+                val bmp = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: throw Exception("image")
+                recognize(InputImage.fromBitmap(bmp, 0))
+            } catch (e: Exception) { js("onOcrError('open')") }
+        }
         @JavascriptInterface fun canSelfUpdate(): Boolean = updater.canUpdate()
         @JavascriptInterface fun checkUpdate(quiet: Boolean) = updater.check(quiet)
         @JavascriptInterface fun installUpdate() = updater.install()
@@ -183,13 +209,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun readText(uri: Uri) {
-        js("onPhotoStart()")
         val image = try {
             InputImage.fromFilePath(this, uri)
         } catch (e: Exception) {
             js("onOcrError('open')")
             return
         }
+        recognize(image)
+    }
+
+    private fun recognize(image: InputImage) {
+        js("onPhotoStart()")
         recognizer.process(image)
             .addOnSuccessListener { result ->
                 // Every word with its position in the photo, so a drawing's labels can be matched to vertices

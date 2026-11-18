@@ -3750,6 +3750,7 @@ const PS = {
   f_proof: [["Full geometry proofs", "Every claim-and-reason row"], ["הוכחות מלאות בגאומטריה", "כל שורות הטענה והנימוק"]],
   f_practice: [["Practice", "5 similar problems with new numbers, checked for you"], ["תרגול", "5 תרגילים דומים עם מספרים חדשים, עם בדיקה"]],
   f_check: [["Mistake checker", "Write your own solution and see where it went wrong"], ["בודק טעויות", "כותבים את הפתרון שלכם ומגלים איפה טעיתם"]],
+  f_study: [["Study for a test", "Load a PDF or photos, read with notes, practice like it"], ["לימוד למבחן", "העלאת PDF או תמונות, קריאה עם הערות ותרגול כמו בקובץ"]],
   f_pdf: [["Save as PDF", "Print or share any solution"], ["שמירה כ-PDF", "הדפסה או שליחה של כל פתרון"]],
   f_themes: [["All looks", "Every theme, gradient backgrounds and your own colours"], ["כל העיצובים", "כל ערכות הצבעים, רקעי מעבר וצבעים משלכם"]],
   f_history: [["Unlimited history", "Every problem you ever solved"], ["היסטוריה בלי הגבלה", "כל תרגיל שפתרתם אי פעם"]],
@@ -3858,6 +3859,7 @@ function paintProBtn(){ document.querySelectorAll("#openChecker .protag").forEac
 // re-draw whatever is on screen when Pro turns on or off
 function proChanged(){
   paintProBtn();
+  if (window.studyProChanged) window.studyProChanged();
   if (!$("results").hidden && $("results").childElementCount && $("problem").value.trim()) solveNow(true, true);
   if (!$("geoResults").hidden && $("geoResults").querySelector("table.proof")) { try { calcGeo(true); } catch (e) {} }
   if (typeof renderMe === "function" && !$("mePanel").hidden) renderMe();
@@ -3906,7 +3908,7 @@ function renderPaywall(feature){
   sheetHead(box, P("title"));
   const hero = el("div", "prohero"); hero.append(svgEl(STAR_SVG), el("p", null, P("sub"))); box.append(hero);
   const list = el("ul", "prolist");
-  for (const k of ["explain", "proof", "practice", "check", "pdf", "themes", "history"]) {
+  for (const k of ["explain", "proof", "practice", "study", "check", "pdf", "themes", "history"]) {
     const [t, d] = pick(...PS["f_" + k]);
     const li = el("li", feature === k ? "on" : null); li.style.setProperty("--i", list.childElementCount);
     const tx = el("div"); tx.append(el("b", null, t), el("span", null, d)); li.append(svgEl('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>'), tx);
@@ -3959,7 +3961,7 @@ function renderPractice(){
   if (S.i >= S.items.length) {
     sheetHead(box, P("practice"));
     const done = el("div", "prodone"); done.append(el("b", null, S.score + " / " + S.items.length), el("p", null, P("prDone", S.score, S.items.length))); box.append(done);
-    const more = el("button", "btn", P("prMore")); more.type = "button"; more.onclick = () => startPractice(S.src);
+    const more = el("button", "btn", P("prMore")); more.type = "button"; more.onclick = () => S.again ? (closeProSheet(), S.again()) : startPractice(S.src);
     const cl = el("button", "btn quiet", P("close")); cl.type = "button"; cl.onclick = closeProSheet;
     box.append(more, cl); return;
   }
@@ -4208,6 +4210,7 @@ if (keyPro && keyPro.key && Date.now() - (keyPro.checked || 0) > 864e5) setTimeo
 })();
 window.onBack = () => {
   if (!$("proSheet").hidden) { closeProSheet(); return true; }
+  if (window.studyBack && window.studyBack()) return true;
   if (!$("bookSheet").hidden) { closeBook(); return true; }
   if (!$("customize").hidden) { closeCustomize(); return true; }
   if (!$("pad").hidden) { setPad(false); return true; }
@@ -4473,5 +4476,6 @@ solveNow(true);
 if (ACC) { try { const st = JSON.parse(Android.authState()); account = st.signedIn ? st : null; } catch(e) {} try { Android.ready(); } catch(e) {} }
 if (ACC && !account && !seenWelcome()) showWelcome();
 </script>
+<script src="study.js"></script>
 </body>
 </html>
