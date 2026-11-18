@@ -93,12 +93,12 @@
       firebase.initializeApp(cfg);
       auth = firebase.auth(); db = firebase.firestore();
       try { await db.enablePersistence({ synchronizeTabs: true }); } catch (e) { /* private mode etc. */ }
-      auth.onAuthStateChanged(u => { user = u; pushAuth(); if (u) listen(); else stop(); });
+      auth.onAuthStateChanged(u => { user = u; pushAuth(); if (u) { listen(); B.checkCode(); } else { stop(); call("onCodePro", false); } });
       try { await auth.getRedirectResult(); } catch (e) { fail(e); }
     })().catch(e => { console.error(e); });
 
     const state = () => user
-      ? { signedIn: true, email: user.email || "", name: user.displayName || "", provider: (user.providerData[0] || {}).providerId || "password" }
+      ? { signedIn: true, uid: user.uid, email: user.email || "", name: user.displayName || "", provider: (user.providerData[0] || {}).providerId || "password" }
       : { signedIn: false };
     const pushAuth = () => call("onAuth", state());
     const CODES = {
@@ -114,6 +114,21 @@
     }
 
     B.authState = () => JSON.stringify(state());
+    // Pro codes: each code works once, for one account (see the Firestore rules for proCodes)
+    const denied = e => e && e.code === "permission-denied";
+    B.redeemCode = hash => boot.then(async () => {
+      if (!user) return call("onCodeResult", "signin");
+      if (!/^[0-9a-f]{32}$/.test(hash)) return call("onCodeResult", "invalid");
+      const ref = db.collection("proCodes").doc(hash);
+      let d; try { d = await ref.get({ source: "server" }); } catch (e) { return call("onCodeResult", denied(e) ? "used" : "offline"); }
+      if (d.exists) return call("onCodeResult", d.data().uid === user.uid ? "ok" : "used");
+      try { await ref.set({ uid: user.uid, at: firebase.firestore.FieldValue.serverTimestamp() }); call("onCodeResult", "ok"); }
+      catch (e) { call("onCodeResult", denied(e) ? "invalid" : "offline"); }
+    });
+    B.checkCode = () => boot.then(async () => {
+      if (!user) return call("onCodePro", false);
+      try { const q = await db.collection("proCodes").where("uid", "==", user.uid).limit(1).get(); call("onCodePro", !q.empty); } catch (e) {}
+    });
     B.ready = () => { boot.then(() => { pushAuth(); if (user) listen(); call("onSync", { paused: false }); }); };
     B.signInEmail = (email, pass) => boot.then(() => auth.signInWithEmailAndPassword(String(email).trim(), pass)).catch(fail);
     B.signUpEmail = (email, pass, name) => boot.then(async () => {
@@ -212,7 +227,7 @@
       const tr = [{ fieldPath: "last", setToServerValue: "REQUEST_TIME" }, { fieldPath: "opens", increment: { integerValue: "1" } }];
       if (!localStorage.getItem("installSent")) tr.push({ fieldPath: "first", setToServerValue: "REQUEST_TIME" });
       fetch("https://firestore.googleapis.com/v1/" + base + ":commit", { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ writes: [{ update: { name: base + "/installs/" + id, fields: { platform: { stringValue: D ? "windows" : ios ? "ios" : "web" }, version: { stringValue: "8.8" } } },
+        body: JSON.stringify({ writes: [{ update: { name: base + "/installs/" + id, fields: { platform: { stringValue: D ? "windows" : ios ? "ios" : "web" }, version: { stringValue: "8.8.1" } } },
           updateMask: { fieldPaths: ["platform", "version"] }, updateTransforms: tr }] }) })
         .then(r => { if (r.ok) { localStorage.setItem("pingDay", day); localStorage.setItem("installSent", "1"); } }).catch(() => {});
     }

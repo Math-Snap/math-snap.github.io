@@ -54,7 +54,7 @@ class Account(private val activity: AppCompatActivity, private val js: (String) 
     fun start() {
         auth.addAuthStateListener {
             pushAuth()
-            if (it.currentUser != null) listenHistory() else stopHistory()
+            if (it.currentUser != null) { listenHistory(); checkCode() } else { stopHistory(); js("window.onCodePro && onCodePro(false)") }
         }
         watchNetwork()
         countPhone()
@@ -94,11 +94,38 @@ class Account(private val activity: AppCompatActivity, private val js: (String) 
         val u = auth.currentUser ?: return JSONObject().put("signedIn", false).toString()
         return JSONObject()
             .put("signedIn", true)
+            .put("uid", u.uid)
             .put("email", u.email ?: "")
             .put("name", u.displayName ?: "")
             .put("provider", u.providerData.map { it.providerId }.firstOrNull { it != "firebase" } ?: "password")
             .toString()
     }
+
+    // ---------- Pro codes: each code works once, for one account ----------
+    // proCodes/{hash} = { uid, at }. The Firestore rules only let an account create a code's document if the
+    // hash is on the list and nobody has it yet, and never change or delete it, so a code can't be used twice.
+    fun redeemCode(hash: String) {
+        val u = auth.currentUser ?: return js("onCodeResult('signin')")
+        if (!Regex("^[0-9a-f]{32}$").matches(hash)) return js("onCodeResult('invalid')")
+        val ref = db.collection("proCodes").document(hash)
+        ref.get(com.google.firebase.firestore.Source.SERVER)
+            .addOnSuccessListener { d ->
+                if (d.exists()) { js(if (d.getString("uid") == u.uid) "onCodeResult('ok')" else "onCodeResult('used')"); return@addOnSuccessListener }
+                ref.set(mapOf("uid" to u.uid, "at" to FieldValue.serverTimestamp()))
+                    .addOnSuccessListener { js("onCodeResult('ok')") }
+                    .addOnFailureListener { e -> js("onCodeResult('" + (if (denied(e)) "invalid" else "offline") + "')") }
+            }
+            .addOnFailureListener { e -> js("onCodeResult('" + (if (denied(e)) "used" else "offline") + "')") }
+    }
+
+    fun checkCode() {
+        val u = auth.currentUser ?: return js("window.onCodePro && onCodePro(false)")
+        db.collection("proCodes").whereEqualTo("uid", u.uid).limit(1).get()
+            .addOnSuccessListener { q -> js("window.onCodePro && onCodePro(" + (!q.isEmpty) + ")") }
+    }
+
+    private fun denied(e: Exception) =
+        e is com.google.firebase.firestore.FirebaseFirestoreException && e.code == com.google.firebase.firestore.FirebaseFirestoreException.Code.PERMISSION_DENIED
 
     private fun pushAuth() = js("window.onAuth && onAuth(" + state() + ")")
 

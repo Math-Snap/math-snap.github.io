@@ -130,6 +130,8 @@ class MainActivity : AppCompatActivity() {
         @JavascriptInterface fun signInGoogle() = runOnUiThread { account.signInGoogle() }
         @JavascriptInterface fun signOut() = runOnUiThread { account.signOut() }
         @JavascriptInterface fun deleteAccount() = runOnUiThread { account.deleteAccount() }
+        @JavascriptInterface fun redeemCode(hash: String) = runOnUiThread { account.redeemCode(hash) }
+        @JavascriptInterface fun checkCode() = runOnUiThread { account.checkCode() }
 
         // ---- Pro key (bought on the web): asks the Lemon Squeezy license service ----
         @JavascriptInterface fun licenseRequest(id: String, action: String, json: String) {
