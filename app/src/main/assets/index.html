@@ -3699,6 +3699,7 @@ const PRO_WEB = {
   storeId: 0,     // Lemon Squeezy store number (keys from other stores are refused)
   productId: 0,   // Lemon Squeezy product number of Math Snap Pro
   portal: "https://app.lemonsqueezy.com/my-orders",
+  site: "https://math-snap.github.io/pro.html", // Pro is bought on the website (Paylink); the buyer gets a code to enter here
 };
 let keyPro = (() => { try { return JSON.parse(localStorage.getItem("proKey") || "null"); } catch (e) { return null; } })();
 const KEY_GRACE = 14 * 864e5; // offline, a checked key keeps working for 14 days
@@ -3837,6 +3838,9 @@ const PS = {
   ckEmpty: ["Write at least two lines: the problem and one step.", "כתבו לפחות שתי שורות: התרגיל ושלב אחד."],
   info_thanks: ["Welcome to Pro!", "ברוכים הבאים ל-Pro!"],
   termsWeb: ["Renews every month until you cancel. After paying you get a Pro key by email: enter it below. It works on Windows, iPhone and Android.", "המנוי מתחדש כל חודש עד שמבטלים. אחרי התשלום מגיע במייל קוד Pro: מקלידים אותו כאן למטה. הוא עובד ב-Windows, באייפון ובאנדרואיד."],
+  buyWeb: ["Get Pro on the website", "לקניית PRO באתר"],
+  termsSite: ["You pay on the Math Snap website and get a Pro code by email. Sign in to your account and enter the code below: Pro then works on all your devices.",
+              "משלמים באתר של Math Snap ומקבלים קוד PRO במייל. מתחברים לחשבון ומקלידים את הקוד כאן למטה, ו-PRO עובד בכל המכשירים שלכם."],
   soon: ["Buying Pro on this device is coming very soon. Already have a Pro key? Enter it below.", "קנייה של Pro במכשיר הזה תגיע ממש בקרוב. כבר יש לכם קוד Pro? הקלידו אותו כאן למטה."],
   keyHave: ["Have a Pro key?", "יש לכם קוד Pro?"],
   codeBad: ["That code isn't right. Check the letters and try again.", "הקוד לא נכון. בדקו את האותיות ונסו שוב."],
@@ -3983,12 +3987,11 @@ function renderPaywall(feature){
     foot.append(el("p", "proterms", P("terms")));
     foot.append(keyForm(true));
   } else {
-    // Windows, iPhone and the APK from the website: subscribe on the web, then enter the Pro key
-    if (PRO_WEB.checkout) {
-      foot.append(el("p", "proprice", P("monthly")));
-      const b = el("button", "btn", P("subscribe")); b.type = "button"; b.onclick = () => { try { Android.openUrl(PRO_WEB.checkout); } catch (e) {} }; foot.append(b);
-      foot.append(el("p", "proterms", P("termsWeb")));
-    } else foot.append(el("p", "proterms", P("soon")));
+    // Windows, iPhone, the website and the APK from the website: Pro is bought on the website, which sends a code
+    // to enter here (with an account). The Google Play version above never links out: it only takes the code.
+    const b = el("button", "btn", P("buyWeb")); b.type = "button";
+    b.onclick = () => { try { Android.openUrl(PRO_WEB.site); } catch (e) { location.href = PRO_WEB.site; } }; foot.append(b);
+    foot.append(el("p", "proterms", P("termsSite")));
     foot.append(keyForm(false));
   }
   box.append(foot);
