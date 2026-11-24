@@ -30,6 +30,12 @@
     for (const l of givenLines) readPerp(l, P);
     placeFeet(P);
     for (const l of goalLines) readGoal(l, P);
+    // nothing asked but a ratio of angles (e.g. from a photo, where the Hebrew question is lost): say what the shape is, or find the angles
+    if (!P.goals.length && P.angRatio) {
+      const n = P.angRatio.parts.length, nm = P.angRatio.name && P.angRatio.name.length === n ? P.angRatio.name : n === 4 ? (P.quads[0] || {}).name : (P.tris[0] || {}).name;
+      if (nm && n === 4) P.goals.push({ kind: "whatQuad", name: nm });
+      else if (nm) [...nm].forEach(v => P.goals.push({ kind: "angle", name: v }));
+    }
     P.goals.forEach(g => { if (g.s) { const t = P.tris.find(t => t.name.includes(g.s[0]) && !t.name.includes(g.s[1])); if (t && !P.on.some(o => o[0] === g.s[1])) { const o = [...t.name].filter(ch => ch !== g.s[0]); P.on.push([g.s[1], o[0], o[1]]); } } });
     return P;
   }
@@ -482,6 +488,12 @@
       else if (g.kind === "cong") { const f = congruent["≅" + g.a + ":" + g.b] || Object.values(congruent).find(c => [...c.a].sort().join("") === [...g.a].sort().join("") && [...c.b].sort().join("") === [...g.b].sort().join("")) || Object.values(congruent).find(c => [...c.b].sort().join("") === [...g.a].sort().join("") && [...c.a].sort().join("") === [...g.b].sort().join(""));
         if (f) { r.ok = true; r.deps = [f]; } r.answer = "Δ" + g.a + " ≅ Δ" + g.b; r.title = W("To prove", "צריך להוכיח"); }
       else if (g.kind === "rightTri") { const [a, b, c] = g.name, A = triAngles(g.name), v = Object.keys(A).find(k => vOf(A[k]) === 90); if (v) { r.ok = true; r.deps = [angVal[A[v]]]; } r.answer = "Δ" + g.name + " " + W("is right-angled", "ישר-זווית"); r.title = W("To prove", "צריך להוכיח"); }
+      else if (g.kind === "whatQuad") { const q = quadKind(g.name);
+        const angs = [...g.name].map(v => { const k = resolveAng(v); return k && vOf(k) != null ? keyName[k] + " = " + R(vOf(k)) + "°" : null; }).filter(Boolean);
+        const kindTxt = { trap: W("is a trapezoid", "טרפז"), isoTrap: W("is an isosceles trapezoid", "טרפז שווה שוקיים"), para: W("is a parallelogram", "מקבילית") }[q.kind];
+        if (q.kind) { r.ok = true; r.deps = q.deps; r.claims = q.claims.length ? q.claims : [[g.name + " " + kindTxt, W("Both pairs of opposite sides are parallel", "שני זוגות של צלעות נגדיות מקבילות")]]; }
+        else if (angs.length) { r.ok = true; r.deps = [...g.name].map(v => angVal[resolveAng(v)]).filter(Boolean); }
+        r.answer = q.kind ? g.name + " " + kindTxt : angs.join(" , "); r.title = q.kind ? W("What the quadrilateral is", "מה סוג המרובע") : W("The angles", "הזוויות"); }
       else if (g.kind === "trap" || g.kind === "isoTrap" || g.kind === "para") { const q = quadKind(g.name);
         const want = g.kind, got = q.kind; const ok = got === want || (want === "trap" && got === "isoTrap");
         if (ok) { r.ok = true; r.deps = q.deps; r.claims = q.claims; }
@@ -529,7 +541,8 @@
     const twoShapes = (t.match(/משולש|triangle|מרובע|טרפז|מקבילית|quadrilateral|trapezoid|parallelogram/gi) || []).length >= 2;
     const proveSomething = /הוכיח|הוכח|להוכיח|הרא(?:ו|ה|י)(?![א-ת])|prove|show that/i.test(t) && /[A-HO]{2,4}/.test(t);
     const special = /חוצ(?:ה|ת)\s+(?:את\s+)?(?:ה)?זווית|bisect|תיכון|median|גובה\s+(?:ל|ב)|altitude|חופפ|חופף|congruen|≅|אלכסונ|diagonal|חיתוך|intersect/i.test(t) && /[A-HO]{2}/.test(t);
-    return onSide || twoShapes || proveSomething || special || letters.size > 4;
+    const ratio = /(?:יחס|זוויות|ratio|angles)[^\n]*\d+(?:\s*:\s*\d+){2,3}/i.test(t);
+    return onSide || twoShapes || proveSomething || special || ratio || letters.size > 4;
   }
 
   const api = { solve, applies, parse };

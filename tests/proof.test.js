@@ -82,5 +82,7 @@ r = run("משולש ABC, היחס בין הזוויות הוא 1:2:3", "הוכי
 ok("angle ratio -> right triangle", r.ok && r.goals[0].ok, r);
 r = run("נתון מרובע ABCD. היחס בין זוויותיו הוא 4:6:12:14", "מצאו את זווית C");
 ok("angle ratio -> find an angle", r.ok && /120/.test(r.answer), r);
+r = run("נתון מרובע ABCD.\nהיחס בין זוויותיו הוא 4:6:12:14", "");
+ok("ratio with no question -> what the quadrilateral is", r.ok && /טרפז/.test(r.answer), r);
 if (bad) { console.log(bad + " proof checks failed (congruence)"); process.exit(1); }
 console.log("proof congruence: all checks passed");
