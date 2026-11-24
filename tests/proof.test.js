@@ -75,5 +75,12 @@ r = run("משולש ABC שווה שוקיים AB = AC, AD תיכון", "הראו
 ok("height goal", r.ok && r.goals[0].ok, r);
 r = run("AB ∥ CD, זווית ABC = 50", "הוכח שזווית BCD = 50");
 ok("parallel lines without a shape", r.ok && r.goals[0].ok && has(r, /מתחלפות/), r);
+// a ratio of angles, and a shape name alone in the ask box
+r = run("נתון מרובע ABCD.\nהיחס בין זוויותיו הוא 4:6:12:14", "טרפז ABCD");
+ok("angle ratio -> trapezoid", r.ok && r.goals[0].ok && has(r, /x = 10°/), r);
+r = run("משולש ABC, היחס בין הזוויות הוא 1:2:3", "הוכיחו: משולש ABC ישר זווית");
+ok("angle ratio -> right triangle", r.ok && r.goals[0].ok, r);
+r = run("נתון מרובע ABCD. היחס בין זוויותיו הוא 4:6:12:14", "מצאו את זווית C");
+ok("angle ratio -> find an angle", r.ok && /120/.test(r.answer), r);
 if (bad) { console.log(bad + " proof checks failed (congruence)"); process.exit(1); }
 console.log("proof congruence: all checks passed");

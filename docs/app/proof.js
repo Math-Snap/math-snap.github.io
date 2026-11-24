@@ -64,6 +64,9 @@
     for (const m of l.matchAll(new RegExp("(" + LET + "{2})\\s*(?:is\\s+|are\\s+)?(?:מקביל(?:ה|ים|ות)?\\s*ל-?|parallel\\s+to|\\|\\|)\\s*(" + LET + "{2})", "gi"))) P.par.push([m[1], m[2]]);
     for (const m of l.matchAll(new RegExp("(?<![A-Z])(" + LET + "{2})\\s*(?:=|שווה\\s*ל-?|שווה|equals?)\\s*(" + LET + "{2})(?![A-Z0-9])", "g"))) P.segEq.push([m[1], m[2], "given"]);
     for (const m of l.matchAll(new RegExp("(?:זווית|angle)\\s*(" + LET + "{1,3})\\s*(?:=|שווה\\s*ל-?|שווה|is|equals?)?\\s*(\\d+(?:\\.\\d+)?)", "gi"))) P.angVal.push([m[1], parseFloat(m[2])]);
+    // "the ratio between its angles is 4:6:12:14" (in the order of the vertices)
+    const ratio = l.match(new RegExp("(?:(?:ה)?יחס\\s+(?:בין\\s+)?(?:ה)?זוויות(?:יו|יה|\\s+(?:ה)?(?:מרובע|משולש|טרפז))?|(?:ה)?זוויות(?:יו|יה|\\s+(?:ה)?(?:מרובע|משולש))?\\s+(?:מתייחסות|ביחס)(?:\\s+(?:זו\\s+לזו|כמו|של))?|(?:the\\s+)?(?:ratio\\s+of\\s+(?:the|its)\\s+angles|angles\\s+are\\s+in\\s+the\\s+ratio))(?:\\s+(?:של\\s+)?(?:ה)?(?:מרובע|משולש)?\\s*(" + LET + "{3,4}))?\\s*(?:הוא|היא|הם|is|=|:)?\\s*(?:כ-?|of\\s+)?(\\d+(?:\\.\\d+)?(?:\\s*:\\s*\\d+(?:\\.\\d+)?){2,3})", "i"));
+    if (ratio) P.angRatio = { name: ratio[1] || null, parts: ratio[2].split(":").map(v => parseFloat(v)) };
     for (const m of l.matchAll(new RegExp("(?:זווית|angle)\\s*(" + LET + "{1,3})\\s*(?:=|שווה\\s*ל-?|שווה|equals?)\\s*(?:זווית|angle)\\s*(" + LET + "{1,3})", "gi"))) P.angEq.push([m[1], m[2]]);
     for (const m of l.matchAll(new RegExp("(" + LET + "{2})\\s+(?:הוא\\s+|היא\\s+|is\\s+(?:the\\s+|an?\\s+)?)?(חוצ(?:ה|ת)\\s+(?:את\\s+)?(?:ה)?זווית|bisects?|גובה|height|altitude|תיכון|median)", "gi"))) {
       const w = m[2]; (/חוצ|bisect/.test(w) ? P.bis : /גובה|height|altitude/.test(w) ? P.heights : P.medians).push(m[1]);
@@ -94,7 +97,8 @@
     const cong = l.match(new RegExp("(?:משולש(?:ים)?|triangles?)\\s+(" + LET + "{3})\\s*(?:≅|חופף\\s+(?:ל-?)?(?:משולש\\s+)?|(?:,|ו|and)\\s*(?:משולש\\s+)?)(" + LET + "{3})\\s*(?:≅|חופפים|חופף|are\\s+congruent|is\\s+congruent)?")) || l.match(new RegExp("Δ?(" + LET + "{3})\\s*≅\\s*Δ?(" + LET + "{3})"));
     if (prove && cong && (/≅|חופ|congruent/.test(l))) { P.goals.push({ kind: "cong", a: cong[1], b: cong[2] }); return; }
     const trap = l.match(new RegExp("(" + LET + "{4})\\s*(?:הוא|היא|is\\s+(?:an?\\s+)?)?\\s*(טרפז\\s+שווה[\\s-]*שוקיים|isosceles\\s+trapezoid|טרפז|trapezoid|מקבילית|parallelogram|מלבן|rectangle|מעוין|rhombus|ריבוע|square)")) || l.match(new RegExp("(טרפז\\s+שווה[\\s-]*שוקיים|isosceles\\s+trapezoid|טרפז|trapezoid|מקבילית|parallelogram)\\s+(" + LET + "{4})"));
-    if (prove && trap) { const [nm, w] = /^[A-HO]{4}$/.test(trap[1]) ? [trap[1], trap[2]] : [trap[2], trap[1]]; P.goals.push({ kind: /שווה|isosceles/.test(w) ? "isoTrap" : /טרפז|trapez/.test(w) ? "trap" : "para", name: nm }); return; }
+    const findWords = /מצא|מצאו|חשב|חשבו|כמה|מה\s|מהי|מהו|find|calculate|how\s+(?:much|many)|what/i.test(l);
+    if ((prove || (!findWords && trap && l.replace(trap[0], "").replace(/[\s.,:?!־-]|(?:האם|הוא|היא|is)/g, "") === "")) && trap) { const [nm, w] = /^[A-HO]{4}$/.test(trap[1]) ? [trap[1], trap[2]] : [trap[2], trap[1]]; P.goals.push({ kind: /שווה|isosceles/.test(w) ? "isoTrap" : /טרפז|trapez/.test(w) ? "trap" : "para", name: nm }); return; }
     const tri = l.match(new RegExp("(?:משולש|triangle)\\s+(" + LET + "{3})[^A-Z]*?(שוו(?:ה|י)[\\s-]*שוקיים|isosceles|שוו(?:ה|י)[\\s-]*צלעות|equilateral|ישר[\\s-]*ה?זווית|right)"));
     if (prove && tri) { P.goals.push({ kind: /שוקיים|isosceles/.test(tri[2]) ? "isoTri" : /צלעות|equilateral/.test(tri[2]) ? "equiTri" : "rightTri", name: tri[1] }); return; }
     const role = l.match(new RegExp("(" + LET + "{2})\\s+(?:הוא\\s+|היא\\s+|is\\s+(?:the\\s+|an?\\s+)?)?(חוצ(?:ה|ת)\\s+(?:את\\s+)?(?:ה)?זווית|bisects?|תיכון|median|גובה|height|altitude)"));
@@ -256,6 +260,16 @@
     for (const [a, b] of P.par) setPar(LN(a[0], a[1]), LN(b[0], b[1]), a + " ∥ " + b, GV, []);
     for (const [a, b, why] of P.segEq) setSegEq(a, b, a + " = " + b, why === "mid" ? W("Given: a midpoint", "נתון: נקודת אמצע") : GV, []);
     for (const [nm, v] of P.angVal) { const k = resolveAng(nm); if (k && !angVal[k]) setVal(k, v, keyName[k] + " = " + R(v) + "°", GV, []); }
+    // a ratio of the angles: the parts add up to 180° (triangle) or 360° (quadrilateral), which gives one part, then each angle
+    if (P.angRatio) {
+      const n = P.angRatio.parts.length, shape = (P.angRatio.name && P.angRatio.name.length === n) ? P.angRatio.name : (n === 4 ? (P.quads[0] || {}).name : (P.tris[0] || {}).name);
+      if (shape && shape.length === n) {
+        const sum = n === 4 ? 360 : 180, tot = P.angRatio.parts.reduce((a, b) => a + b, 0), x = sum / tot;
+        const eq = P.angRatio.parts.map(p => R(p) + "x").join(" + ") + " = " + sum + "°  →  " + R(tot) + "x = " + sum + "°  →  x = " + R(x) + "°";
+        const fx = add("note", {}, eq, n === 4 ? W("The angles of a quadrilateral add up to 360° (the ratio " + P.angRatio.parts.join(":") + ")", "סכום הזוויות במרובע הוא 360° (היחס " + P.angRatio.parts.join(":") + ")") : W("The angles of a triangle add up to 180° (the ratio " + P.angRatio.parts.join(":") + ")", "סכום הזוויות במשולש הוא 180° (היחס " + P.angRatio.parts.join(":") + ")"), []);
+        [...shape].forEach((v, i) => { const k = resolveAng(v); if (k && !angVal[k]) setVal(k, P.angRatio.parts[i] * x, keyName[k] + " = " + R(P.angRatio.parts[i]) + " · " + R(x) + "° = " + R(P.angRatio.parts[i] * x) + "°", W(R(P.angRatio.parts[i]) + " parts of x", R(P.angRatio.parts[i]) + " חלקים של x"), [fx]); });
+      }
+    }
     for (const [n1, n2] of P.angEq) { const k1 = resolveAng(n1), k2 = resolveAng(n2); if (k1 && k2) setAngEq(k1, k2, keyName[k1] + " = " + keyName[k2], GV, []); }
     const between = [];   // [d, a, b]: d is between a and b
     for (const [d, a, b] of P.on) if (X[d] && X[a] && X[b] && collinear(a, b, d) && opposite(d, a, b)) between.push([d, a, b]);
