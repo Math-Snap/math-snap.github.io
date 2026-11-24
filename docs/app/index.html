@@ -2961,6 +2961,8 @@ function givensToText(G, seen){
 }
 function onGeoOcr(text, items){
   const t = String(text).trim();
+  // a coordinate problem (points like A(4;1), a side's equation): keep everything that was read, and solve it there
+  try { if (typeof Coord !== "undefined" && Coord.detect(t)) { $("geoText").value = t.replace(/\s*\n\s*/g, " "); readGivens(); return; } } catch (e) { console.error(e); }
   const fromDrawing = Array.isArray(items) ? diagramGivens(items) : [];
   const written = t.split("\n").filter(l => /=|∥|\|\||\/\/|[∢∠]/.test(l));
   const G = parseGivens(written.concat(fromDrawing).join("\n"));
@@ -2975,7 +2977,8 @@ function onGeoOcr(text, items){
   }
   if (!n) { setGeoStatus("ocrNoGivens", true); clearGeo(); return; }
   const keep = $("geoText").value.trim();
-  $("geoText").value = (keep && !/[A-D]\s*(?:=|שווה)/.test(keep) ? keep + ", " : "") + givensToText(G, seen);
+  const got = givensToText(G, seen);
+  $("geoText").value = (keep && !/[A-D]\s*(?:=|שווה)/.test(keep) && !keep.includes(got) && !got.includes(keep) ? keep + ", " : "") + got;
   readGivens();
   setGeoStatus("geoCheck");
 }
