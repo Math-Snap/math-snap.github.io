@@ -2526,23 +2526,64 @@ const SHAPE_EX = {
   lines: ["parallel lines and a transversal, one angle 70", "שני ישרים מקבילים וחותך, זווית אחת 70"],
 };
 // a coordinate-system problem, solved and shown right here in the geometry tab (not in the solve tab)
-function showCoordGeo(r){
+// what the "what to find" box asks for: slope XY, equation of XY, the vertex X, area, perimeter, the kind, the sides
+function coordWants(ask){
+  const q = String(ask || "").replace(/[\u2066-\u2069]/g, ""), w = [];
+  for (const m of q.matchAll(/(?:שיפוע|slope)[^A-Z\n]{0,18}([A-Z]{2})/gi)) w.push("slope:" + m[1]);
+  for (const m of q.matchAll(/(?:משוואת|משוואה|equation)[^A-Z\n]{0,18}([A-Z]{2})/gi)) w.push("eq:" + m[1]);
+  for (const m of q.matchAll(/(?:שיעורי|קודקוד|הקודקוד|נקודת|הנקודה|נקודה|coordinates|vertex|point|מצא[וי]?\s+את|find)[^A-Z\n]{0,18}([A-Z])(?![A-Z(])/gi)) w.push("vertex:" + m[1]);
+  if (/שטח|area/i.test(q)) w.push("area");
+  if (/היקף|perimeter/i.test(q)) w.push("per");
+  if (/סוג|איזה|מה המרובע|הוכח|הראו|prove|show that|what kind|which|טרפז|מקבילית|מלבן|ריבוע|מעוין|ישר זווית|שווה שוקיים/i.test(q)) w.push("kind");
+  if (/אורך|אורכי|length/i.test(q)) w.push("sides");
+  return w;
+}
+function coordStageKey(t){
+  t = String(t || ""); let m;
+  if ((m = t.match(/(?:שיפוע|slope of)\s+([A-Z]{2})/i))) return "slope:" + m[1];
+  if ((m = t.match(/(?:משוואת|equation of)\s+([A-Z]{2})/i))) return "eq:" + m[1];
+  if ((m = t.match(/(?:הקודקוד|coordinates of)\s+([A-Z])$/i))) return "vertex:" + m[1];
+  if (/אורכי הצלעות|The sides/.test(t)) return "sides";
+  if (/^(שטח|Area)$/.test(t)) return "area";
+  if (/^(היקף|Perimeter)$/.test(t)) return "per";
+  if (/בדיקת|Checking/.test(t)) return "check";
+  return "kind";
+}
+function showCoordGeo(r, all){
   setGeoStatus("");
+  const wants = all ? [] : coordWants($("geoAsk") ? $("geoAsk").value : "");
   const out = $("geoResults"); out.innerHTML = "";
   const box = el("div", "result");
   const pr = mathEl("div", "prob", r.problem); pr.dir = "ltr"; box.append(pr);
   const a = el("div", "ans"); a.append(el("small", null, T("answer")));
-  String(r.answer).split(" ,  ").forEach(part => { const d = dirOf(el("div", null, part), part); d.style.display = "block"; d.style.margin = "2px 0"; a.append(d); });
+  // only what was asked (and the stages it needs); an empty box shows everything
+  let parts = String(r.answer).split(" ,  ");
+  const groupsAll = [];
+  (r.steps || []).forEach(([c, why, st]) => { const t = st || ""; let g = groupsAll[groupsAll.length - 1]; if (!g || g.t !== t) groupsAll.push(g = { t, k: coordStageKey(t), rows: [] }); if (c !== t) g.rows.push([c, why || ""]); });
+  let groups = groupsAll, cut = false;
+  if (wants.length) {
+    const has = k => wants.includes(k);
+    const find = ["check", "slope", "eq", "vertex"], isFind = k => find.includes(k.split(":")[0]);
+    let last = -1; groupsAll.forEach((g, i) => { if (has(g.k) || (["area", "per", "kind", "sides"].some(has) && isFind(g.k))) last = Math.max(last, i); });
+    const keep = groupsAll.filter((g, i) => has(g.k) || (isFind(g.k) && i < last) || (g.k === "sides" && (has("per") || has("kind"))));
+    if (!keep.some(g => g.k.startsWith("vertex:"))) { const i = keep.findIndex(g => g.k === "check" && !has("check")); if (i >= 0) keep.splice(i, 1); }
+    if (keep.some(g => has(g.k))) {
+      groups = keep; cut = keep.length < groupsAll.length;
+      const plain = x => x.replace(/[\u2066-\u2069]/g, "");
+      const pk = p => { p = plain(p); let m; if ((m = p.match(/^(?:שיפוע|slope of)\s+([A-Z]{2})/i))) return "slope:" + m[1]; if ((m = p.match(/^([A-Z]{2}):/))) return "eq:" + m[1]; if ((m = p.match(/^([A-Z])\(/))) return "vertex:" + m[1]; if (/^(שטח|area)/i.test(p)) return "area"; if (/^(היקף|perimeter)/i.test(p)) return "per"; return "kind"; };
+      const asked = parts.filter(p => has(pk(p))); if (asked.length) parts = asked;
+    }
+  }
+  parts.forEach(part => { const d = dirOf(el("div", null, part), part); d.style.display = "block"; d.style.margin = "2px 0"; a.append(d); });
   box.append(a);
   if (r.coord) { const f = el("div", "gfig"); f.append(el("small", null, pick("In a coordinate system", "במערכת צירים"))); f.insertAdjacentHTML("beforeend", r.coord); box.append(f); }
   // stage by stage, each as a claim-and-reason table (like a proof)
-  const groups = [];
-  (r.steps || []).forEach(([c, why, st]) => { const t = st || ""; let g = groups[groups.length - 1]; if (!g || g.t !== t) groups.push(g = { t, rows: [] }); if (c !== t) g.rows.push([c, why || ""]); });
   groups.filter(g => g.rows.length).forEach((g, i) => {
     const h = g.t ? pick("Stage ", "שלב ") + (i + 1) + ": " + g.t : pick("Stage ", "שלב ") + (i + 1);
     const hd = dirOf(el("div", "section-title", h), h); hd.style.margin = "16px 2px 8px"; box.append(hd);
     box.append(proofTable(g.rows));
   });
+  if (cut) { const more = el("button", "chip", pick("Show the whole solution", "הצג את כל הפתרון")); more.type = "button"; more.style.marginTop = "14px"; more.onclick = () => showCoordGeo(r, true); box.append(more); }
   out.append(box); out.hidden = false;
   try { out.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {}
 }
