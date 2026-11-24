@@ -2,7 +2,7 @@
    The app's own files are kept on the phone and refreshed in the background.
    The text scanner and Firebase libraries are saved the first time they are used.
    Account traffic (sign-in, saving) is never cached. */
-const CACHE = "mathsnap-404c73cf1c";
+const CACHE = "mathsnap-142b9caf1f";
 const LIBS = "mathsnap-libs";
 const SHELL = ["./", "index.html", "solver.js", "pro-core.js", "science.js", "daily.js", "proof.js", "math.js", "study.js", "topics.js", "menu.js", "coord.js", "web-bridge.js", "install-gate.js", "firebase-config.js", "manifest.webmanifest",
   "fonts/Rubik.ttf", "fonts/JetBrainsMono.ttf", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];

@@ -2539,6 +2539,19 @@ function explainGeo(raw, msg){
   a.append(el("small", null, g2("What I understood", "מה הבנתי")));
   const und = (shape ? g2("Shape: ", "צורה: ") + pick(shape[3], shape[4]) : g2("I didn't find the shape (triangle, trapezoid, circle…)", "לא מצאתי את הצורה (משולש, טרפז, מעגל…)")) + "\n" + (items.length ? g2("Givens: ", "נתונים: ") + items.map(x => /[א-ת]/.test(x) ? x : LRI(x)).join(" ,  ") : g2("I didn't find numbers with a name (like angle A = 40 or AB = 5)", "לא מצאתי מספרים עם שם (כמו זווית A שווה 40 או AB שווה 5)"));
   a.append(dirOf(el("div", null, und), und)); a.querySelector("div").style.fontSize = "17px"; box.append(a);
+  // a sketch of the shape even before everything is known: where A, B, C, D are, and what is already given
+  try {
+    const one = {}; for (const [k, v] of Object.entries(G.ang)) if (/^[A-D]$/.test(k)) one[k] = v;
+    const parHas = (u, v) => G.par.some(([x, y]) => [x, y].map(t => [...t].sort().join("")).sort().join() === [u, v].map(t => [...t].sort().join("")).sort().join());
+    const k = shape ? shape[0] : null;
+    let sk = "";
+    if (k === "trap") sk = trapSVG(one, [true, parHas("AD", "BC")], []);
+    else if (k === "para") sk = trapSVG(one, [true, true], []);
+    else if (k === "kite") sk = kiteSVG(one, [], {});
+    else if (k === "iso") sk = isoSVG(one, [], {});
+    else if (k === "tri") sk = triSVGAngles({ A: one.A ?? 60, B: one.B ?? 60, C: one.C ?? 60 });
+    if (sk) { const f = el("div", "fig"); f.innerHTML = sk; box.append(f); }
+  } catch (e) { console.error(e); }
   const rows = [];
   if (msg) rows.push([msg, g2("What's missing", "מה חסר")]);
   const ex = SHAPE_EX[shape ? shape[0] : "tri"];
