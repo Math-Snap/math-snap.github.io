@@ -2525,6 +2525,22 @@ const SHAPE_EX = {
   tri: ["triangle ABC, AB = 7, AC = 5, angle A = 60  /  right triangle, legs 3 and 4", "משולש ABC, AB שווה 7, AC שווה 5, זווית A שווה 60  /  משולש ישר זווית, ניצבים 3 ו-4"],
   lines: ["parallel lines and a transversal, one angle 70", "שני ישרים מקבילים וחותך, זווית אחת 70"],
 };
+// a coordinate-system problem, solved and shown right here in the geometry tab (not in the solve tab)
+function showCoordGeo(r){
+  setGeoStatus("");
+  const out = $("geoResults"); out.innerHTML = "";
+  const box = el("div", "result");
+  const pr = mathEl("div", "prob", r.problem); pr.dir = "ltr"; box.append(pr);
+  const a = el("div", "ans"); a.append(el("small", null, T("answer")));
+  String(r.answer).split(" ,  ").forEach(part => { const d = dirOf(el("div", null, part), part); d.style.display = "block"; d.style.margin = "2px 0"; a.append(d); });
+  box.append(a);
+  if (r.coord) { const f = el("div", "gfig"); f.append(el("small", null, pick("In a coordinate system", "במערכת צירים"))); f.insertAdjacentHTML("beforeend", r.coord); box.append(f); }
+  const ol = el("ol", "steps");
+  (r.steps || []).forEach(([c, why]) => { const li = el("li"); li.append(mathEl("div", "math", c)); if (why) li.append(dirOf(el("div", "why", why), why)); ol.append(li); });
+  box.append(ol);
+  out.append(box); out.hidden = false;
+  try { out.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {}
+}
 function explainGeo(raw, msg){
   const out = $("geoResults"); out.innerHTML = "";
   const G = parseGivens(raw), Rl = rolesOf(raw);
@@ -2917,7 +2933,7 @@ function readGivens(){
   const text = $("geoText").value.split("\n").filter(l => !/הוכיח|להוכיח|צ"ל|צ״ל|\bprove\b|\bshow that\b/i.test(l)).join("\n");
   if (!text.trim()) { setGeoStatus("noGivens", true); clearGeo(); return; }
   // points with coordinates belong to the coordinate-system solver in the solve tab
-  if (typeof Coord !== "undefined" && Coord.detect(text)) { $("problem").value = text.replace(/\s*\n\s*/g, " "); tab("solve"); solveNow(); return; }
+  if (typeof Coord !== "undefined" && Coord.detect(text)) { let cr = null; try { cr = Coord.solve(text, lang); } catch (e) { console.error(e); } if (cr) { showCoordGeo(cr); return; } }
   if (tryProofEngine(false)) return;
   let plan = null; try { plan = understand(text); } catch (e) { plan = null; }
   if (plan && SH[plan.tool]) {

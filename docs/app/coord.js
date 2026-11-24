@@ -10,12 +10,23 @@
     for (const m of String(s).replace(/[−–]/g, "-").matchAll(PT)) if (!seen.has(m[1])) { seen.add(m[1]); out.push({ n: m[1], x: +m[2], y: +m[3] }); }
     return out;
   }
-  // "AD: y = 3x − 11" (also as read from a photo: "AD y = 3x - 11")
-  const LINE = /(?<![A-Za-z])([A-HK-NP-Z])([A-HK-NP-Z])(?![A-Za-z(])[^=()]{0,40}?\by\s*=\s*([-−–]?\s*\d*(?:\.\d+)?(?:\/\d+)?)\s*x\s*(?:([+\-−–])\s*(\d+(?:\.\d+)?(?:\/\d+)?))?/g;
+  // "AD: y = 3x − 11". A photo of a Hebrew line can read it backwards ("y = 3x - 11 … AD"), so the side's name
+  // may come just before or just after the equation; a known point that is (or isn't) on the line decides.
+  const EQ = /\by\s*=\s*([-−–]?\s*\d*(?:\.\d+)?(?:\/\d+)?)\s*x\s*(?:([+\-−–])\s*(\d+(?:\.\d+)?(?:\/\d+)?))?/g;
+  const SIDE = /(?<![A-Za-z])([A-HK-NP-Z])([A-HK-NP-Z])(?![A-Za-z(])/g;
   const num = t => { t = String(t).replace(/[−–\s]/g, m => /\s/.test(m) ? "" : "-"); if (t === "" || t === "+") return 1; if (t === "-") return -1; if (t.includes("/")) { const [a, b] = t.split("/"); return (a === "-" ? -1 : a === "" ? 1 : +a) / +b; } return +t; };
-  function lines(s){
-    const out = {};
-    for (const m of String(s).matchAll(LINE)) { const k = m[1] + m[2]; if (out[k]) continue; out[k] = { m: num(m[3]), b: m[5] ? (/[-−–]/.test(m[4]) ? -1 : 1) * num(m[5]) : 0 }; }
+  function lines(s, pts){
+    s = String(s).replace(/[−–]/g, "-"); const out = {}, byN = {}; (pts || points(s)).forEach(p => byN[p.n] = p);
+    for (const m of s.matchAll(EQ)) {
+      const L = { m: num(m[1]), b: m[3] ? (m[2] === "-" ? -1 : 1) * num(m[3]) : 0 };
+      const before = [...s.slice(Math.max(0, m.index - 40), m.index).replace(/[^=]*=/, "").matchAll(SIDE)].map(x => ({ k: x[1] + x[2], d: 0 })).slice(-1);
+      const after = [...s.slice(m.index + m[0].length, m.index + m[0].length + 20).split("=")[0].matchAll(SIDE)].map(x => ({ k: x[1] + x[2], d: 1 }));
+      const score = c => [...c.k].reduce((a, n) => a + (byN[n] ? (Math.abs(L.m * byN[n].x + L.b - byN[n].y) < 1e-9 ? 2 : -5) : 0), 0) - c.d * 0.5;
+      // only sides made of the shape's own letters (a photo also reads stray letters like "NN")
+      const own = new Set(Object.keys(byN).concat([...(s.match(/(?<![A-Za-z])[A-HK-NP-Z]{3,4}(?![A-Za-z(])/) || [""])[0]]));
+      const best = before.concat(after).filter(c => !out[c.k] && (own.size < 2 || [...c.k].every(n => own.has(n)))).sort((x, y) => score(y) - score(x))[0];
+      if (best && score(best) > -5) out[best.k] = L;
+    }
     return out;
   }
   // "AB ∥ CD" (a photo may read ∥ as || or ll or 11)
@@ -57,7 +68,7 @@
   // Find what the shape is missing: the slopes of known sides, the equation of a side parallel to a known one
   // through a known vertex, and a missing vertex where two of its sides' lines meet.
   function findMissing(text, pts, W){
-    const L = lines(text), PR = pars(text), byN = {}; pts.forEach(p => byN[p.n] = p);
+    const L = lines(text, pts), PR = pars(text), byN = {}; pts.forEach(p => byN[p.n] = p);
     const nameM = String(text).match(/(?<![A-Za-z])([A-HK-NP-Z]{3,4})(?![A-Za-z(])/);
     const letters = new Set(pts.map(p => p.n)); Object.keys(L).forEach(k => [...k].forEach(c => letters.add(c))); PR.flat().forEach(k => [...k].forEach(c => letters.add(c)));
     const order = nameM && pts.every(p => nameM[1].includes(p.n)) ? [...nameM[1]] : [...letters].sort();
@@ -71,7 +82,7 @@
     // the slope of every side named in a parallel, when both its ends are known
     const slopes = {};
     for (const pr of PR) for (const sd of pr) { const m = slopeOf(sd[0], sd[1]); if (m !== undefined && !(sd in slopes)) { slopes[sd] = m; const A = byN[sd[0]], B = byN[sd[1]];
-      steps.push([m === null ? sd + " " + W("is vertical", "אנכי") : "m" + sd + " = (" + F(B.y) + " − " + P(A.y) + ") / (" + F(B.x) + " − " + P(A.x) + ") = " + F(B.y - A.y) + "/" + F(B.x - A.x) + (F(m) === F(B.y - A.y) + "/" + F(B.x - A.x) ? "" : " = " + F(m)), W("Slope = (y₂ − y₁) / (x₂ − x₁)", "שיפוע = (y₂ − y₁) / (x₂ − x₁)")]);
+      steps.push([m === null ? sd + " " + W("is vertical", "אנכי") : "m" + sd + " = (" + F(B.y) + " − " + P(A.y) + ") / (" + F(B.x) + " − " + P(A.x) + ") = " + F(B.y - A.y) + "/" + F(B.x - A.x) + (F(m) === F(B.y - A.y) + "/" + F(B.x - A.x) ? "" : " = " + F(m)), W("Slope = the change in y divided by the change in x", "שיפוע = השינוי ב-y חלקי השינוי ב-x")]);
       answer.push(m === null ? sd + " " + W("vertical", "אנכי") : W("slope of ", "שיפוע ") + sd + " = " + F(m)); } }
     // a side parallel to a known one, through one known vertex: y − y₁ = m(x − x₁)
     for (const [s1, s2] of PR) for (const [a, b] of [[s1, s2], [s2, s1]]) {
@@ -109,7 +120,7 @@
     const all = order.every(c => byN[c]);
     if (all) return { done: true, pts: order.map(c => byN[c]), steps, answer, lines: drawn };
     if (!steps.length) return null;
-    return { done: false, partial: { problem: pts.map(p => p.n + "(" + F(p.x) + ", " + F(p.y) + ")").join("  "), answer: answer.join(" ,  ") || W("Need one more given", "חסר עוד נתון"), steps, coord: svg(pts, drawn), kind: "", area: null, perimeter: null } };
+    return { done: false, partial: { problem: pts.map(p => p.n + "(" + F(p.x) + ", " + F(p.y) + ")").join("  "), answer: answer.join(" ,  ") || W("Need one more given", "חסר עוד נתון"), steps, coord: svg(order.filter(c => byN[c]).map(c => byN[c]), drawn, order), kind: "", area: null, perimeter: null } };
   }
 
   function solve(text, lang){
@@ -205,7 +216,7 @@
   }
 
   // the drawing: a grid with the axes, the shape and its points
-  function svg(ps, lns){
+  function svg(ps, lns, order){
     const xs = ps.map(p => p.x).concat(0), ys = ps.map(p => p.y).concat(0);
     const x0 = Math.floor(Math.min(...xs)) - 1, x1 = Math.ceil(Math.max(...xs)) + 1, y0 = Math.floor(Math.min(...ys)) - 1, y1 = Math.ceil(Math.max(...ys)) + 1;
     const u = Math.max(14, Math.min(34, 320 / Math.max(x1 - x0, y1 - y0))), W = (x1 - x0) * u, H = (y1 - y0) * u;
@@ -220,7 +231,9 @@
     (lns || []).forEach(l => { const a = l.vert ? [l.c, y0] : [x0, l.m * x0 + l.b], b = l.vert ? [l.c, y1] : [x1, l.m * x1 + l.b];
       g += `<line x1="${X(a[0])}" y1="${Y(a[1])}" x2="${X(b[0])}" y2="${Y(b[1])}" stroke="var(--muted,#5E6A84)" stroke-width="1.4" stroke-dasharray="5 4" clip-path="url(#cbox)"/>`; });
     g = `<defs><clipPath id="cbox"><rect x="0" y="0" width="${W}" height="${H}"/></clipPath></defs>` + g;
-    g += `<polygon points="${ps.map(p => X(p.x) + "," + Y(p.y)).join(" ")}" fill="var(--pen-soft,#ECEFFE)" fill-opacity=".85" stroke="var(--pen,#3346E0)" stroke-width="2.4" stroke-linejoin="round"/>`;
+    if (order && order.length > ps.length) { const at = {}; ps.forEach(p => at[p.n] = p);
+      order.forEach((c, i) => { const q = order[(i + 1) % order.length]; if (at[c] && at[q]) g += `<line x1="${X(at[c].x)}" y1="${Y(at[c].y)}" x2="${X(at[q].x)}" y2="${Y(at[q].y)}" stroke="var(--pen,#3346E0)" stroke-width="2.4" stroke-linecap="round"/>`; });
+    } else g += `<polygon points="${ps.map(p => X(p.x) + "," + Y(p.y)).join(" ")}" fill="var(--pen-soft,#ECEFFE)" fill-opacity=".85" stroke="var(--pen,#3346E0)" stroke-width="2.4" stroke-linejoin="round"/>`;
     const cx = ps.reduce((a, p) => a + p.x, 0) / ps.length, cy = ps.reduce((a, p) => a + p.y, 0) / ps.length;
     ps.forEach(p => { const dx = p.x - cx, dy = p.y - cy, d = Math.hypot(dx, dy) || 1, lx = X(p.x) + dx / d * 24, ly = Y(p.y) - dy / d * 18;
       g += `<circle cx="${X(p.x)}" cy="${Y(p.y)}" r="3.6" fill="var(--pen,#3346E0)"/><text x="${lx}" y="${ly + 4}" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink,#131A2C)" stroke="var(--surface,#fff)" stroke-width="4" paint-order="stroke" stroke-linejoin="round">${p.n}(${N(p.x)},${N(p.y)})</text>`; });
