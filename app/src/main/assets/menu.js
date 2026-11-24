@@ -56,7 +56,7 @@ html[dir="ltr"] .drawer{padding-left:max(14px,env(safe-area-inset-left,0px))}
   wrap.addEventListener("click", e => { if (e.target === wrap) close(); });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !wrap.hidden) close(); });
 
-  const current = () => ["tabSolve", "tabGeo", "tabSci", "tabMe"].find(id => $(id) && $(id).getAttribute("aria-selected") === "true");
+  const current = () => ["tabLearn", "tabSolve", "tabGeo", "tabSci", "tabMe"].find(id => $(id) && $(id).getAttribute("aria-selected") === "true");
   function item(svg, text, onclick, extra){
     const b = document.createElement("button"); b.type = "button"; b.className = "mi";
     b.append(typeof svg === "string" ? svgEl(svg) : svg, el("span", null, text)); if (extra) b.append(extra);
@@ -69,7 +69,7 @@ html[dir="ltr"] .drawer{padding-left:max(14px,env(safe-area-inset-left,0px))}
     head.append(x); dr.append(head);
     // the screens: the same as the tabs at the bottom were
     const cur = current();
-    for (const id of ["tabSolve", "tabGeo", "tabSci", "tabMe"]) {
+    for (const id of ["tabLearn", "tabSolve", "tabGeo", "tabSci", "tabMe"]) {
       const t = $(id); if (!t) continue;
       const ic = t.querySelector("svg") ? t.querySelector("svg").cloneNode(true) : svgEl(ICON.book);
       const b = item(ic, t.textContent.trim(), () => t.click()); if (id === cur) b.setAttribute("aria-current", "page"); dr.append(b);
