@@ -22,3 +22,15 @@ for (const [q, kind, area] of cases) {
 if (C.detect("A(1,2), B(7,2)")) { bad++; console.log("FAIL two points should stay with the solver"); }
 console.log(bad ? bad + " coordinate failures" : "coordinates: all " + cases.length + " passed");
 process.exit(bad ? 1 : 0);
+
+// a missing vertex from a side's equation and a parallel (also as text read from a photo)
+{
+  const C2 = require("../app/src/main/assets/coord.js"), strip = x => x.replace(/[\u2066\u2069]/g, "");
+  for (const q of ["בטרפז ABCD (AB || CD) נתון: A(4;1), B(8;3), C(10;-1). משוואת הצלע AD היא y = 3x − 11.", "ABCD (AB || CD) : B(8;3) , A(4;1) C(10;-1) . AD y = 3x - 11 . AB . CD . D"]) {
+    const r = C2.solve(q, "he"), a = strip(r.answer);
+    if (!a.includes("½") || !a.includes("y = ½x − 6") || !a.includes("D(2, −5)") || r.area !== 30) { console.error("FAIL missing vertex:", a); process.exit(1); }
+  }
+  const p = strip(C2.solve("מקבילית ABCD, A(1,1) B(5,1) C(7,4). מצאו את D", "he").answer);
+  if (!p.includes("D(3, 4)")) { console.error("FAIL parallelogram D:", p); process.exit(1); }
+  console.log("ok missing vertex");
+}
