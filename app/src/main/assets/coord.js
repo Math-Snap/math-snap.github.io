@@ -77,13 +77,15 @@
     const steps = [], answer = [], known = {}, drawn = [];
     const key = (a, b) => [a, b].sort().join("");
     for (const [k, v] of Object.entries(L)) { known[key(k[0], k[1])] = v; drawn.push(v);
-      for (const c of k) if (byN[c]) steps.push([c + "(" + F(byN[c].x) + ", " + F(byN[c].y) + ") " + W("is on", "על") + " " + k + ": " + F(v.m) + " · " + P(byN[c].x) + (v.b ? (v.b < 0 ? " − " : " + ") + F(Math.abs(v.b)) : "") + " = " + F(v.m * byN[c].x + v.b) + (onL(v, byN[c]) ? " ✓" : " ✗"), W("Put the point into the equation of the line", "מציבים את הנקודה במשוואת הישר")]); }
+      for (const c of k) if (byN[c]) steps.push([c + "(" + F(byN[c].x) + ", " + F(byN[c].y) + "):  " + F(v.m) + " · " + P(byN[c].x) + (v.b ? (v.b < 0 ? " − " : " + ") + F(Math.abs(v.b)) : "") + " = " + F(v.m * byN[c].x + v.b) + (onL(v, byN[c]) ? " ✓" : " ✗"), W("Put " + c + " into the equation of " + k + ": it is on the line", "מציבים את " + c + " במשוואת " + k + ": הנקודה על הישר")]); }
+    const tag = t => steps.forEach(st => { if (st.length < 3) st.push(t); });
+    tag(W("Checking the givens", "בדיקת הנתונים"));
     const slopeOf = (a, b) => { const A = byN[a], B = byN[b]; return A && B ? (B.x === A.x ? null : (B.y - A.y) / (B.x - A.x)) : undefined; };
     // the slope of every side named in a parallel, when both its ends are known
     const slopes = {};
     for (const pr of PR) for (const sd of pr) { const m = slopeOf(sd[0], sd[1]); if (m !== undefined && !(sd in slopes)) { slopes[sd] = m; const A = byN[sd[0]], B = byN[sd[1]];
       steps.push([m === null ? sd + " " + W("is vertical", "אנכי") : "m" + sd + " = (" + F(B.y) + " − " + P(A.y) + ") / (" + F(B.x) + " − " + P(A.x) + ") = " + F(B.y - A.y) + "/" + F(B.x - A.x) + (F(m) === F(B.y - A.y) + "/" + F(B.x - A.x) ? "" : " = " + F(m)), W("Slope = the change in y divided by the change in x", "שיפוע = השינוי ב-y חלקי השינוי ב-x")]);
-      answer.push(m === null ? sd + " " + W("vertical", "אנכי") : W("slope of ", "שיפוע ") + sd + " = " + F(m)); } }
+      answer.push(m === null ? sd + " " + W("vertical", "אנכי") : W("slope of ", "שיפוע ") + sd + " = " + F(m)); tag(W("The slope of ", "שיפוע ") + sd); } }
     // a side parallel to a known one, through one known vertex: y − y₁ = m(x − x₁)
     for (const [s1, s2] of PR) for (const [a, b] of [[s1, s2], [s2, s1]]) {
       if (!(a in slopes) || known[key(b[0], b[1])]) continue;
@@ -91,7 +93,7 @@
       const m = slopes[a], Ln = m === null ? { vert: true, c: q.x } : { m, b: q.y - m * q.x };
       known[key(b[0], b[1])] = Ln; drawn.push(Ln);
       steps.push([m === null ? "x = " + F(q.x) : "y − " + P(q.y) + " = " + K(m) + "(x − " + P(q.x) + ")  →  " + eqStr(Ln), W(b + " ∥ " + a + ": the same slope, through " + q.n, b + " ∥ " + a + ": אותו שיפוע, ועובר דרך " + q.n)]);
-      answer.push(b + ": " + eqStr(Ln));
+      answer.push(b + ": " + eqStr(Ln)); tag(W("The equation of ", "משוואת ") + b);
     }
     // a missing vertex: where two of its sides' lines meet
     for (const v of missing) {
@@ -107,7 +109,7 @@
         steps.push([K(l1.m - l2.m) + "x = " + F(l2.b - l1.b) + "  →  x = " + F(x), W("Move x to one side and the numbers to the other", "מעבירים את ה-x לצד אחד ואת המספרים לצד השני")]);
         steps.push(["y = " + K(l1.m) + " · " + (x < 0 ? "(" + F(x) + ")" : F(x)) + (l1.b ? (l1.b < 0 ? " − " : " + ") + F(Math.abs(l1.b)) : "") + " = " + F(y), W("Put x into one of the equations", "מציבים את x באחת המשוואות")]);
       }
-      byN[v] = { n: v, x, y }; answer.push(v + "(" + F(x) + ", " + F(y) + ")");
+      byN[v] = { n: v, x, y }; answer.push(v + "(" + F(x) + ", " + F(y) + ")"); tag(W("The coordinates of ", "שיעורי הקודקוד ") + v);
     }
     // a parallelogram with three vertices: the fourth by the diagonals' midpoint
     if (/מקבילית|parallelogram/i.test(text) && order.length === 4) {
@@ -115,7 +117,7 @@
       if (v && order.filter(c => byN[c]).length === 3) { const i = order.indexOf(v), O = byN[order[(i + 2) % 4]], A1 = byN[order[(i + 1) % 4]], A2 = byN[order[(i + 3) % 4]];
         const x = A1.x + A2.x - O.x, y = A1.y + A2.y - O.y; byN[v] = { n: v, x, y };
         steps.push([v + " = " + A1.n + " + " + A2.n + " − " + O.n + " = (" + F(A1.x) + " + " + P(A2.x) + " − " + P(O.x) + ", " + F(A1.y) + " + " + P(A2.y) + " − " + P(O.y) + ") = (" + F(x) + ", " + F(y) + ")", W("In a parallelogram the diagonals bisect each other", "במקבילית האלכסונים חוצים זה את זה")]);
-        answer.push(v + "(" + F(x) + ", " + F(y) + ")"); }
+        answer.push(v + "(" + F(x) + ", " + F(y) + ")"); tag(W("The coordinates of ", "שיעורי הקודקוד ") + v); }
     }
     const all = order.every(c => byN[c]);
     if (all) return { done: true, pts: order.map(c => byN[c]), steps, answer, lines: drawn };
@@ -208,6 +210,10 @@
       per = s.reduce((a, x) => a + x.len, 0);
       steps.push([W("Perimeter", "היקף") + " = " + s.map(x => x.ls).join(" + ") + (s.every(x => Number.isInteger(Math.round(x.len * 1e6) / 1e6)) ? " = " + N(per) : " ≈ " + N(Math.round(per * 100) / 100)), W("Add up the sides", "מחברים את כל הצלעות")]);
     }
+    // stages, for the claim-and-reason view: the sides, what the shape is, its area, its perimeter
+    { const sidesT = W("The sides", "אורכי הצלעות");
+      steps.forEach(st => { if (st.length >= 3) return; const c = st[0];
+        st.push(c === sidesT || /^[A-Z]{2} = (\||√)/.test(c) ? sidesT : /^(Area|שטח|height|גובה)/.test(c) ? W("Area", "שטח") : /^(Perimeter|היקף)/.test(c) ? W("Perimeter", "היקף") : W("What the shape is", use.length === 3 ? "סוג המשולש" : "סוג המרובע")); }); }
     // Hebrew words next to math: keep each piece of math left-to-right
     const iso = t => /[\u0590-\u05FF]/.test(t) ? t.split(" ,  ").map(part => part.replace(/[A-Za-z0-9(|√−+=·:≈∥∦⊥°²/.\-][^\u0590-\u05FF]*[A-Za-z0-9)|°²]/g, m => "\u2066" + m + "\u2069")).join(" ,  ") : t;
     steps.forEach(st => { st[0] = iso(st[0]); });

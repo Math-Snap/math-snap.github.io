@@ -2523,9 +2523,14 @@ function showCoordGeo(r){
   String(r.answer).split(" ,  ").forEach(part => { const d = dirOf(el("div", null, part), part); d.style.display = "block"; d.style.margin = "2px 0"; a.append(d); });
   box.append(a);
   if (r.coord) { const f = el("div", "gfig"); f.append(el("small", null, pick("In a coordinate system", "במערכת צירים"))); f.insertAdjacentHTML("beforeend", r.coord); box.append(f); }
-  const ol = el("ol", "steps");
-  (r.steps || []).forEach(([c, why]) => { const li = el("li"); li.append(mathEl("div", "math", c)); if (why) li.append(dirOf(el("div", "why", why), why)); ol.append(li); });
-  box.append(ol);
+  // stage by stage, each as a claim-and-reason table (like a proof)
+  const groups = [];
+  (r.steps || []).forEach(([c, why, st]) => { const t = st || ""; let g = groups[groups.length - 1]; if (!g || g.t !== t) groups.push(g = { t, rows: [] }); if (c !== t) g.rows.push([c, why || ""]); });
+  groups.filter(g => g.rows.length).forEach((g, i) => {
+    const h = g.t ? pick("Stage ", "שלב ") + (i + 1) + ": " + g.t : pick("Stage ", "שלב ") + (i + 1);
+    const hd = dirOf(el("div", "section-title", h), h); hd.style.margin = "16px 2px 8px"; box.append(hd);
+    box.append(proofTable(g.rows));
+  });
   out.append(box); out.hidden = false;
   try { out.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {}
 }
