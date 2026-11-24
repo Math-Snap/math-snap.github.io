@@ -51,8 +51,9 @@
       const a90 = l.match(new RegExp("(?:זווית|angle)\\s*(" + LET + "{1,3})\\s*(?:=|שווה|is)?\\s*90")), rightAt = a90 ? (a90[1].length === 3 ? a90[1][1] : a90[1]) : iso ? apex : name[1];
       P.tris.push({ name, iso, right, equi, apex, rightAt, assumedRight: right && !a90 && !iso });
     }
-    for (const m of l.matchAll(new RegExp("(?:מרובע|טרפז|מקבילית|מלבן|ריבוע|quadrilateral|trapezoid|parallelogram|rectangle|square)\\s+(" + LET + "{4})", "gi"))) {
+    for (const m of l.matchAll(new RegExp("(?:מרובע|טרפז(?:\\s+(?:שווה[\\s-]*שוקיים|ישר[\\s-]*ה?זווית))?|מקבילית|מלבן|ריבוע|quadrilateral|(?:isosceles\\s+|right\\s+)?trapezoid|parallelogram|rectangle|square)\\s+(" + LET + "{4})", "gi"))) {
       const w = m[0].toLowerCase(), q = { name: m[1], kind: /טרפז|trapez/.test(w) ? "trap" : /מקבילית|parallelogram/.test(w) ? "para" : /מלבן|rectangle/.test(w) ? "rect" : /ריבוע|square/.test(w) ? "square" : "quad" };
+      if (q.kind === "trap") { const after = l.slice(m.index + m[0].length); q.iso = /שווה[\s-]*שוקיים|isosceles/i.test(w) || /^[^,.;]*?(?:שווה[\s-]*שוקיים|isosceles)/i.test(after) || /(?:שווה[\s-]*שוקיים|isosceles)\s*$/i.test(l.slice(0, m.index)); }
       P.quads.push(q);
     }
     // points on sides: "D and E are on AB and AC respectively", "D on BC", "D is the midpoint of BC"
@@ -260,6 +261,17 @@
       const [a, b, c, d] = q.name;
       if (q.kind === "para" || q.kind === "rect" || q.kind === "square") { setPar(LN(a, b), LN(d, c), a + b + " ∥ " + d + c, W("Given: " + q.name + " is a parallelogram", "נתון: " + q.name + " מקבילית"), []); setPar(LN(a, d), LN(b, c), a + d + " ∥ " + b + c, W("Given: " + q.name + " is a parallelogram", "נתון: " + q.name + " מקבילית"), []); }
       if (q.kind === "para" || q.kind === "rect" || q.kind === "square") { setSegEq(a + b, d + c, a + b + " = " + d + c, W("In a parallelogram, opposite sides are equal", "במקבילית צלעות נגדיות שוות"), []); setSegEq(a + d, b + c, a + d + " = " + b + c, W("In a parallelogram, opposite sides are equal", "במקבילית צלעות נגדיות שוות"), []); }
+      if (q.kind === "trap" && q.iso) {   // the bases: from "AB ∥ CD" if it is given, else the usual AB and DC
+        const pAD = P.par.some(([u, v]) => [u, v].map(x => [...x].sort().join("")).sort().join() === [a + d, b + c].map(x => [...x].sort().join("")).sort().join());
+        const [p, q2, r2, s2] = pAD ? [a, d, c, b] : [a, b, c, d];   // p q2 = one base, s2 r2 = the other (p next to s2)
+        const GI = W("Given: an isosceles trapezoid", "נתון: טרפז שווה שוקיים");
+        const legs = setSegEq(p + s2, q2 + r2, p + s2 + " = " + q2 + r2, GI, []) || segEqual(p + s2, q2 + r2);
+        const ld = Array.isArray(legs) ? legs : [legs];
+        const BA = W("In an isosceles trapezoid the angles at each base are equal", "בטרפז שווה שוקיים הזוויות ליד כל בסיס שוות זו לזו");
+        setAngEq(AK(p, q2, s2), AK(q2, p, r2), "∢" + p + " = ∢" + q2, BA, ld);
+        setAngEq(AK(s2, p, r2), AK(r2, q2, s2), "∢" + s2 + " = ∢" + r2, BA, ld);
+        setSegEq(p + r2, q2 + s2, p + r2 + " = " + q2 + s2, W("In an isosceles trapezoid the diagonals are equal", "בטרפז שווה שוקיים האלכסונים שווים זה לזה"), ld);
+      }
       if (q.kind === "rect" || q.kind === "square") for (let i = 0; i < 4; i++) { const v = q.name[i], k = AK(v, q.name[(i + 3) % 4], q.name[(i + 1) % 4], "∢" + v); setVal(k, 90, keyName[k] + " = 90°", W("Given: all the angles of a rectangle are 90°", "נתון: במלבן כל הזוויות 90°"), []); }
       if (q.kind === "square") { setSegEq(a + b, b + c, a + b + " = " + b + c, W("Given: a square", "נתון: ריבוע"), []); setSegEq(b + c, c + d, b + c + " = " + c + d, W("Given: a square", "נתון: ריבוע"), []); setSegEq(c + d, d + a, c + d + " = " + d + a, W("Given: a square", "נתון: ריבוע"), []); }
     }
@@ -456,6 +468,8 @@
       if (legs) { out.kind = "isoTrap"; out.deps.push(...legs); out.claims.push([given + " " + W("is an isosceles trapezoid", "טרפז שווה שוקיים"), W("A trapezoid whose legs are equal (" + pair.legs[0] + " = " + pair.legs[1] + ") is an isosceles trapezoid", "טרפז ששוקיו שוות (" + pair.legs[0] + " = " + pair.legs[1] + ") הוא טרפז שווה שוקיים")]); return out; }
       const [b1, b2] = pair.bases, u = b1[0], v = b1[1], uo = nm[(nm.indexOf(u) + 3) % 4] === v ? nm[(nm.indexOf(u) + 1) % 4] : nm[(nm.indexOf(u) + 3) % 4], vo = nm[(nm.indexOf(v) + 3) % 4] === u ? nm[(nm.indexOf(v) + 1) % 4] : nm[(nm.indexOf(v) + 3) % 4];
       const kA = AK(u, v, uo), kB = AK(v, u, vo), ang = eqPath(angEq, kA, kB) || (vOf(kA) != null && vOf(kA) === vOf(kB) ? [angVal[kA], angVal[kB]] : null);
+      const dg = segEqual(nm[0] + nm[2], nm[1] + nm[3]);
+      if (!ang && dg) { out.kind = "isoTrap"; out.deps.push(...dg); out.claims.push([given + " " + W("is an isosceles trapezoid", "טרפז שווה שוקיים"), W("A trapezoid whose diagonals are equal (" + nm[0] + nm[2] + " = " + nm[1] + nm[3] + ") is an isosceles trapezoid", "טרפז שהאלכסונים שלו שווים (" + nm[0] + nm[2] + " = " + nm[1] + nm[3] + ") הוא טרפז שווה שוקיים")]); return out; }
       if (ang) { out.kind = "isoTrap"; out.deps.push(...ang); out.claims.push([given + " " + W("is an isosceles trapezoid", "טרפז שווה שוקיים"), W("A trapezoid whose base angles are equal (" + keyName[kA] + " = " + keyName[kB] + ") is an isosceles trapezoid", "טרפז שזוויות הבסיס שלו שוות (" + keyName[kA] + " = " + keyName[kB] + ") הוא טרפז שווה שוקיים")]); }
       return out;
     };

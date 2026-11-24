@@ -120,6 +120,24 @@
       if (Math.random() < .5) return word(env, T(env, "A rectangle is " + a + " by " + b + ". What is its area?", "מלבן שאורכו " + a + " ורוחבו " + b + ". מה השטח שלו?"), a * b, a * b, [[a + " · " + b + " = " + a * b, T(env, "Area of a rectangle = length × width", "שטח מלבן = אורך × רוחב")]]);
       const h = R(2, 10) * 2; return word(env, T(env, "A triangle has base " + a + " and height " + h + ". What is its area?", "משולש שהבסיס שלו " + a + " והגובה " + h + ". מה השטח שלו?"), a * h / 2, a * h / 2, [[a + " · " + h + " : 2 = " + a * h / 2, T(env, "Area of a triangle = base × height ÷ 2", "שטח משולש = בסיס × גובה : 2")]]);
     } },
+    { id: "trapezoid", en: "Trapezoid", he: "טרפז", re: /טרפז|trapezoid/i, make(env){
+      const k = R(0, 2);
+      if (k === 0) { const a = R(4, 14) * 10 % 170 || 70; const A = Math.min(a, 160);
+        return word(env, T(env, "In trapezoid ABCD (AB ∥ CD), ∢A = " + A + "°. What is ∢D?", "בטרפז ABCD (AB ∥ CD) זווית A היא " + A + "°. מה גודל זווית D?"), (180 - A) + "°", 180 - A,
+          [["∢D = 180° − " + A + "° = " + (180 - A) + "°", T(env, "The two angles at each leg of a trapezoid add up to 180°", "סכום הזוויות ליד כל שוק בטרפז הוא 180°")]]); }
+      if (k === 1) { const A = R(5, 8) * 10; const C = 180 - A;
+        return word(env, T(env, "In isosceles trapezoid ABCD (AB ∥ CD), ∢A = " + A + "°. What is ∢C?", "בטרפז שווה שוקיים ABCD (AB ∥ CD) זווית A היא " + A + "°. מה גודל זווית C?"), C + "°", C,
+          [["∢B = ∢A = " + A + "°", T(env, "In an isosceles trapezoid the angles at each base are equal", "בטרפז שווה שוקיים הזוויות ליד כל בסיס שוות")], ["∢C = 180° − " + A + "° = " + C + "°", T(env, "The angles at a leg add up to 180°", "סכום הזוויות ליד שוק הוא 180°")]]); }
+      const a = R(4, 14), b = R(2, a - 1), h = R(1, 6) * 2, S = (a + b) * h / 2;
+      return word(env, T(env, "A trapezoid has bases " + a + " and " + b + " and height " + h + ". What is its area?", "בטרפז הבסיסים הם " + a + " ו-" + b + " והגובה " + h + ". מה השטח שלו?"), S, S,
+        [["(" + a + " + " + b + ") · " + h + " : 2 = " + S, T(env, "Area of a trapezoid = half the sum of the bases × the height", "שטח טרפז = מחצית המכפלה של סכום הבסיסים בגובה")]]);
+    } },
+    { id: "coord", en: "Coordinate system", he: "מערכת צירים", re: /מערכת\s+צירים|במערכת\s+הצירים|צירים|coordinate/i, make(env){
+      const y1 = R(-2, 2), h = R(2, 5), x1 = R(-3, 1), a = R(4, 8), b = R(1, a - 1), off = R(0, a - b), S = (a + b) * h / 2;
+      const P = [[x1, y1], [x1 + a, y1], [x1 + off + b, y1 + h], [x1 + off, y1 + h]].map(([x, y], i) => "ABCD"[i] + "(" + x + "," + y + ")").join(" ");
+      return word(env, T(env, "Trapezoid " + P + ". What is its area?", "הטרפז " + P + ". מה השטח שלו?"), S, S,
+        [["AB = " + a + " ,  CD = " + b, T(env, "The bases are horizontal: count along the x axis", "הבסיסים אופקיים: סופרים לאורך ציר x")], [T(env, "height", "גובה") + " = " + h, T(env, "The difference in y between the bases", "ההפרש ב-y בין הבסיסים")], ["(" + a + " + " + b + ") · " + h + " : 2 = " + S, T(env, "Area of a trapezoid", "שטח טרפז")]]);
+    } },
     { id: "slope", en: "Linear functions", he: "פונקציה קווית", re: /פונקציה\s+קווית|שיפוע|slope|linear\s+function/i, make(env){
       const m = R(-4, 5) || 2, x1 = R(-3, 3), y1 = R(-5, 5), x2 = x1 + R(1, 4), y2 = y1 + m * (x2 - x1);
       return word(env, T(env, "What is the slope of the line through (" + x1 + ", " + y1 + ") and (" + x2 + ", " + y2 + ")?", "מה השיפוע של הישר שעובר דרך הנקודות (" + x1 + ", " + y1 + ") ו-(" + x2 + ", " + y2 + ")?"), m, m,
@@ -137,7 +155,7 @@
   ];
   // a hint in the answer box that shows the kind of answer, not the answer
   const PH = { powers: "256", primes: "2³ · 3 · 5", factor: "(x + 1)(x − 2)", distrib: "x² + 3x + 2", linear: "x = 4", quadratic: "x = 1 , x = 2", ineq: "x > 3",
-    fractions: "5/6", percent: "12", roots: "7", isosceles: "50", angles: "60", pythag: "10", area: "24", slope: "2", sequences: "35", mean: "8" };
+    fractions: "5/6", trapezoid: "110", coord: "18", percent: "12", roots: "7", isosceles: "50", angles: "60", pythag: "10", area: "24", slope: "2", sequences: "35", mean: "8" };
   const DEFAULT = ["linear", "powers", "distrib", "factor", "fractions", "percent"];
 
   function detect(text){
