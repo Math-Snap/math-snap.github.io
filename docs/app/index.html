@@ -3272,6 +3272,12 @@ function renderSignIn(box){
 
 // ---------- theorem bank ----------
 const BANK_CATS = [
+  // the class's own bank of reasons (the teacher's sheet), word for word
+  ["c1",["📄 Lines, angles, parallels","📄 ישרים, זוויות והקבלה"]],
+  ["c2",["📄 Triangles, congruence, similarity","📄 משולשים, חפיפה ודמיון"]],
+  ["c3",["📄 Quadrilaterals (kite, trapezoid, rectangle)","📄 מרובעים (דלתון, טרפז ומלבן)"]],
+  ["c4",["📄 Coordinate system","📄 מערכת צירים"]],
+  ["c5",["📄 Logic, algebra and proof reasons","📄 כללים לוגיים, אלגברה ונימוקי הוכחה"]],
   ["angles",["Angles and parallel lines","זוויות וישרים מקבילים"]],
   ["tri",["Triangles","משולשים"]],
   ["cong",["Congruent triangles","חפיפת משולשים"]],
@@ -3281,6 +3287,7 @@ const BANK_CATS = [
   ["trap",["Trapezoid","טרפז"]],
   ["kite",["Kite","דלתון"]],
   ["hs",["Trig, circle, similarity","טריגו, מעגל ודמיון"]],
+
 ];
 // [category, English, Hebrew]
 const BANK = [
@@ -3348,8 +3355,93 @@ const BANK = [
   ["kite","In a kite, the main diagonal bisects the vertex angles.","בדלתון, האלכסון הראשי חוצה את זוויות הראש."],
   ["kite","In a kite, the main diagonal is perpendicular to the other diagonal and bisects it.","בדלתון, האלכסון הראשי מאונך לאלכסון המשני וחוצה אותו."],
   ["kite","Kite area = half the product of the diagonals.","שטח דלתון = מחצית מכפלת האלכסונים."],
+  ["c1","Sun rays are parallel, approximately (definition of parallel rays).","קרני שמש מקבילות, בקירוב (הגדרת קרניים מקבילות)."],
+  ["c1","The distance between parallel lines is constant.","המרחק בין ישרים מקבילים קבוע."],
+  ["c1","Definition of parallel lines.","הגדרת ישרים מקבילים."],
+  ["c1","Lines with the same slope are parallel.","ישרים בעלי שיפוע זהה מקבילים."],
+  ["c1","Lines with different slopes intersect.","ישרים בעלי שיפוע שונה נחתכים."],
+  ["c1","Adjacent angles add up to 180°.","סכום זוויות צמודות 180°."],
+  ["c1","Angles on a straight line add up to 180°.","סכום זוויות על הישר 180°."],
+  ["c1","Angles that make up a right angle add up to 90°.","סכום זוויות היוצרות זווית ישרה 90°."],
+  ["c1","Angles adjacent to equal angles are equal.","זוויות צמודות לזוויות שוות, שוות."],
+  ["c1","Vertical angles are equal.","זוויות קודקודיות שוות זו לזו בגודלן."],
+  ["c1","If the lines are parallel, corresponding angles are equal.","אם הישרים מקבילים, אז הזוויות המתאימות שוות בגודלן."],
+  ["c1","If the lines are parallel, alternate angles are equal.","אם הישרים מקבילים, אז הזוויות המתחלפות שוות בגודלן."],
+  ["c1","If the lines are parallel, co-interior angles add up to 180°.","אם הישרים מקבילים, אז סכום זוויות חד-צדדיות 180°."],
+  ["c1","If a pair of corresponding angles is equal, the lines are parallel.","אם קיים זוג זוויות מתאימות שוות, אז הישרים מקבילים."],
+  ["c1","If a pair of alternate angles is equal, the lines are parallel.","אם קיים זוג זוויות מתחלפות שוות, אז הישרים מקבילים."],
+  ["c1","If a pair of co-interior angles adds up to 180°, the lines are parallel.","אם קיים זוג זוויות חד-צדדיות שסכומן 180°, אז הישרים מקבילים."],
+  ["c1","Two lines perpendicular to a third line are parallel.","אם שני ישרים מאונכים לישר שלישי, הם מקבילים."],
+  ["c1","Definition of a perpendicular.","הגדרת האנך."],
+  ["c1","Definition of an angle bisector.","הגדרת חוצה זווית."],
+  ["c1","Definition of a midpoint.","הגדרת אמצע קטע."],
+  ["c2","Definition of a triangle.","הגדרת משולש."],
+  ["c2","The angles of a triangle add up to 180°.","סכום זוויות במשולש 180°."],
+  ["c2","An exterior angle of a triangle equals the sum of the two interior angles not adjacent to it.","זווית חיצונית למשולש שווה בגודלה לסכום שתי הזוויות הפנימיות שאינן צמודות לה."],
+  ["c2","In an equilateral triangle all the angles are 60°.","במשולש שווה צלעות כל הזוויות שוות 60°."],
+  ["c2","A triangle with a right angle is a right triangle.","משולש שבו זווית ישרה נקרא משולש ישר זווית."],
+  ["c2","A triangle with two equal sides is isosceles.","משולש שבו שתי צלעות שוות נקרא משולש שווה שוקיים."],
+  ["c2","A triangle with three equal sides is equilateral.","משולש שבו שלוש צלעות שוות נקרא משולש שווה צלעות."],
+  ["c2","By Pythagoras' theorem.","לפי משפט פיתגורס."],
+  ["c2","Definition of a median.","הגדרת תיכון."],
+  ["c2","Definition of an altitude.","הגדרת גובה."],
+  ["c2","A median splits a triangle into two triangles of equal area.","תיכון במשולש מחלק את המשולש לשני משולשים שווי שטח."],
+  ["c2","In a triangle, equal angles are opposite equal sides.","במשולש מול זוויות שוות, צלעות שוות."],
+  ["c2","In a triangle, equal sides are opposite equal angles.","במשולש מול צלעות שוות, זוויות שוות."],
+  ["c2","In an isosceles triangle, the median, the altitude to the base and the bisector of the apex angle coincide.","במשולש שווה שוקיים, התיכון לבסיס, הגובה לבסיס וחוצה זווית הראש מתלכדים."],
+  ["c2","If in a triangle the median / bisector / altitude coincide, the triangle is isosceles.","אם במשולש התיכון / חוצה זווית / גובה מתלכדים, אז המשולש הוא שווה שוקיים."],
+  ["c2","By the congruence theorem: side, angle, side (SAS).","לפי משפט חפיפה: צלע, זווית, צלע."],
+  ["c2","By the congruence theorem: angle, side, angle (ASA).","לפי משפט חפיפה: זווית, צלע, זווית."],
+  ["c2","By the congruence theorem: side, side, side (SSS).","לפי משפט חפיפה: צלע, צלע, צלע."],
+  ["c2","Two right triangles with an equal leg and an equal hypotenuse are congruent.","שני משולשים ישרי זווית השווים בניצב וביתר חופפים."],
+  ["c2","By the similarity theorem: angle, angle (AA).","לפי משפט דמיון: זווית, זווית."],
+  ["c2","In congruent triangles, corresponding angles are equal.","במשולשים חופפים זוויות שוות בהתאמה."],
+  ["c2","In congruent triangles, corresponding sides are equal.","במשולשים חופפים צלעות שוות בהתאמה."],
+  ["c2","In similar triangles, corresponding angles are equal.","במשולשים דומים זוויות שוות בהתאמה."],
+  ["c2","In similar triangles, the ratio of corresponding sides is constant (the ratio of similarity).","במשולשים דומים היחס בין הצלעות המתאימות קבוע (נקרא גם יחס הדמיון)."],
+  ["c2","The formula for the area of a triangle.","נוסחת שטח משולש."],
+  ["c2","The formula for the area of a right triangle.","נוסחת שטח משולש ישר זווית."],
+  ["c3","A quadrilateral with two separate pairs of equal adjacent sides is a kite.","מרובע שבו שני זוגות זרים של צלעות סמוכות שוות נקרא דלתון."],
+  ["c3","In a kite, the angles opposite the main diagonal are equal.","בדלתון, הזוויות שמול האלכסון הראשי שוות בגודלן."],
+  ["c3","In a kite, the main diagonal bisects the apex angles.","בדלתון האלכסון הראשי חוצה את זוויות הראש."],
+  ["c3","In a kite, the main diagonal bisects the other diagonal.","בדלתון, האלכסון הראשי חוצה את האלכסון המשני."],
+  ["c3","In a kite, the main diagonal is perpendicular to the other diagonal.","בדלתון האלכסון הראשי מאונך למשני."],
+  ["c3","A quadrilateral with exactly one pair of parallel opposite sides is a trapezoid.","מרובע שבו זוג אחד בלבד של צלעות נגדיות מקבילות נקרא טרפז."],
+  ["c3","In a trapezoid, the angles next to the same leg add up to 180°.","בטרפז סכום הזוויות שליד אותה שוק הוא 180°."],
+  ["c3","A trapezoid with equal legs is an isosceles trapezoid.","טרפז בעל שוקיים שוות נקרא טרפז שווה שוקיים."],
+  ["c3","A trapezoid with equal angles is an equiangular trapezoid.","טרפז בעל זוויות שוות נקרא טרפז שווה-זוויות."],
+  ["c3","In an isosceles trapezoid, the angles next to the same base are equal.","בטרפז שווה שוקיים, הזוויות שליד אותו בסיס שוות בגודלן."],
+  ["c3","If in a trapezoid the angles next to the same base are equal, it is isosceles.","אם בטרפז הזוויות שליד אותו בסיס שוות, אז הוא טרפז שווה שוקיים."],
+  ["c3","If a trapezoid is isosceles, its diagonals are equal.","אם טרפז הוא שווה שוקיים, אז האלכסונים שווים באורכם."],
+  ["c3","If in a trapezoid the diagonals are equal, it is isosceles.","אם בטרפז האלכסונים שווים, אז הוא טרפז שווה שוקיים."],
+  ["c3","The formula for the area of a trapezoid.","נוסחת שטח טרפז."],
+  ["c3","The formula for the perimeter of a trapezoid.","נוסחת היקף טרפז."],
+  ["c3","A quadrilateral with all angles equal is a rectangle.","מרובע שבו כל הזוויות שוות נקרא מלבן."],
+  ["c3","In a rectangle, opposite sides are equal.","במלבן הצלעות הנגדיות שוות באורכן."],
+  ["c3","In a rectangle, the diagonals bisect each other and are equal.","במלבן האלכסונים חוצים זה את זה ושווים באורכם."],
+  ["c3","The formula for the perimeter of a rectangle.","נוסחת היקף מלבן."],
+  ["c3","The formula for the area of a rectangle.","נוסחת שטח מלבן."],
+  ["c4","Definition of a coordinate system.","הגדרת מערכת צירים."],
+  ["c4","In a coordinate system the axes are perpendicular.","במערכת צירים הצירים מאונכים זה לזה."],
+  ["c4","Working out the lengths of segments parallel to the axes.","חישוב אורכי קטעים המקבילים לצירים."],
+  ["c5","Given.","נתון."],
+  ["c5","Common side.","צלע משותפת."],
+  ["c5","Common angle.","זווית משותפת."],
+  ["c5","Every quantity is equal to itself.","כל גודל שווה לעצמו."],
+  ["c5","Adding equal quantities to equal quantities gives equal quantities.","חיבור גדלים שווים לגדלים שווים נותן גודל שווה."],
+  ["c5","Subtracting equal quantities from equal quantities gives equal quantities.","חיסור גדלים שווים מגדלים שווים נותן גודל שווה."],
+  ["c5","The transitive rule.","כלל המעבר."],
+  ["c5","The whole equals the sum of its parts.","השלם שווה לסכום חלקיו."],
+  ["c5","Substitution.","הצבה."],
+  ["c5","Calculation.","חישוב."],
+  ["c5","Algebraic calculation.","חישוב אלגברי."],
+  ["c5","The result of an algebraic calculation.","תוצאת חישוב אלגברי."],
+  ["c5","Proven.","הוכח."],
+  ["c5","Auxiliary construction.","בניית עזר."],
 ];
 let bankCat = "all";
+// the class's reasons keep their own numbers (1, 2, 3…) so you can say "reason 47"
+const CLASS_NUM = {}; { let k = 0; BANK.forEach(([c], i) => { if (/^c\d$/.test(c)) CLASS_NUM[i] = ++k; }); }
 function renderBank(){
   const cats = $("bankCats"); if (!cats) return;
   cats.innerHTML = "";
@@ -3365,7 +3457,7 @@ function renderBank(){
     const plainTxt = txt.replace(/<[^>]+>/g, "");
     if (q && !plainTxt.toLowerCase().includes(q)) return;
     n++;
-    const li = el("li"); li.append(el("span", "num", String(i + 1)));
+    const li = el("li"); li.append(el("span", "num", String(/^c\d$/.test(c) ? CLASS_NUM[i] : i + 1)));
     const t = el("div", "t");
     if (bankCat === "all") t.append(el("small", null, pick(...BANK_CATS.find(x => x[0] === c)[1])));
     const body = el("span"); body.innerHTML = q ? txt.replace(new RegExp("(" + q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")(?![^<]*>)", "gi"), "<mark>$1</mark>") : txt;
