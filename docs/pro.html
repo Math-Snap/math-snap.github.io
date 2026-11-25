@@ -67,6 +67,7 @@ h2{font:800 24px/1.2 var(--body);margin:0 0 16px}
 .feats .ic svg{width:18px;height:18px}
 .feats b{display:block}.feats span{color:var(--muted);font-size:15px}
 .buy{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
+.thanks{outline:2px solid var(--ok,#11845B);outline-offset:-2px}.thanks p{margin:0 0 10px}
 .price{font:900 44px/1 var(--body)}.price small{font-size:18px;font-weight:600;color:var(--muted)}
 .note{color:var(--muted);font-size:14px;margin:0;max-width:36em}
 .steps{counter-reset:s;list-style:none;margin:0;padding:0;display:grid;gap:14px}
@@ -110,14 +111,20 @@ footer{padding-block:28px 48px;text-align:center;color:var(--muted);font-size:14
     <h2>קנייה</h2>
     <p class="price" id="price" hidden></p>
     <a class="btn primary" id="payBtn" href="#buy" aria-disabled="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg><span>התשלום ייפתח בקרוב</span></a>
-    <p class="note">התשלום מאובטח ונעשה בדף התשלום של Paylink. אחרי התשלום מקבלים במייל קוד PRO.</p>
+    <p class="note">התשלום מאובטח ונעשה דרך Paddle, שמוכר את המנוי בשמנו ומטפל בתשלום, בקבלה ובמסים. אחרי התשלום מקבלים במייל קוד PRO. מנוי חודשי, אפשר לבטל בכל רגע, והחזר מלא תוך 14 יום (<a href="refunds.html">מדיניות החזרים</a>).</p>
+  </section>
+
+  <section class="card thanks" id="thanks" hidden>
+    <h2>תודה! התשלום התקבל 🎉</h2>
+    <p>קבלה מ-Paddle נשלחה למייל שכתבתם בתשלום. <b>קוד ה-PRO יישלח לאותו מייל, בדרך כלל באותו יום.</b> כשהוא מגיע: באפליקציה ☰ ← Math Snap PRO ← "יש לכם קוד Pro?".</p>
+    <p class="note">לא הגיע תוך יום? בדקו בספאם, או כתבו לנו בדיסקורד עם המייל ששילמתם בו.</p>
   </section>
 
   <section class="card">
     <h2>איך זה עובד</h2>
     <ol class="steps">
       <li><div><b>מתחברים לחשבון באפליקציה</b><span>בתפריט ☰ ← שלי ← התחברות. ה-PRO נשמר בחשבון, לא במכשיר.</span></div></li>
-      <li><div><b>משלמים כאן באתר</b><span>בכפתור למעלה. כדאי לכתוב בתשלום את אותו מייל של החשבון.</span></div></li>
+      <li><div><b>משלמים כאן באתר</b><span>בכפתור למעלה, בכרטיס אשראי, PayPal, Apple Pay או Google Pay. כדאי לכתוב בתשלום את אותו מייל של החשבון.</span></div></li>
       <li><div><b>מקבלים קוד במייל ומקלידים אותו</b><span>באפליקציה: ☰ ← Math Snap PRO ← "יש לכם קוד Pro?". הקוד נראה כך: <span class="mono" dir="ltr">ABCD-EFGH-JKLM</span>.</span></div></li>
       <li><div><b>זהו, PRO פעיל בכל המכשירים</b><span>בכל מכשיר שמתחברים בו לאותו חשבון.</span></div></li>
     </ol>
@@ -128,20 +135,40 @@ footer{padding-block:28px 48px;text-align:center;color:var(--muted);font-size:14
     <details><summary>יש לי את האפליקציה מ-Google Play. זה עובד גם שם?</summary><p>כן. מתחברים לאותו חשבון ומקלידים את הקוד במסך ה-PRO.</p></details>
     <details><summary>כמה זמן לוקח לקבל את הקוד?</summary><p>בדרך כלל באותו יום. אם לא הגיע, בדקו בתיקיית הספאם או כתבו לנו בשרת הדיסקורד.</p></details>
     <details><summary>אפשר להשתמש בקוד יותר מפעם אחת?</summary><p>לא. כל קוד עובד פעם אחת, לחשבון אחד. החשבון עצמו עובד בכל המכשירים שלכם.</p></details>
+    <details><summary>איך מבטלים את המנוי?</summary><p>בקבלה שקיבלתם מ-Paddle במייל יש קישור לניהול המנוי, ושם מבטלים. ה-PRO נשאר פעיל עד סוף החודש ששולם. אפשר גם לכתוב לנו ונבטל בשבילכם.</p></details>
     <details><summary>יש לי שאלה או בעיה</summary><p>כתבו לנו בשרת הדיסקורד: <a href="https://discord.gg/BWfQ3XyTuZ" dir="ltr">discord.gg/BWfQ3XyTuZ</a></p></details>
   </section>
 </main>
 <footer><a href="./">Math Snap</a> · <a href="terms.html">תנאי שימוש</a> · <a href="privacy.html">פרטיות</a> · <a href="refunds.html">החזרים</a></footer>
 
+<script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
 <script>
-// ---- fill these two in, then the button works ----
-const PAYLINK = "";   // the Paylink payment page link
-const PRICE = "";     // what PRO costs, as it should be shown, e.g. "₪19.90"
+// ---- Paddle (the reseller that sells PRO for us) ----
+const PADDLE_TOKEN = "live_96684c06380c644deb14baaa740";      // client-side token: public, made for web pages
+const PADDLE_PRICE = "pri_01m89ydwdr7k64cbn4ydrbwybh";         // Math Snap PRO, ₪20 a month
+const PRICE = "₪20";
 (function(){
-  const b = document.getElementById("payBtn"), p = document.getElementById("price");
-  if (PRICE) { p.textContent = PRICE; p.hidden = false; }
-  if (PAYLINK) { b.href = PAYLINK; b.target = "_blank"; b.rel = "noopener"; b.removeAttribute("aria-disabled"); b.querySelector("span").textContent = "לתשלום"; }
-  else b.addEventListener("click", e => e.preventDefault());
+  const b = document.getElementById("payBtn"), p = document.getElementById("price"), thanks = document.getElementById("thanks");
+  p.innerHTML = PRICE + " <small>לחודש</small>"; p.hidden = false;
+  const done = () => { thanks.hidden = false; try { thanks.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {} };
+  if (/[?&]paid=1/.test(location.search)) done();
+  b.addEventListener("click", e => {
+    e.preventDefault();
+    if (!window.Paddle) { alert("דף התשלום לא נטען. בדקו את החיבור לאינטרנט ונסו שוב."); return; }
+    Paddle.Checkout.open({
+      items: [{ priceId: PADDLE_PRICE, quantity: 1 }],
+      customData: { app: "mathsnap-pro" },
+      settings: { displayMode: "overlay", theme: matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light", successUrl: "https://math-snap.github.io/pro.html?paid=1" },
+    });
+  });
+  const start = () => {
+    if (!window.Paddle) return;
+    try {
+      Paddle.Initialize({ token: PADDLE_TOKEN, eventCallback: ev => { if (ev && ev.name === "checkout.completed") setTimeout(done, 300); } });
+      b.removeAttribute("aria-disabled"); b.querySelector("span").textContent = "קנייה ב-" + PRICE + " לחודש";
+    } catch (e) { console.error(e); }
+  };
+  if (window.Paddle) start(); else window.addEventListener("load", start);
 })();
 </script>
 </body>
