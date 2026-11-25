@@ -90,6 +90,14 @@ class Account(private val activity: AppCompatActivity, private val js: (String) 
 
     // ---------- sign in ----------
 
+    // a short-lived sign-in token, so the smart-reading server knows the request comes from a real account
+    fun idToken() {
+        val u = auth.currentUser ?: return js("onIdToken('')")
+        u.getIdToken(false)
+            .addOnSuccessListener { r -> js("onIdToken(" + JSONObject.quote(r.token ?: "") + ")") }
+            .addOnFailureListener { js("onIdToken('')") }
+    }
+
     fun state(): String {
         val u = auth.currentUser ?: return JSONObject().put("signedIn", false).toString()
         return JSONObject()

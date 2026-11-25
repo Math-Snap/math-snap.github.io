@@ -33,15 +33,17 @@ class MainActivity : AppCompatActivity() {
     private lateinit var updater: Updater
     private val recognizer by lazy { TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS) }
 
+    // raw = send the photo itself to the page (to crop and clean it there) instead of reading it right away
+    private var raw = false
     private val takePicture =
         registerForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
             val uri = cameraUri
-            if (ok && uri != null) readText(uri) else js("onPhotoCancelled()")
+            if (ok && uri != null) { if (raw) sendPhoto(uri) else readText(uri) } else js("onPhotoCancelled()")
         }
 
     private val pickImage =
         registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-            if (uri != null) readText(uri) else js("onPhotoCancelled()")
+            if (uri != null) { if (raw) sendPhoto(uri) else readText(uri) } else js("onPhotoCancelled()")
         }
 
     // <input type="file"> in the page (study mode: PDFs and photos of pages)
@@ -116,10 +118,13 @@ class MainActivity : AppCompatActivity() {
 
     inner class Bridge {
         @JavascriptInterface
-        fun takePhoto() = runOnUiThread { openCamera() }
+        fun takePhoto() = runOnUiThread { raw = false; openCamera() }
+        // the photo comes back to the page as a picture, to be cropped and cleaned before it's read
+        @JavascriptInterface fun takePhotoRaw() = runOnUiThread { raw = true; openCamera() }
+        @JavascriptInterface fun pickPhotoRaw() = runOnUiThread { raw = true; pickImage.launch("image/*") }
 
         @JavascriptInterface
-        fun pickPhoto() = runOnUiThread { pickImage.launch("image/*") }
+        fun pickPhoto() = runOnUiThread { raw = false; pickImage.launch("image/*") }
 
         // ---- account ----
         @JavascriptInterface fun ready() = runOnUiThread { account.ready() }
@@ -132,6 +137,7 @@ class MainActivity : AppCompatActivity() {
         @JavascriptInterface fun deleteAccount() = runOnUiThread { account.deleteAccount() }
         @JavascriptInterface fun redeemCode(hash: String) = runOnUiThread { account.redeemCode(hash) }
         @JavascriptInterface fun checkCode() = runOnUiThread { account.checkCode() }
+        @JavascriptInterface fun idToken() = runOnUiThread { account.idToken() }
 
         // ---- Pro key (bought on the web): asks the Lemon Squeezy license service ----
         @JavascriptInterface fun licenseRequest(id: String, action: String, json: String) {
@@ -208,6 +214,42 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {
             js("onOcrError('camera')")
         }
+    }
+
+    // the photo, the right way up and no bigger than 2200 px, as a data: URL for the page
+    private fun sendPhoto(uri: Uri) {
+        js("onPhotoStart()")
+        Thread {
+            try {
+                val bounds = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                contentResolver.openInputStream(uri)?.use { android.graphics.BitmapFactory.decodeStream(it, null, bounds) }
+                var sample = 1
+                while (maxOf(bounds.outWidth, bounds.outHeight) / (sample * 2) >= 2200) sample *= 2
+                val opts = android.graphics.BitmapFactory.Options().apply { inSampleSize = sample }
+                var bmp = contentResolver.openInputStream(uri)?.use { android.graphics.BitmapFactory.decodeStream(it, null, opts) } ?: throw Exception("image")
+                val turn = try {
+                    contentResolver.openInputStream(uri)?.use {
+                        when (android.media.ExifInterface(it).getAttributeInt(android.media.ExifInterface.TAG_ORIENTATION, 1)) {
+                            android.media.ExifInterface.ORIENTATION_ROTATE_90 -> 90f
+                            android.media.ExifInterface.ORIENTATION_ROTATE_180 -> 180f
+                            android.media.ExifInterface.ORIENTATION_ROTATE_270 -> 270f
+                            else -> 0f
+                        }
+                    } ?: 0f
+                } catch (e: Exception) { 0f }
+                val k = minOf(1f, 2200f / maxOf(bmp.width, bmp.height))
+                if (turn != 0f || k < 1f) {
+                    val m = android.graphics.Matrix().apply { postScale(k, k); postRotate(turn) }
+                    bmp = android.graphics.Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, m, true)
+                }
+                val out = java.io.ByteArrayOutputStream()
+                bmp.compress(android.graphics.Bitmap.CompressFormat.JPEG, 90, out)
+                val url = "data:image/jpeg;base64," + android.util.Base64.encodeToString(out.toByteArray(), android.util.Base64.NO_WRAP)
+                js("onPhotoImage(" + JSONObject.quote(url) + ")")
+            } catch (e: Exception) {
+                js("onOcrError('open')")
+            }
+        }.start()
     }
 
     private fun readText(uri: Uri) {

@@ -18,7 +18,7 @@ OUT = ROOT / "docs/app"
 OUT.mkdir(parents=True, exist_ok=True)
 (OUT / "fonts").mkdir(exist_ok=True)
 
-for name in ["solver.js", "pro-core.js", "science.js", "daily.js", "proof.js", "math.js", "study.js", "topics.js", "menu.js", "coord.js", "courses.js", "learn.js"]:
+for name in ["solver.js", "pro-core.js", "science.js", "daily.js", "proof.js", "math.js", "study.js", "topics.js", "menu.js", "coord.js", "courses.js", "learn.js", "smartread.js", "photofix.js"]:
     shutil.copy(ASSETS / name, OUT / name)
 shutil.copytree(ASSETS / "pdfjs", OUT / "pdfjs", dirs_exist_ok=True)
 for f in (ASSETS / "fonts").iterdir():

@@ -901,7 +901,11 @@ function setGeoStatus(key, bad){
   geoKey = key; geoBad = !!bad;
   const s = $("geoStatus"); s.hidden = !key; s.textContent = key ? T(key) : ""; s.classList.toggle("bad", !!bad);
 }
-const photo = (target, gallery) => { photoFor = target; if (!hasBridge) return setStatus("appOnly", true); gallery ? Android.pickPhoto() : Android.takePhoto(); };
+const photo = (target, gallery) => {
+  photoFor = target; if (!hasBridge) return setStatus("appOnly", true);
+  if (window.PhotoFix && PhotoFix.capture(target, gallery)) return;     // crop + clean + check (photofix.js)
+  gallery ? Android.pickPhoto() : Android.takePhoto();
+};
 $("camera").onclick = () => photo("solve", false);
 $("gallery").onclick = () => photo("solve", true);
 $("geoCamera").onclick = () => photo("geo", false);
@@ -4421,7 +4425,9 @@ if (keyPro && keyPro.key && Date.now() - (keyPro.checked || 0) > 864e5) setTimeo
   if (hasBridge && Android.isDesktop) { $("camera").hidden = true; $("geoCamera").hidden = true; }
   const readImage = file => {
     if (!file || !/^image\//.test(file.type) || !hasBridge || typeof Android.scanImage !== "function") return false;
-    photoFor = onTab(); Android.scanImage(file); return true;
+    photoFor = onTab();
+    if (window.PhotoFix) { PhotoFix.openBlob(file, photoFor); return true; }
+    Android.scanImage(file); return true;
   };
   document.addEventListener("keydown", e => {
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
@@ -4715,6 +4721,8 @@ if (ACC && !account && !seenWelcome()) showWelcome();
 <script src="study.js"></script>
 <script src="courses.js"></script>
 <script src="learn.js"></script>
+<script src="smartread.js"></script>
+<script src="photofix.js"></script>
 <script src="menu.js"></script>
 </body>
 </html>

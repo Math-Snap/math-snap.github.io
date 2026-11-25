@@ -35,6 +35,22 @@
     document.body.appendChild(inp);
     inp.click();
   }
+  // the photo itself, to crop and clean in the page before it's read
+  function pickRaw(useCamera) {
+    const inp = document.createElement("input");
+    inp.type = "file"; inp.accept = "image/*";
+    if (useCamera) inp.setAttribute("capture", "environment");
+    inp.style.display = "none";
+    inp.onchange = () => {
+      const f = inp.files && inp.files[0];
+      inp.remove();
+      if (f) call("onPhotoImage", f); else call("onPhotoCancelled");
+    };
+    document.body.appendChild(inp);
+    inp.click();
+  }
+  B.takePhotoRaw = () => pickRaw(!D);
+  B.pickPhotoRaw = () => pickRaw(false);
   B.takePhoto = () => pickImage(!D);
   B.pickPhoto = () => pickImage(false);
 
@@ -101,6 +117,7 @@
       ? { signedIn: true, uid: user.uid, email: user.email || "", name: user.displayName || "", provider: (user.providerData[0] || {}).providerId || "password" }
       : { signedIn: false };
     const pushAuth = () => call("onAuth", state());
+    B.idToken = () => { boot.then(() => user ? user.getIdToken(false) : "").then(t => call("onIdToken", t || ""), () => call("onIdToken", "")); };
     const CODES = {
       "auth/invalid-email": "bad_email", "auth/wrong-password": "bad_password", "auth/invalid-credential": "bad_password",
       "auth/invalid-login-credentials": "bad_password", "auth/user-not-found": "no_user", "auth/email-already-in-use": "email_in_use",

@@ -1,0 +1,13 @@
+name = "mathsnap-read"
+main = "worker.js"
+compatibility_date = "2026-11-01"
+
+# The daily limit per account needs a KV namespace. Create one (Cloudflare → Storage → KV → Create, name it READS),
+# then put its id here and remove the # signs:
+# [[kv_namespaces]]
+# binding = "READS"
+# id = "<the KV namespace id>"
+
+[vars]
+DAILY_LIMIT = "40"
+# MODEL = "gemini-2.5-flash"
