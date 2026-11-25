@@ -126,19 +126,40 @@ html[dir="rtl"] .lr-back svg{transform:scaleX(-1)}
 .lr-ctrl{display:flex;align-items:center;gap:10px}
 .lr-ctrl .pb{width:44px;height:44px;border-radius:50%;border:0;background:var(--pen);color:var(--on-pen);display:grid;place-items:center;cursor:pointer;flex:none}
 .lr-ctrl .pb svg{width:20px;height:20px}
-.lr-segs{flex:1;display:flex;gap:4px;direction:ltr}
-html[dir="rtl"] .lr-segs{direction:rtl}
-.lr-segs button{flex:1;height:8px;border-radius:4px;border:0;padding:0;background:var(--surface-2);cursor:pointer;overflow:hidden;position:relative}
-.lr-segs button i{position:absolute;inset:0;background:var(--pen);transform-origin:left;transform:scaleX(0)}
-html[dir="rtl"] .lr-segs button i{transform-origin:right}
-.lr-time{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;min-width:38px;text-align:end}
+.lr-prog{flex:1;position:relative;height:8px;border-radius:4px;background:var(--surface-2);cursor:pointer}
+.lr-prog .fill{position:absolute;inset-block:0;inset-inline-start:0;width:0;border-radius:4px;background:var(--pen)}
+.lr-prog .stopmark{position:absolute;top:-8px;width:22px;height:22px;border-radius:50%;background:var(--mark);font-size:11px;line-height:18px;padding:0;border:2px solid var(--surface);cursor:pointer;text-align:center}
+.lr-prog .stopmark.done{background:var(--ok)}
+.lr-time{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;text-align:end}
 /* figures: lines draw themselves, labels pop in */
 .lr-vid svg .d{stroke-dasharray:1;stroke-dashoffset:1;animation:lrdraw 1s ease forwards}
 .lr-vid svg .d2{animation-delay:.5s}.lr-vid svg .d3{animation-delay:1s}.lr-vid svg .d4{animation-delay:1.5s}
 .lr-vid svg .t{opacity:0;animation:lrpop .4s ease forwards;animation-delay:.7s}
 .lr-vid svg .t2{animation-delay:1.2s}.lr-vid svg .t3{animation-delay:1.7s}
 .lr-vid svg .f{opacity:0;animation:lrfade .6s ease forwards;animation-delay:.4s}
-.lr-vid.paused *{animation-play-state:paused!important}
+.lr-vid.paused .lr-stage *{animation-play-state:paused!important}
+.lr-intro{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+.lr-intro .ic{font-size:56px;line-height:1}
+.lr-intro b{font-size:24px;line-height:1.25}
+.lr-line.bad{color:var(--warn);text-decoration:line-through}
+.lr-line.good{color:var(--ok)}
+.lr-line.q{font-size:17px;font-weight:700;color:var(--muted)}
+.lr-stage.worked .lr-line:last-child.on{color:var(--pen)}
+.lr-chk{position:absolute;inset:0;background:var(--surface);display:flex;flex-direction:column;gap:12px;padding:18px;overflow:auto;cursor:default;z-index:2}
+.lr-chk .hd{display:flex;align-items:center;justify-content:space-between}
+.lr-chk .hd b{font-size:18px}
+.lr-chk .hd small{color:var(--muted);font-weight:700}
+.lr-chk .q{font-size:18px;font-weight:700;line-height:1.5}
+.lr-chk input{font:600 20px/1.2 var(--mono);padding:12px 14px;border-radius:14px;border:2px solid var(--line);background:var(--surface-2);color:var(--ink);width:100%}
+.lr-chk input:focus{outline:none;border-color:var(--pen)}
+.lr-chk .row{display:flex;gap:10px}
+.lr-chk .row .btn{flex:1}
+.lr-chk .fb{display:flex;flex-direction:column;gap:10px}
+.lr-chk .res{border-radius:14px;padding:12px;background:var(--surface-2);display:flex;flex-direction:column;gap:8px}
+.lr-chk .res.good{background:var(--ok-soft,var(--pen-soft))}
+.lr-chk .res.good b{color:var(--ok)}
+.lr-chk .res.bad{color:var(--warn);font-weight:600}
+.lr-chk .ans{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-weight:700}
 @keyframes lrdraw{to{stroke-dashoffset:0}}
 @keyframes lrpop{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
 @keyframes lrfade{to{opacity:1}}
@@ -205,12 +226,27 @@ html[dir="rtl"] .lr-segs button i{transform-origin:right}
       if (!part) return;
       if (part[0] === "`") { const m = el("span", "lr-m", part.slice(1, -1)); m.dir = "ltr"; e.append(m); }
       else if (part.startsWith("**")) e.append(el("b", null, part.slice(2, -2)));
+      else if (HE.test(text)) isolate(e, part);
       else e.append(document.createTextNode(part));
     });
     return e;
   }
+  // Hebrew with Latin/maths inside: keep every run of maths in one piece, left to right
+  const RUN = /([A-Za-z0-9ΔΣαβγπ√∠△≅∥⊥_(\[][A-Za-z0-9ΔΣαβγπ√∠△≅∥⊥²³⁰-⁹ₙₖₚ₀-₉⁺⁻'+\-−=·×:/()\[\]., →⟹_≤≥<>°%]*[A-Za-z0-9²³ΔΣαβγπ)\]ₙ₀-₉⁺⁻'°%])/;
+  function isolate(e, text){
+    String(text).split(RUN).forEach((part, i) => {
+      if (!part) return;
+      if (i % 2) { const b = el("span", "lt", part); b.dir = "ltr"; b.style.unicodeBidi = "isolate"; e.append(b); } else e.append(document.createTextNode(part));
+    });
+    return e;
+  }
   // a line that is math, or Hebrew with math in it
-  const line = (cls, text) => HE.test(text) ? dirOf(el("div", cls, text), text) : mathEl("div", cls, text);
+  const line = (cls, text) => {
+    const t = String(text);
+    if (/^[✗✓]/.test(t) && !HE.test(t)) { const e = el("div", cls); e.dir = "ltr"; e.append(el("span", null, t[0] + " ")); e.append(mathEl("span", null, t.slice(1).trim())); return e; }
+    if (!HE.test(t)) return mathEl("div", cls, t);
+    const e = el("div", cls); e.dir = "rtl"; return isolate(e, t);
+  };
   function steps(list){
     const ol = el("ol", "steps");
     for (const [c, why] of list) { const li = el("li"); li.append(line("math", c)); if (why) li.append(dirOf(el("div", "why", why), why)); ol.append(li); }
@@ -277,7 +313,7 @@ html[dir="rtl"] .lr-segs button i{transform-origin:right}
     const list = el("div", "lr-list");
     c.lessons.forEach((l, i) => {
       const r = el("button", "lr-row" + (isDone(l.id) ? " done" : "")); r.type = "button";
-      const tx = el("div"); tx.append(el("b", null, nameOf(l)), el("small", null, "▶ " + S("video") + " · " + S("min", l.min)));
+      const tx = el("div"); tx.append(el("b", null, nameOf(l)), el("small", null, lessonMeta(l)));
       const pl = el("span", "pl"); pl.append(svgEl(ICON.go));
       r.append(el("span", "n", isDone(l.id) ? "✓" : String(i + 1)), tx, pl); r.onclick = () => go("lesson", l.id);
       list.append(r);
@@ -289,7 +325,7 @@ html[dir="rtl"] .lr-segs button i{transform-origin:right}
   function renderLesson(l){
     const c = Courses.course(l.course);
     panel.append(backBtn(nameOf(c), () => go("course", c.id)));
-    const head = el("div", "phead"); head.append(el("h2", null, nameOf(l)), el("p", "lr-sub", c.icon + " " + nameOf(c) + " · " + S("min", l.min)));
+    const head = el("div", "phead"); head.append(el("h2", null, nameOf(l)), el("p", "lr-sub", c.icon + " " + nameOf(c) + " · " + lessonMeta(l)));
     panel.append(head);
     panel.append(videoPlayer(l, c));
     // the idea
@@ -346,24 +382,79 @@ html[dir="rtl"] .lr-segs button i{transform-origin:right}
   const fixed = l => (l.practice.items || []).map(it => ({ problem: it.q, answer: it.a, rtl: HE.test(it.q), ph: pick("Your answer", "התשובה שלכם"),
     result: { problem: it.q, answer: it.a, steps: it.steps }, check: v => accept(it, v) }));
   const practiceCount = l => Math.min(6, (l.practice.topic && typeof Topics !== "undefined" ? 5 : 0) + (l.practice.items || []).length) || 0;
+  function generated(l, n){
+    if (!l.practice.topic || typeof Topics === "undefined") return [];
+    try {
+      const env = { solve: Solver.solve, math, normalize: Solver.normalize, lang, sameAnswer: ProCore.sameAnswer, sameExpr: (a, b) => ProCore.sameExpr(math, Solver.normalize, a, b) };
+      return Topics.make([l.practice.topic], env, n);
+    } catch (e) { console.error(e); return []; }
+  }
   function startPractice(l){
-    let items = [];
-    if (l.practice.topic && typeof Topics !== "undefined") {
-      try {
-        const env = { solve: Solver.solve, math, normalize: Solver.normalize, lang, sameAnswer: ProCore.sameAnswer, sameExpr: (a, b) => ProCore.sameExpr(math, Solver.normalize, a, b) };
-        items = Topics.make([l.practice.topic], env, 5);
-      } catch (e) { console.error(e); items = []; }
-    }
-    items = items.concat(fixed(l).sort(() => Math.random() - .5)).slice(0, 6);
+    const items = generated(l, 5).concat(fixed(l).sort(() => Math.random() - .5)).slice(0, 6);
     if (!items.length) return;
     practiceSet = { src: null, items, i: 0, score: 0, answered: false, again: () => startPractice(l) };
     openProSheet("practice"); renderPractice();
   }
 
-  // ---------- the lesson video: scenes drawn here, with captions instead of a voice ----------
+  // ---------- the lesson video: a timeline of scenes, with stops where you practise ----------
+  // Built from the lesson: why it matters → teaching scenes → the idea → what to remember → a worked example,
+  // a step at a time → ✋ a question → another example → ✋ → the common mistake → (more until 3+ minutes) → summary → ✋.
+  const plain = s => String(s || "").replace(/`/g, "").replace(/\*\*/g, "").replace(/[⁦-⁩]/g, "");
+  const bits = s => [...String(s).matchAll(/`([^`]+)`/g)].map(m => m[1]);
+  const MIN_VIDEO = 180;
+  function sceneDur(sc){
+    if (sc.type === "check") return 0;
+    const fresh = Math.max(0, (sc.show || []).length - (sc.keep || 0));
+    return sc.dur || Math.max(6, Math.min(24, 2.5 + plain(sc.cap).length / 11 + fresh * 1.6 + (sc.fig ? 1.5 : 0) + (sc.intro ? 2 : 0)));
+  }
+  const TL = new Map();
+  function timeline(l){
+    if (TL.has(l.id)) return TL.get(l.id);
+    const T = [], c = Courses.course(l.course);
+    const scene = o => T.push(Object.assign({ type: "scene" }, o));
+    const check = it => { if (it) T.push({ type: "check", item: it }); };
+    const total = () => T.reduce((a, x) => a + sceneDur(x), 0);
+    function worked(q, steps, ans, label){
+      steps = (steps || []).filter(s => s && s[0]); if (!q || !steps.length) return;
+      scene({ cap: label + ": נפתור יחד, צעד אחרי צעד.", show: [q], head: true });
+      steps.forEach((st, i) => {
+        const from = Math.max(0, i - 2);                    // the question, and the last few steps
+        scene({ cap: plain(st[1]) || "ממשיכים לצעד הבא.", show: [q].concat(steps.slice(from, i + 1).map(x => x[0])), keep: 1 + (i - from), head: true });
+      });
+      scene({ cap: "וזאת התשובה. שווה לעצור רגע ולוודא שכל צעד ברור.", show: [q, "✓ " + plain(ans)], keep: 1, head: true });
+    }
+    scene({ intro: true, cap: l.why, title: nameOf(l), icon: c.icon });
+    for (const sc of l.video) scene(sc);
+    for (const p of l.idea) scene({ cap: plain(p), show: bits(p).slice(0, 3) });
+    if (l.rules && l.rules.length) scene({ cap: "את זה כדאי לזכור. אפשר לעצור את הסרטון ולהעתיק למחברת.", show: l.rules.slice(0, 4) });
+    worked(l.example.q, l.example.steps, l.example.a, "דוגמה פתורה");
+    const pool = generated(l, 9).concat(fixed(l));
+    let k = 0;
+    scene({ cap: "✋ עכשיו תורכם. הסרטון יעצור ותקבלו שאלה. נסו לפתור לבד, ואז לחצו בדיקה.", show: [] , stop: true });
+    check(pool[k++]);
+    const ex2 = pool[k++];
+    if (ex2 && ex2.result) worked(ex2.problem, ex2.result.steps, ex2.answer, "עוד דוגמה");
+    check(pool[k++]);
+    scene({ cap: "טעות נפוצה. הרבה תלמידים נופלים בזה, אז כדאי לשים לב.", show: ["✗ " + l.mistake.wrong] });
+    scene({ cap: plain(l.mistake.why), show: ["✗ " + l.mistake.wrong, "✓ " + l.mistake.right], keep: 1 });
+    // more examples and stops until the video teaches for at least 3 minutes (the summary and last stop add ~20 s)
+    while (total() < MIN_VIDEO - 6 && k < pool.length) {
+      const ex = pool[k++];
+      if (ex && ex.result) worked(ex.problem, ex.result.steps, ex.answer, "דוגמה נוספת");
+      if (k < pool.length) check(pool[k++]);
+    }
+    scene({ cap: "לסיכום: " + plain(l.idea[0]).split(/(?<=\.)\s/)[0], show: (l.rules || []).slice(0, 2) });
+    scene({ cap: "שאלה אחרונה לפני התרגול. בהצלחה!", show: [], stop: true });
+    check(pool[k++] || pool[1] || pool[0]);
+    const info = { T, video: total(), checks: T.filter(x => x.type === "check").length };
+    TL.set(l.id, info);
+    return info;
+  }
+  const lessonMinutes = l => { const i = timeline(l); return Math.max(1, Math.round((i.video + i.checks * 40 + practiceCount(l) * 45 + 60) / 60)); };
+  const lessonMeta = l => { const i = timeline(l); return "▶ " + fmt(i.video) + " · ✋ " + i.checks + " " + pick("stops", "עצירות") + " · " + S("min", "~" + lessonMinutes(l)); };
+
   let player = null;
   function stopVideo(){ if (player) player.stop(); player = null; }
-  const sceneDur = sc => sc.dur || Math.max(4.2, Math.min(9, 1.2 + String(sc.cap || "").length / 15 + (sc.show || []).length * 0.9));
   const fmt = t => Math.floor(t / 60) + ":" + String(Math.floor(t % 60)).padStart(2, "0");
 
   function videoPlayer(l, c){
@@ -372,31 +463,52 @@ html[dir="rtl"] .lr-segs button i{transform-origin:right}
     const vid = el("div", "lr-vid paused"); vid.style.setProperty("--c", c.color);
     const stage = el("div", "lr-stage"), cap = el("div", "lr-cap"); cap.dir = "rtl";
     vid.append(stage, cap);
-    const scenes = l.video, durs = scenes.map(sceneDur), total = durs.reduce((a, b) => a + b, 0);
+    const { T, video: total } = timeline(l), durs = T.map(sceneDur);
+    const starts = []; durs.reduce((a, d, i) => (starts[i] = a, a + d), 0);
     const poster = el("button", "lr-poster"); poster.type = "button";
     const big = el("span", "big"); big.append(svgEl(ICON.play));
-    poster.append(big, el("b", null, nameOf(l)), el("small", null, "▶ " + S("video") + " · " + fmt(total)));
+    poster.append(big, el("b", null, nameOf(l)), el("small", null, lessonMeta(l)));
     vid.append(poster);
     const ctrl = el("div", "lr-ctrl"), pb = el("button", "pb"); pb.type = "button"; pb.setAttribute("aria-label", S("play")); pb.append(svgEl(ICON.play));
-    const segs = el("div", "lr-segs"), time = el("span", "lr-time", "0:00");
-    scenes.forEach((s, i) => { const b = el("button"); b.type = "button"; b.setAttribute("aria-label", (i + 1) + "/" + scenes.length); b.append(el("i")); b.onclick = () => { seekTo(durs.slice(0, i).reduce((a, x) => a + x, 0)); if (!playing) play(); }; segs.append(b); });
+    const segs = el("div", "lr-prog"), fill = el("i", "fill"), time = el("span", "lr-time", "0:00 / " + fmt(total)); time.dir = "ltr";
+    segs.append(fill);
+    const marks = [];
+    T.forEach((x, i) => {
+      if (x.type !== "check") return;
+      const m = el("button", "stopmark", "✋"); m.type = "button"; m.setAttribute("aria-label", pick("Practice stop", "עצירה לתרגול"));
+      m.style.insetInlineStart = `calc(${(starts[i] / total * 100).toFixed(2)}% - 11px)`;
+      m.onclick = e => { e.stopPropagation(); seekTo(starts[i]); passed.delete(i); openCheck(i); };
+      marks.push([i, m]); segs.append(m);
+    });
+    segs.onclick = e => {
+      const r = segs.getBoundingClientRect(), rtl = getComputedStyle(segs).direction === "rtl";
+      const f = Math.max(0, Math.min(1, (rtl ? r.right - e.clientX : e.clientX - r.left) / r.width));
+      seekTo(f * total); if (!playing) play();
+    };
     ctrl.append(pb, segs, time);
     box.append(vid, ctrl);
 
-    let t = 0, playing = false, last = 0, raf = 0, cur = -1, ended = false;
-    function setCap(text){
-      cap.innerHTML = "";
-      String(text).split(/([A-Za-z0-9ΔΣαβγπ][A-Za-z0-9ΔΣαβγπ²³⁰-⁹ₙₖₚ₀-₉'+\-−=·×:/()., ]*[A-Za-z0-9²³ΔΣαβγπ)ₙ₀-₉'])/).forEach((part, i) => {
-        if (!part) return;
-        if (i % 2) { const b = el("span", "lt", part); b.dir = "ltr"; cap.append(b); } else cap.append(document.createTextNode(part));
-      });
+    let t = 0, playing = false, last = 0, raf = 0, cur = -1, ended = false, inCheck = false;
+    const passed = new Set();
+    function sceneAt(tt){
+      for (let i = 0; i < T.length; i++) if (T[i].type === "scene" && tt < starts[i] + durs[i]) return [i, tt - starts[i]];
+      const lastScene = T.map(x => x.type).lastIndexOf("scene"); return [lastScene, durs[lastScene]];
     }
-    function sceneAt(tt){ let a = 0; for (let i = 0; i < durs.length; i++) { if (tt < a + durs[i]) return [i, tt - a]; a += durs[i]; } return [durs.length - 1, durs[durs.length - 1]]; }
+    function setCap(text){ cap.innerHTML = ""; isolate(cap, text); }
     function build(i){
-      cur = i; const sc = scenes[i];
-      stage.innerHTML = ""; stage.classList.toggle("many", (sc.show || []).length > 3);
+      cur = i; const sc = T[i];
+      stage.innerHTML = ""; stage.className = "lr-stage" + ((sc.show || []).length > 3 ? " many" : "") + (sc.head ? " worked" : "");
+      if (sc.intro) {
+        const iv = el("div", "lr-intro"); iv.append(el("div", "ic", sc.icon), el("b", null, sc.title)); stage.append(iv);
+      }
+      if (sc.stop) { const s = el("div", "lr-intro"); s.append(el("div", "ic", "✋")); stage.append(s); }
       if (sc.fig) { const f = el("div", "lr-fig"); f.innerHTML = FIG(sc.fig); stage.append(f); }
-      const ls = el("div", "lr-lines"); (sc.show || []).forEach(s => ls.append(line("lr-line", s))); stage.append(ls);
+      const ls = el("div", "lr-lines");
+      (sc.show || []).forEach((s, k) => {
+        const txt = String(s), e = line("lr-line" + (k < (sc.keep || 0) ? " on" : "") + (txt.startsWith("✗") ? " bad" : txt.startsWith("✓") ? " good" : "") + (sc.head && k === 0 ? " q" : ""), txt);
+        ls.append(e);
+      });
+      stage.append(ls);
       setCap(sc.cap || ""); cap.classList.remove("on"); void cap.offsetWidth;
       stage.style.paddingBottom = (cap.offsetHeight + 24) + "px";
     }
@@ -404,19 +516,24 @@ html[dir="rtl"] .lr-segs button i{transform-origin:right}
       const [i, lt] = sceneAt(t);
       if (i !== cur) build(i);
       cap.classList.toggle("on", lt > 0.15);
-      const base = scenes[i].fig ? 0.9 : 0.35;
-      [...stage.querySelectorAll(".lr-line")].forEach((e, k) => e.classList.toggle("on", lt > base + k * 0.9));
-      [...segs.children].forEach((b, k) => { const s0 = durs.slice(0, k).reduce((a, x) => a + x, 0); b.firstChild.style.transform = `scaleX(${Math.max(0, Math.min(1, (t - s0) / durs[k]))})`; });
-      time.textContent = fmt(t);
+      const sc = T[i], keep = sc.keep || 0, base = sc.fig ? 0.9 : 0.35;
+      [...stage.querySelectorAll(".lr-line")].forEach((e, k) => { if (k >= keep) e.classList.toggle("on", lt > base + (k - keep) * 1.1); });
+      fill.style.width = (t / total * 100).toFixed(2) + "%";
+      for (const [k, m] of marks) m.classList.toggle("done", passed.has(k));
+      time.textContent = fmt(t) + " / " + fmt(total);
     }
     function frame(now){
       if (!playing) return;
-      t += Math.min(0.1, (now - last) / 1000); last = now;
-      if (t >= total) { t = total; paint(); end(); return; }
+      const nt = Math.min(total, t + Math.min(0.1, (now - last) / 1000)); last = now;
+      // a practice stop between t and nt: stop there
+      for (let i = 0; i < T.length; i++) if (T[i].type === "check" && !passed.has(i) && starts[i] > t - 1e-6 && starts[i] <= nt) { t = starts[i]; paint(); openCheck(i); return; }
+      t = nt;
+      if (t >= total) { paint(); end(); return; }
       paint(); raf = requestAnimationFrame(frame);
     }
     function play(){
-      if (ended) { seekTo(0); ended = false; }
+      if (inCheck) return;
+      if (ended) { passed.clear(); seekTo(0); ended = false; }
       poster.remove(); playing = true; vid.classList.remove("paused");
       pb.innerHTML = ""; pb.append(svgEl(ICON.pause)); pb.setAttribute("aria-label", S("pause"));
       last = performance.now(); paint(); raf = requestAnimationFrame(frame);
@@ -429,11 +546,49 @@ html[dir="rtl"] .lr-segs button i{transform-origin:right}
       pause(); ended = true; markDone(l.id);
       pb.innerHTML = ""; pb.append(svgEl(ICON.redo)); pb.setAttribute("aria-label", S("again"));
     }
-    function seekTo(x){ t = Math.max(0, Math.min(total - 0.01, x)); cur = -1; ended = false; build(sceneAt(t)[0]); paint(); }
-    poster.onclick = play;
-    pb.onclick = () => playing ? pause() : play();
-    vid.onclick = e => { if (e.target === poster || poster.contains(e.target)) return; playing ? pause() : play(); };
-    player = { stop: pause };
+    function seekTo(x){ closeCheck(); t = Math.max(0, Math.min(total - 0.01, x)); cur = -1; ended = false; build(sceneAt(t)[0]); paint(); }
+
+    // ---------- a practice stop inside the video ----------
+    let chk = null;
+    function closeCheck(){ if (chk) { chk.remove(); chk = null; } inCheck = false; }
+    function openCheck(i){
+      pause(); closeCheck(); poster.remove(); inCheck = true;
+      const it = T[i].item, n = T.slice(0, i + 1).filter(x => x.type === "check").length, all = T.filter(x => x.type === "check").length;
+      chk = el("div", "lr-chk"); chk.onclick = e => e.stopPropagation();
+      const head = el("div", "hd"); head.append(el("b", null, "✋ " + pick("Your turn", "עצירה לתרגול")), el("small", null, n + " / " + all));
+      const q = line("q", plain(it.problem));
+      const inp = el("input"); inp.type = "text"; inp.dir = "ltr"; inp.placeholder = pick("Your answer", "התשובה שלכם"); inp.autocomplete = "off"; inp.spellcheck = false;
+      const row = el("div", "row"), ok = el("button", "btn", pick("Check", "בדיקה")), skip = el("button", "btn quiet", pick("Show me", "הראו לי"));
+      ok.type = skip.type = "button"; row.append(ok, skip);
+      const fb = el("div", "fb");
+      chk.append(head, q, inp, row, fb);
+      vid.append(chk);
+      let tries = 0;
+      const cont = () => { const b = el("button", "btn", "▶ " + pick("Continue the video", "המשך בסרטון")); b.type = "button"; b.onclick = () => { passed.add(i); closeCheck(); t = starts[i] + 1e-4; play(); }; return b; };
+      const reveal = (good) => {
+        fb.innerHTML = ""; inp.disabled = true; row.remove();
+        const r = el("div", good ? "res good" : "res"); r.append(el("b", null, good ? pick("✓ Correct!", "✓ נכון! כל הכבוד") : pick("Here's how:", "ככה פותרים:")));
+        const a = el("div", "ans"); a.append(el("span", null, S("answer") + ": "), line("lr-m", plain(it.answer))); r.append(a);
+        if (!good && it.result && it.result.steps) r.append(steps(it.result.steps.map(([c2, w]) => [plain(c2), plain(w)])));
+        fb.append(r, cont()); try { chk.scrollTop = 0; r.scrollIntoView({ block: "nearest" }); } catch (e) {}
+      };
+      ok.onclick = () => {
+        const v = inp.value.trim(); if (!v) { inp.focus(); return; }
+        let good = false; try { good = !!it.check(v); } catch (e) { good = false; }
+        tries++;
+        if (good) return reveal(true);
+        fb.innerHTML = ""; fb.append(el("div", "res bad", tries < 2 ? pick("Not yet. Try again, or tap “Show me”.", "עוד לא. נסו שוב, או לחצו \"הראו לי\".") : pick("Still not it. Tap “Show me” to see the solution.", "עדיין לא. לחצו \"הראו לי\" כדי לראות את הפתרון.")));
+        inp.select();
+      };
+      skip.onclick = () => reveal(false);
+      inp.onkeydown = e => { if (e.key === "Enter") ok.click(); };
+      setTimeout(() => { try { inp.focus({ preventScroll: true }); } catch (e) {} }, 50);
+    }
+
+    poster.onclick = e => { e.stopPropagation(); play(); };
+    pb.onclick = () => { if (inCheck) return; playing ? pause() : play(); };
+    vid.onclick = e => { if (inCheck || e.target === poster || poster.contains(e.target)) return; playing ? pause() : play(); };
+    player = { stop: () => { pause(); } };
     return box;
   }
 
@@ -658,7 +813,7 @@ html[dir="rtl"] .lr-segs button i{transform-origin:right}
   };
   function FIG(f){ try { return (FIGS[f.type] || (() => ""))(f); } catch (e) { console.error(e); return ""; } }
   window.LearnFigures = FIGS;
-  window.LearnCheck = { accept, numOf, startPractice };
+  window.LearnCheck = { accept, numOf, startPractice, timeline };
 
   // ---------- after solving: a link to the lesson on that topic ----------
   const TOPIC_LESSON = { fractions: "fractions", percent: "percent", powers: "powers", roots: "roots", distrib: "distrib", linear: "linear", quadratic: "quadratic",
