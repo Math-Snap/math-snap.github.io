@@ -160,6 +160,11 @@ html[dir="rtl"] .lr-back svg{transform:scaleX(-1)}
 .lr-chk .res.good b{color:var(--ok)}
 .lr-chk .res.bad{color:var(--warn);font-weight:600}
 .lr-chk .ans{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-weight:700}
+.qfig{display:flex;justify-content:center;background:var(--surface-2);border-radius:14px;padding:6px}
+.qfig svg{width:100%;max-width:320px;height:auto;max-height:170px}
+.still svg .d,.qfig.still svg .d{animation:none!important;stroke-dashoffset:0}
+.still svg .t,.still svg .f,.qfig.still svg .t,.qfig.still svg .f{animation:none!important;opacity:1}
+.lr-chk .qfig svg .d{animation-duration:.6s}
 @keyframes lrdraw{to{stroke-dashoffset:0}}
 @keyframes lrpop{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
 @keyframes lrfade{to{opacity:1}}
@@ -336,7 +341,10 @@ html[dir="rtl"] .lr-back svg{transform:scaleX(-1)}
     }
     // the example
     const s3 = el("div", "lr-sec"); s3.append(el("h3", null, "✏️ " + S("example")));
-    const ex = el("div", "lr-ex"); ex.append(line("q", l.example.q), steps(l.example.steps));
+    const ex = el("div", "lr-ex");
+    const exFig = figFor(l.example.q, l) || lessonFig(l);
+    if (exFig) { const f = el("div", "qfig still"); f.innerHTML = FIG(exFig); ex.append(f); }
+    ex.append(line("q", l.example.q), steps(l.example.steps));
     const a = el("div", "lr-ans"); a.append(el("span", null, S("answer") + ": "), (() => { const m = el("span", "lr-m", l.example.a); m.style.background = "transparent"; m.dir = HE.test(l.example.a) ? "rtl" : "ltr"; return m; })());
     ex.append(a); s3.append(ex); panel.append(s3);
     // the mistake
@@ -396,6 +404,69 @@ html[dir="rtl"] .lr-back svg{transform:scaleX(-1)}
     openProSheet("practice"); renderPractice();
   }
 
+
+  // ---------- a drawing for a question, read from its text ----------
+  const VISUAL = new Set(["geo", "anal", "func", "kin", "dyn", "elec", "atomc"]);
+  function figFor(text, l){
+    const t = plain(text).replace(/[−–]/g, "-");
+    const nums = [...t.matchAll(/-?\d+(?:\.\d+)?/g)].map(m => +m[0]);
+    const ang = {};
+    for (const m of t.matchAll(/(?:זווית|∠|∢)\s*([A-D])\s*(?:היא|הוא|שווה ל-?|שווה|=)?\s*(\d+(?:\.\d+)?)\s*°?/g)) ang[m[1]] = m[2] + "°";
+    const ask = t.match(/(?:מה\s+(?:גודל\s+)?|מצאו\s+(?:את\s+)?)(?:ה?זווית|∠|∢)\s*([A-D])/); if (ask) ang[ask[1]] = "?";
+    // points in a coordinate system, and lines y = mx + b
+    const pts = [...t.matchAll(/(?<![a-zA-Z])([A-Z])?\s*\(\s*(-?\d+(?:\.\d+)?)\s*[,;]\s*(-?\d+(?:\.\d+)?)\s*\)/g)].map(m => [+m[2], +m[3], m[1] || ""]);
+    const lines = [...t.matchAll(/y\s*=\s*(-?\d*(?:\.\d+)?(?:\/\d+)?)\s*x\s*(?:([+-])\s*(\d+(?:\.\d+)?))?/g)].map(m => {
+      const k = m[1] === "" ? 1 : m[1] === "-" ? -1 : m[1].includes("/") ? m[1].split("/").reduce((a, b) => +a / +b) : +m[1];
+      return [k, m[3] ? (m[2] === "-" ? -1 : 1) * +m[3] : 0];
+    });
+    const fx = t.match(/(?:f\(x\)|y)\s*=\s*([-0-9x²³⁴⁵+\s.^*/()]+?x[²³⁴⁵][-0-9x²³⁴⁵+\s.^*/()]*)/);
+    if (fx) return { type: "curve", expr: fx[1].trim().replace(/[.\s]+$/, "") };
+    if (pts.length || (lines.length && /ישר|y\s*=/.test(t) && !/f\(x\)/.test(t))) {
+      const xs = pts.map(p => p[0]).concat(0), ys = pts.map(p => p[1]).concat(0);
+      const pad = v => Math.max(1, Math.round(v * 0.15));
+      const x0 = Math.min(...xs) - pad(Math.max(...xs) - Math.min(...xs) + 4), x1 = Math.max(...xs) + pad(Math.max(...xs) - Math.min(...xs) + 4);
+      const y0 = Math.min(...ys) - pad(Math.max(...ys) - Math.min(...ys) + 4), y1 = Math.max(...ys) + pad(Math.max(...ys) - Math.min(...ys) + 4);
+      const range = pts.length ? [x0, Math.max(x1, x0 + 4), y0, Math.max(y1, y0 + 4)] : [-5, 5, -5, 5];
+      return { type: "axes", points: pts.map(([x, y, n]) => [x, y, n + "(" + x + "," + y + ")"]), seg: pts.length === 2 ? [pts[0], pts[1]] : null, poly: pts.length >= 3 ? pts : null, lines, range };
+    }
+    if (/ממוצע|חציון|שכיח/.test(t) && nums.length >= 3) return { type: "bars", vals: nums.slice(0, 7).map(Math.abs).filter(v => v > 0), mean: false };
+    const bases = t.match(/בסיסים\s*(?:הם|באורך|של)?\s*(\d+(?:\.\d+)?)\s*(?:ו-?|,)\s*(\d+(?:\.\d+)?)/), hgt = t.match(/(?:ה)?גובה\s*(?:הוא|הטרפז|=|באורך)?\s*(\d+(?:\.\d+)?)/);
+    const sides = bases || hgt ? { top: bases ? String(Math.min(+bases[1], +bases[2])) : null, bottom: bases ? String(Math.max(+bases[1], +bases[2])) : null, h: hgt ? hgt[1] : null } : null;
+    if (/טרפז/.test(t)) return { type: "quad", kind: /שווה שוקיים/.test(t) ? "isotrap" : "trap", labels: ang, sides };
+    if (/מקבילית/.test(t) && sides) return { type: "quad", kind: "para", labels: ang, sides: { bottom: sides.bottom || sides.top, h: sides.h } };
+    if (/מקבילית/.test(t)) return { type: "quad", kind: "para", labels: ang };
+    if (/מלבן/.test(t)) return { type: "quad", kind: "rect", labels: ang };
+    if (/מעוין/.test(t)) return { type: "quad", kind: "rhom", labels: ang };
+    if (/ריבוע(?!ית)/.test(t) && !/x²|\^/.test(t)) return { type: "quad", kind: "square", labels: ang };
+    if (/ניצב|יתר|פיתגורס/.test(t)) {
+      const hyp = t.match(/(?:יתר|היתר)\s*(?:הוא|היא|=|באורך)?\s*(\d+(?:\.\d+)?)/), leg = [...t.matchAll(/(?:ניצב|הניצב)(?!ים)\s*(?:אחד|הוא|=|באורך)?\s*(\d+(?:\.\d+)?)/g)].map(m => m[1]);
+      const legs2 = t.match(/הניצבים\s*(?:הם|באורך)?\s*(\d+(?:\.\d+)?)\s*(?:ו-?|,)\s*(\d+(?:\.\d+)?)/);
+      if (legs2) return { type: "right", a: +legs2[1], b: +legs2[2], la: legs2[1], lb: legs2[2], lc: "?" };
+      if (hyp) return { type: "right", a: +(leg[0] || 3), b: Math.max(1, Math.sqrt(Math.max(1, (+hyp[1]) ** 2 - (+(leg[0] || 3)) ** 2))), la: leg[0] || "?", lb: leg[0] ? "?" : "", lc: hyp[1] };
+      return { type: "right", a: 3, b: 4 };
+    }
+    if (/משולש/.test(t) && /שווה שוקיים/.test(t)) {
+      const top = t.match(/זווית (?:ה)?ראש\s*(?:היא|=)?\s*(\d+)/), base = t.match(/זווית (?:ה)?בסיס\s*(?:היא|=)?\s*(\d+)/);
+      const lab = Object.assign({}, ang); if (top) lab.A = top[1] + "°"; if (base) lab.B = base[1] + "°";
+      if (/מה (?:גודל )?זווית (?:ה)?בסיס/.test(t)) lab.B = "?"; if (/מה (?:גודל )?זווית (?:ה)?ראש/.test(t)) lab.A = "?";
+      return { type: "iso", labels: lab };
+    }
+    if (/משולש/.test(t)) return { type: "tri", A: 62, B: 52, labels: ang, names: true };
+    if (/מעגל|עיגול|רדיוס|קוטר/.test(t)) return { type: "circle" };
+    if (/זווית|ישרים מקבילים|מתחלפ|קודקודי|צמוד/.test(t)) return /קודקודי/.test(t) ? { type: "vert", a: nums[0] || 50 } : /צמוד/.test(t) ? { type: "adj", a: nums[0] || 120 } : { type: "par", a: Math.min(80, Math.max(30, nums[0] || 60)) };
+    if (/Ω|נגד/.test(t) || (l && l.course === "elec" && /מתח|זרם|הספק/.test(t))) return { type: "circuit" };
+    if (/נופל|נפילה|נזרק|גובה/.test(t) && l && ["kin", "dyn"].includes(l.course)) return { type: "fall" };
+    if (/כוח|\bN\b|משקל/.test(t) && l && l.course === "dyn") return { type: "forces", F: 1 };
+    if (/קמ"ש|מ'\/ש'|m\/s|נוסע|מהירות|רץ/.test(t) && l && l.course === "kin") return { type: "car" };
+    if (/Z\s*=|פרוטונ|אלקטרונ|נויטרונ/.test(t)) return { type: "atom", p: 6, shells: [2, 4] };
+    if (/קובי/.test(t)) return { type: "dice" };
+    if (/סדרה/.test(t) && nums.length >= 3) return { type: "seq", vals: nums.slice(0, 4).map(Math.abs).filter(v => v > 0) };
+    return null;
+  }
+  // the lesson's own drawing, for questions in a visual subject that don't describe a shape
+  const lessonFig = l => VISUAL.has(l.course) ? ((l.video.find(sc => sc.fig) || {}).fig || null) : null;
+  window.LearnFigFor = figFor;
+
   // ---------- the lesson video: a timeline of scenes, with stops where you practise ----------
   // Built from the lesson: why it matters → teaching scenes → the idea → what to remember → a worked example,
   // a step at a time → ✋ a question → another example → ✋ → the common mistake → (more until 3+ minutes) → summary → ✋.
@@ -416,12 +487,14 @@ html[dir="rtl"] .lr-back svg{transform:scaleX(-1)}
     const total = () => T.reduce((a, x) => a + sceneDur(x), 0);
     function worked(q, steps, ans, label){
       steps = (steps || []).filter(s => s && s[0]); if (!q || !steps.length) return;
-      scene({ cap: label + ": נפתור יחד, צעד אחרי צעד.", show: [q], head: true });
+      const fig = figFor(q, l) || lessonFig(l);
+      const put = o => scene(Object.assign(fig ? { fig, keepFig: true } : {}, o));
+      put({ cap: label + ": נפתור יחד, צעד אחרי צעד.", show: [q], head: true });
       steps.forEach((st, i) => {
         const from = Math.max(0, i - 2);                    // the question, and the last few steps
-        scene({ cap: plain(st[1]) || "ממשיכים לצעד הבא.", show: [q].concat(steps.slice(from, i + 1).map(x => x[0])), keep: 1 + (i - from), head: true });
+        put({ cap: plain(st[1]) || "ממשיכים לצעד הבא.", show: [q].concat(steps.slice(from, i + 1).map(x => x[0])), keep: 1 + (i - from), head: true });
       });
-      scene({ cap: "וזאת התשובה. שווה לעצור רגע ולוודא שכל צעד ברור.", show: [q, "✓ " + plain(ans)], keep: 1, head: true });
+      put({ cap: "וזאת התשובה. שווה לעצור רגע ולוודא שכל צעד ברור.", show: [q, "✓ " + plain(ans)], keep: 1, head: true });
     }
     scene({ intro: true, cap: l.why, title: nameOf(l), icon: c.icon });
     for (const sc of l.video) scene(sc);
@@ -502,7 +575,7 @@ html[dir="rtl"] .lr-back svg{transform:scaleX(-1)}
         const iv = el("div", "lr-intro"); iv.append(el("div", "ic", sc.icon), el("b", null, sc.title)); stage.append(iv);
       }
       if (sc.stop) { const s = el("div", "lr-intro"); s.append(el("div", "ic", "✋")); stage.append(s); }
-      if (sc.fig) { const f = el("div", "lr-fig"); f.innerHTML = FIG(sc.fig); stage.append(f); }
+      if (sc.fig) { const f = el("div", "lr-fig" + (sc.keepFig && T[i - 1] && T[i - 1].keepFig ? " still" : "")); f.innerHTML = FIG(sc.fig); stage.append(f); }
       const ls = el("div", "lr-lines");
       (sc.show || []).forEach((s, k) => {
         const txt = String(s), e = line("lr-line" + (k < (sc.keep || 0) ? " on" : "") + (txt.startsWith("✗") ? " bad" : txt.startsWith("✓") ? " good" : "") + (sc.head && k === 0 ? " q" : ""), txt);
@@ -557,11 +630,13 @@ html[dir="rtl"] .lr-back svg{transform:scaleX(-1)}
       chk = el("div", "lr-chk"); chk.onclick = e => e.stopPropagation();
       const head = el("div", "hd"); head.append(el("b", null, "✋ " + pick("Your turn", "עצירה לתרגול")), el("small", null, n + " / " + all));
       const q = line("q", plain(it.problem));
+      const qf = figFor(it.problem, l) || lessonFig(l);
+      const figBox = qf ? (() => { const f = el("div", "qfig still"); f.innerHTML = FIG(qf); return f; })() : null;
       const inp = el("input"); inp.type = "text"; inp.dir = "ltr"; inp.placeholder = pick("Your answer", "התשובה שלכם"); inp.autocomplete = "off"; inp.spellcheck = false;
       const row = el("div", "row"), ok = el("button", "btn", pick("Check", "בדיקה")), skip = el("button", "btn quiet", pick("Show me", "הראו לי"));
       ok.type = skip.type = "button"; row.append(ok, skip);
       const fb = el("div", "fb");
-      chk.append(head, q, inp, row, fb);
+      chk.append(head); if (figBox) chk.append(figBox); chk.append(q, inp, row, fb);
       vid.append(chk);
       let tries = 0;
       const cont = () => { const b = el("button", "btn", "▶ " + pick("Continue the video", "המשך בסרטון")); b.type = "button"; b.onclick = () => { passed.add(i); closeCheck(); t = starts[i] + 1e-4; play(); }; return b; };
@@ -601,6 +676,18 @@ html[dir="rtl"] .lr-back svg{transform:scaleX(-1)}
   const txt = (x, y, s, cls = "t", size = 15, color = INK, anchor = "middle", weight = 700) => `<text class="${cls}" x="${x}" y="${y}" font-size="${size}" fill="${color}" text-anchor="${anchor}" font-weight="${weight}" direction="${HE.test(s) ? "rtl" : "ltr"}">${s}</text>`;
   const fillPoly = (pts, color = SOFT) => `<polygon class="f" points="${P_(pts)}" fill="${color}"/>`;
   const arc = (cx, cy, r, a0, a1, color = WARN, cls = "d d2") => { const rad = d => d * Math.PI / 180; const x0 = cx + r * Math.cos(rad(a0)), y0 = cy - r * Math.sin(rad(a0)), x1 = cx + r * Math.cos(rad(a1)), y1 = cy - r * Math.sin(rad(a1)); return path(`M${x0.toFixed(1)},${y0.toFixed(1)} A${r},${r} 0 ${Math.abs(a1 - a0) > 180 ? 1 : 0} 0 ${x1.toFixed(1)},${y1.toFixed(1)}`, cls, color, 2.5); };
+  // vertex letters outside the shape, and given values (an angle, or "?") inside each corner
+  function vlabels(pts, names, labels){
+    const cx = pts.reduce((a, p) => a + p[0], 0) / pts.length, cy = pts.reduce((a, p) => a + p[1], 0) / pts.length;
+    let out = "";
+    pts.forEach((p, i) => {
+      const dx = p[0] - cx, dy = p[1] - cy, d = Math.hypot(dx, dy) || 1;
+      out += txt((p[0] + dx / d * 16).toFixed(1), (p[1] + dy / d * 16 + 5).toFixed(1), names[i], "t t3", 15, INK);
+      const v = labels[names[i]];
+      if (v) out += txt((p[0] - dx / d * 34).toFixed(1), (p[1] - dy / d * 30 + 5).toFixed(1), v, "t t3", 15, v.includes("?") ? WARN : PEN);
+    });
+    return out;
+  }
   function triPts(A, B, w = 220, x0 = 50, y0 = 170){
     // a triangle with base angles A (left) and B (right)
     const ta = Math.tan(A * Math.PI / 180), tb = Math.tan(B * Math.PI / 180), x = w * tb / (ta + tb), h = x * ta;
@@ -632,7 +719,7 @@ html[dir="rtl"] .lr-back svg{transform:scaleX(-1)}
       b += `<circle class="t" cx="${X(at)}" cy="62" r="8" fill="${dir.includes("=") ? PEN : "var(--surface)"}" stroke="${PEN}" stroke-width="3"/>`;
       return svg(320, 120, b + txt(160, 36, "x " + dir + " " + at, "t t2", 16));
     },
-    axes({ lines = [], points = [], seg = null, legs = false, step = null, range = [-5, 5, -5, 5] }){
+    axes({ lines = [], points = [], seg = null, poly = null, legs = false, step = null, range = [-5, 5, -5, 5] }){
       const [x0, x1, y0, y1] = range, W = 300, H = 210, X = x => 10 + (x - x0) / (x1 - x0) * W, Y = y => 10 + (y1 - y) / (y1 - y0) * H;
       let b = "";
       for (let x = Math.ceil(x0); x <= x1; x++) b += `<line x1="${X(x)}" y1="${Y(y0)}" x2="${X(x)}" y2="${Y(y1)}" stroke="var(--line)" stroke-width="1"/>`;
@@ -643,6 +730,7 @@ html[dir="rtl"] .lr-back svg{transform:scaleX(-1)}
       lines.forEach(([m, c], i) => { b += path(`M${X(x0)},${Y(m * x0 + c)} L${X(x1)},${Y(m * x1 + c)}`, "d" + (i ? " d2" : ""), i ? WARN : PEN, 3); });
       b += "</g>";
       if (seg) b += path(`M${X(seg[0][0])},${Y(seg[0][1])} L${X(seg[1][0])},${Y(seg[1][1])}`, "d", PEN, 3.5);
+      if (poly && poly.length >= 3) b += `<polygon class="d" pathLength="1" points="${poly.map(([x, y]) => X(x) + "," + Y(y)).join(" ")}" fill="${SOFT}" fill-opacity=".7" stroke="${PEN}" stroke-width="3" stroke-linejoin="round"/>`;
       if (seg && legs) b += path(`M${X(seg[0][0])},${Y(seg[0][1])} L${X(seg[1][0])},${Y(seg[0][1])} L${X(seg[1][0])},${Y(seg[1][1])}`, "d d3", WARN, 2.5);
       if (step) b += path(`M${X(step[0][0])},${Y(step[0][1])} L${X(step[1][0])},${Y(step[0][1])} L${X(step[1][0])},${Y(step[1][1])}`, "d d3", WARN, 3) + txt((X(step[0][0]) + X(step[1][0])) / 2, Y(step[0][1]) + 16, "1", "t t3", 13, WARN) + txt(X(step[1][0]) + 14, (Y(step[0][1]) + Y(step[1][1])) / 2 + 5, String(step[1][1] - step[0][1]), "t t3", 13, WARN);
       points.forEach(([x, y, label], i) => { b += `<circle class="t t2" cx="${X(x)}" cy="${Y(y)}" r="5.5" fill="${PEN}" stroke="var(--surface)" stroke-width="2"/>`; if (label) b += txt(X(x) + 8, Y(y) - 9, label, "t t2", 13, INK, "start"); });
@@ -668,21 +756,22 @@ html[dir="rtl"] .lr-back svg{transform:scaleX(-1)}
       b += arc(xa, 60, 22, 0, a, WARN, "d d3") + arc(xb, 140, 22, 0, a, WARN, "d d3") + arc(xb, 140, 22, 180, 180 + a, OK, "d d4");
       return svg(320, 200, b + txt(xa + 32, 46, a + "°", "t t3", 14, WARN) + txt(xb + 32, 126, a + "°", "t t3", 14, WARN) + txt(xb - 34, 165, a + "°", "t t3", 14, OK));
     },
-    tri({ A = 60, B = 60, h = false }){
+    tri({ A = 60, B = 60, h = false, labels = null, names = false }){
       const [p, q, r] = triPts(A, B);
       let b = fillPoly([p, q, r]) + poly([p, q, r]);
       b += arc(p[0], p[1], 26, 0, A, WARN, "d d2") + arc(q[0], q[1], 26, 180 - B, 180, WARN, "d d2");
       const C = 180 - A - B, aR = Math.atan2(p[1] - r[1], p[0] - r[0]) * -180 / Math.PI;
       b += arc(r[0], r[1], 22, aR, aR + C, WARN, "d d2");
       if (h) b += path(`M${r[0]},${r[1]} L${r[0]},${p[1]}`, "d d3", INK, 2.5) + `<rect class="f" x="${r[0]}" y="${p[1] - 12}" width="12" height="12" fill="none" stroke="${INK}" stroke-width="2"/>` + txt(r[0] + 12, (r[1] + p[1]) / 2, "h", "t t3", 16, INK, "start");
+      if (labels || names) return svg(320, 200, b + vlabels([p, q, r], ["A", "B", "C"], labels || {}));
       return svg(320, 190, b + txt(p[0] + 40, p[1] - 8, "α", "t", 15, WARN) + txt(q[0] - 40, q[1] - 8, "β", "t", 15, WARN) + txt(r[0], r[1] + 40, "γ", "t", 15, WARN));
     },
-    iso(){
-      const A = [160, 20], B = [70, 170], C = [250, 170];
+    iso({ labels = null } = {}){
+      const A = [160, 24], B = [70, 172], C = [250, 172];
       let b = fillPoly([A, B, C]) + poly([A, B, C]);
       b += path("M108,92 L122,100", "d d2", INK, 3) + path("M198,100 L212,92", "d d2", INK, 3);
       b += arc(B[0], B[1], 26, 0, 59, WARN, "d d3") + arc(C[0], C[1], 26, 121, 180, WARN, "d d3");
-      return svg(320, 195, b + txt(160, 14, "A", "t") + txt(58, 186, "B", "t") + txt(262, 186, "C", "t"));
+      return svg(320, 200, b + vlabels([A, B, C], ["A", "B", "C"], labels || {}));
     },
     twotri(){
       const t1 = [[30, 160], [140, 160], [60, 60]], t2 = t1.map(([x, y]) => [x + 150, y]);
@@ -690,13 +779,17 @@ html[dir="rtl"] .lr-back svg{transform:scaleX(-1)}
       b += txt(160, 115, "≅", "t t3", 30, PEN);
       return svg(320, 180, b);
     },
-    right({ a = 3, b: bb = 4 }){
-      const s = 34, A = [60, 170], B = [60 + bb * s, 170], C = [60, 170 - a * s];
-      let b = fillPoly([A, B, C]) + poly([A, B, C]) + `<rect class="f" x="60" y="152" width="18" height="18" fill="none" stroke="${INK}" stroke-width="2"/>`;
-      b += txt(48, 170 - a * s / 2 + 5, "a = " + a, "t", 14, INK, "end") + txt(60 + bb * s / 2, 192, "b = " + bb, "t t2", 14) + txt(60 + bb * s / 2 + 16, 170 - a * s / 2 - 4, "c = ?", "t t3", 14, WARN, "start");
-      return svg(320, 200, b);
+    right({ a = 3, b: bb = 4, la = null, lb = null, lc = null }){
+      // the shape keeps a readable ratio whatever the numbers are
+      const r = Math.max(0.45, Math.min(2.2, a / bb)), W = 200, Hh = Math.min(150, W * r), Ww = Hh / r > W ? W : Hh / r;
+      const A = [70, 175], B = [70 + Ww, 175], C = [70, 175 - Hh];
+      let b = fillPoly([A, B, C]) + poly([A, B, C]) + `<rect class="f" x="70" y="157" width="18" height="18" fill="none" stroke="${INK}" stroke-width="2"/>`;
+      const L = v => v === null || v === undefined ? null : String(v);
+      const ta = L(la) ?? "a = " + a, tb = L(lb) ?? "b = " + bb, tc = L(lc) ?? "c = ?";
+      b += txt(58, 175 - Hh / 2 + 5, ta, "t", 15, ta.includes("?") ? WARN : INK, "end") + txt(70 + Ww / 2, 196, tb, "t t2", 15, tb.includes("?") ? WARN : INK) + txt(70 + Ww / 2 + 14, 175 - Hh / 2 - 6, tc, "t t3", 15, tc.includes("?") ? WARN : INK, "start");
+      return svg(320, 205, b);
     },
-    quad({ kind = "para" }){
+    quad({ kind = "para", labels = null, sides = null }){
       const Q = { para: [[60, 150], [220, 150], [270, 50], [110, 50]], rect: [[60, 150], [260, 150], [260, 50], [60, 50]], rhom: [[160, 175], [260, 100], [160, 25], [60, 100]],
         square: [[90, 165], [230, 165], [230, 25], [90, 25]], trap: [[40, 150], [280, 150], [220, 50], [100, 50]], isotrap: [[40, 150], [280, 150], [210, 50], [110, 50]] }[kind];
       let b = fillPoly(Q) + poly(Q);
@@ -704,9 +797,15 @@ html[dir="rtl"] .lr-back svg{transform:scaleX(-1)}
       if (kind === "para" || kind === "trap" || kind === "isotrap") b += txt((Q[0][0] + Q[1][0]) / 2, Q[0][1] + 6, "›", "t t2", 22, MUTED) + txt((Q[2][0] + Q[3][0]) / 2, Q[2][1] + 6, "›", "t t2", 22, MUTED);
       if (kind === "para") b += txt((Q[1][0] + Q[2][0]) / 2 + 2, (Q[1][1] + Q[2][1]) / 2 + 6, "»", "t t2", 20, MUTED) + txt((Q[0][0] + Q[3][0]) / 2 + 2, (Q[0][1] + Q[3][1]) / 2 + 6, "»", "t t2", 20, MUTED);
       if (kind === "isotrap") b += path("M66,102 L80,96", "d d3", INK, 3) + path("M240,96 L254,102", "d d3", INK, 3);
-      const L = ["D", "C", "B", "A"];
-      if (kind === "trap" || kind === "isotrap") Q.forEach((p, i) => { b += txt(p[0] + (i === 0 || i === 3 ? -12 : 12), p[1] + (i < 2 ? 16 : -6), L[i], "t t3", 14); });
-      return svg(320, 190, b);
+      // A, B on top and D, C at the bottom (AB ∥ DC), like in the textbook
+      const names = ["D", "C", "B", "A"];
+      if (labels || kind === "trap" || kind === "isotrap") b += vlabels(Q, names, labels || {});
+      if (sides) {
+        if (sides.top) b += txt((Q[2][0] + Q[3][0]) / 2, Q[2][1] - 10, sides.top, "t t3", 15, PEN);
+        if (sides.bottom) b += txt((Q[0][0] + Q[1][0]) / 2, Q[0][1] + 22, sides.bottom, "t t3", 15, PEN);
+        if (sides.h) { const hx = Q[3][0] + 8; b += `<line class="f" x1="${hx}" y1="${Q[3][1]}" x2="${hx}" y2="${Q[0][1]}" stroke="${WARN}" stroke-width="2.5" stroke-dasharray="6 5"/>` + txt(hx + 8, (Q[3][1] + Q[0][1]) / 2 + 5, "h = " + sides.h, "t t3", 14, WARN, "start"); }
+      }
+      return svg(320, 200, b);
     },
     circle(){
       let b = `<circle class="f" cx="160" cy="100" r="80" fill="${SOFT}"/>` + `<circle class="d" pathLength="1" cx="160" cy="100" r="80" fill="none" stroke="${PEN}" stroke-width="3"/>`;
@@ -727,17 +826,31 @@ html[dir="rtl"] .lr-back svg{transform:scaleX(-1)}
       if (vertex) s += `<circle class="t t3" cx="${X(vx)}" cy="${Y(vy)}" r="6" fill="${OK}"/>` + txt(X(vx), Y(vy) + (a > 0 ? 22 : -12), "(" + (+vx.toFixed(2)) + ", " + (+vy.toFixed(2)) + ")", "t t3", 13, OK);
       return svg(320, 230, s);
     },
+    curve({ expr = "x^2" }){
+      const e = String(expr).replace(/[−–]/g, "-").replace(/²/g, "^2").replace(/³/g, "^3").replace(/⁴/g, "^4").replace(/⁵/g, "^5");
+      let f; try { const c = math.compile(e); f = x => c.evaluate({ x }); f(1); } catch (er) { return ""; }
+      const x0 = -5, x1 = 5, ys = []; for (let i = 0; i <= 80; i++) { const v = f(x0 + (x1 - x0) * i / 80); if (isFinite(v)) ys.push(v); }
+      let y0 = Math.min(...ys, 0), y1 = Math.max(...ys, 0); const span = y1 - y0 || 1; y0 = Math.max(y0, -span) - span * 0.08; y1 = y1 + span * 0.08;
+      if (y1 - y0 > 60) { const mid = f(0); y0 = Math.min(mid, 0) - 15; y1 = Math.max(mid, 0) + 15; }
+      const W = 300, H = 200, X = x => 10 + (x - x0) / (x1 - x0) * W, Y = y => 10 + (y1 - y) / (y1 - y0) * H;
+      let d = ""; for (let i = 0; i <= 120; i++) { const x = x0 + (x1 - x0) * i / 120, y = f(x); if (!isFinite(y)) continue; d += (d ? "L" : "M") + X(x).toFixed(1) + "," + Math.max(-50, Math.min(260, Y(y))).toFixed(1); }
+      let s2 = "";
+      for (let x = x0; x <= x1; x++) s2 += `<line x1="${X(x)}" y1="10" x2="${X(x)}" y2="${10 + H}" stroke="var(--line)" stroke-width="1"/>`;
+      s2 += `<line x1="10" y1="${Y(0)}" x2="310" y2="${Y(0)}" stroke="${MUTED}" stroke-width="2"/><line x1="${X(0)}" y1="10" x2="${X(0)}" y2="${10 + H}" stroke="${MUTED}" stroke-width="2"/>`;
+      s2 += `<defs><clipPath id="lrcc"><rect x="10" y="10" width="${W}" height="${H}"/></clipPath></defs><g clip-path="url(#lrcc)">` + path(d, "d", PEN, 3.5) + "</g>";
+      return svg(320, 220, s2 + txt(300, 30, "y = " + expr, "t t2", 13, PEN, "end"));
+    },
     seq({ vals = [] }){
       const n = vals.length, w = 280 / n, mx = Math.max(...vals);
       let b = "";
       vals.forEach((v, i) => { const h = 20 + 110 * v / mx; b += `<rect class="f" x="${25 + i * w}" y="${150 - h}" width="${w - 12}" height="${h}" rx="8" fill="${PEN}" style="animation-delay:${0.2 + i * 0.3}s"/>` + txt(25 + i * w + (w - 12) / 2, 172, String(v), "t", 15, INK, "middle"); });
       return svg(320, 185, b);
     },
-    bars({ vals = [] }){
+    bars({ vals = [], mean: showMean = true }){
       const n = vals.length, w = 280 / n, mx = Math.max(...vals), mean = vals.reduce((a, b) => a + b, 0) / n;
       let b = "";
       vals.forEach((v, i) => { const h = 120 * v / mx; b += `<rect class="f" x="${25 + i * w}" y="${150 - h}" width="${w - 14}" height="${h}" rx="6" fill="${SOFT}" stroke="${PEN}" stroke-width="2" style="animation-delay:${0.2 + i * 0.2}s"/>` + txt(25 + i * w + (w - 14) / 2, 168, String(v), "t", 14); });
-      b += path(`M15,${150 - 120 * mean / mx} L305,${150 - 120 * mean / mx}`, "d d4", WARN, 3) + txt(300, 150 - 120 * mean / mx - 6, "ממוצע " + (+mean.toFixed(2)), "t t3", 13, WARN, "end");
+      if (showMean) b += path(`M15,${150 - 120 * mean / mx} L305,${150 - 120 * mean / mx}`, "d d4", WARN, 3) + txt(300, 150 - 120 * mean / mx - 6, "ממוצע " + (+mean.toFixed(2)), "t t3", 13, WARN, "end");
       return svg(320, 180, b);
     },
     dice(){
