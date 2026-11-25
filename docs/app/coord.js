@@ -6,7 +6,7 @@
   "use strict";
   const PT = /(?<![A-Za-z])([A-HK-NP-Z])\s*\(\s*(-?\d+(?:\.\d+)?)\s*[,;]\s*(-?\d+(?:\.\d+)?)\s*\)/g;
   // a photo can read 1 as l or I, and 0 as O, inside a point's brackets: D(-l; 4)
-  const fixNums = s => String(s).replace(/\(([^()]{1,24})\)/g, (m, inner) => /[;,]/.test(inner) && /\d/.test(inner) ? "(" + inner.replace(/(^|[\s;,\-−–])[lI|](?=[\s;,)]|$)/g, "$11").replace(/(^|[\s;,\-−–])O(?=[\s;,.]|$)/g, "$10") + ")" : m);
+  const fixNums = s => String(s).replace(/\(([^()]{1,24})\)/g, (m, inner) => /[;,:]/.test(inner) && /\d/.test(inner) ? "(" + inner.replace(/(\d)\s*:\s*(?=[\-−–]?\s*[\dlIO])/g, "$1;").replace(/(^|[\s;,\-−–])[lI|](?=[\s;,)]|$)/g, "$11").replace(/(^|[\s;,\-−–])O(?=[\s;,.]|$)/g, "$10") + ")" : m);
   function points(s){
     const out = [], seen = new Set();
     for (const m of fixNums(s).replace(/[−–]/g, "-").matchAll(PT)) if (!seen.has(m[1])) { seen.add(m[1]); out.push({ n: m[1], x: +m[2], y: +m[3] }); }
@@ -268,7 +268,7 @@
     // a side, a diagonal, a line: "משוואת השוק AD"
     for (const m of t.matchAll(/(?:משוואת|equation of)\s*(?:the\s+)?(?:ה?(?:צלע|שוק|ישר|אלכסון|בסיס|קטע)|side|leg|line|diagonal|base)?\s*([A-Z]{2})(?![A-Za-z(])/gi)) if (!asks.some(a => a.i === m.index)) asks.push({ i: m.index, kind: "eq", k: m[1] });
     // where a line meets an axis: "G (נקודת החיתוך של AD עם ציר y)", "AD meets the y axis at G"
-    for (const m of t.matchAll(/(?:חיתוך|חותך|נחתך|intersection|meets|cuts)\s*(?:של\s*|of\s*)?(?:ה?(?:צלע|שוק|ישר|אלכסון|בסיס)\s*|the\s+(?:side|line|leg)\s*)?(?:ה?(?:המשך|continuation of)\s*)?([A-Z]{2})(?![A-Za-z(])[^]{0,24}?(?:ציר\s*(?:ה-?)?\s*([xy])|(?:the\s+)?([xy])[\s-]*axis)/gi)) {
+    for (const m of t.matchAll(/(?:חיתו[ךכד]|חותך|נחתך|intersection|meets|cuts)\s*(?:של\s*|of\s*)?(?:ה?(?:צלע|שוק|ישר|אלכסון|בסיס)\s*|the\s+(?:side|line|leg)\s*)?(?:ה?(?:המשך|continuation of)\s*)?([A-Z]{2})(?![A-Za-z(])[^]{0,24}?(?:ציר\s*(?:ה-?)?\s*([xy])|(?:the\s+)?([xy])[\s-]*axis)/gi)) {
       const back = t.slice(Math.max(0, m.index - 40), m.index), fwd = t.slice(m.index + m[0].length, m.index + m[0].length + 20);
       const nb = [...back.matchAll(/(?<![A-Za-z])([A-Z])(?![A-Za-z])/g)].pop(), nf = fwd.match(/(?:בנקודה|at|at point)\s*([A-Z])(?![A-Za-z])/i);
       asks.push({ i: m.index, kind: "axis", k: m[1], axis: (m[2] || m[3]).toLowerCase(), n: nf ? nf[1] : nb ? nb[1] : null });

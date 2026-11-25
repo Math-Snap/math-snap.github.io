@@ -10,6 +10,7 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven { url = uri("https://jitpack.io") }   // Tesseract (Hebrew text on the phone)
     }
 }
 rootProject.name = "MathSnap"

@@ -102,8 +102,10 @@
     let clean = true;
     // the corners, in photo pixels: start a little inside the edges
     let Q;
-    const resetQ = full => { const w = src.width, h = src.height, m = full ? 0 : 0.06; Q = [[w * m, h * m], [w * (1 - m), h * m], [w * (1 - m), h * (1 - m)], [w * m, h * (1 - m)]]; };
-    resetQ(false);
+    const resetQ = full => { const w = src.width, h = src.height, m = full ? 0 : 0.015; Q = [[w * m, h * m], [w * (1 - m), h * m], [w * (1 - m), h * (1 - m)], [w * m, h * (1 - m)]]; };
+    // the page's own corners when they can be found, else just inside the edges
+    const autoQ = () => { let f = null; try { f = findPage(src); } catch (e) {} if (f) Q = f; else resetQ(false); return !!f; };
+    autoQ();
     const handles = Q.map(() => { const h = el("div", "h"); area.append(h); return h; });
     let scale = 1, ox = 0, oy = 0;
     function layout(){
@@ -133,7 +135,7 @@
         h.onpointermove = move; h.onpointerup = h.onpointercancel = () => { h.onpointermove = null; };
       };
     });
-    bRot.onclick = () => { src = rotate90(src); resetQ(false); layout(); };
+    bRot.onclick = () => { src = rotate90(src); autoQ(); layout(); };
     bAll.onclick = () => { resetQ(true); draw(); };
     bClean.onclick = () => { clean = !clean; bClean.setAttribute("aria-pressed", String(clean)); };
     x.onclick = () => { close(); setStatus(""); };
@@ -151,6 +153,43 @@
     PhotoFix.ui = ui;
   }
   function close(){ for (const n of document.querySelectorAll(".pf,.pfc")) n.remove(); }
+
+  // ---------- finding the page by itself ----------
+  // A page is the big bright patch: a small copy of the photo, the brightness that splits page from table (Otsu),
+  // the largest connected bright patch, and its four extreme points (top-left = smallest x+y, and so on).
+  // Nothing found (the page fills the photo, or no clear patch): null, and the corners start just inside the edges.
+  function findPage(c){
+    const k = Math.min(1, 240 / Math.max(c.width, c.height)), w = Math.max(8, Math.round(c.width * k)), h = Math.max(8, Math.round(c.height * k));
+    const sm = document.createElement("canvas"); sm.width = w; sm.height = h; const g = sm.getContext("2d"); g.drawImage(c, 0, 0, w, h);
+    const d = g.getImageData(0, 0, w, h).data, N = w * h, v = new Uint8Array(N), hist = new Uint32Array(256);
+    for (let i = 0; i < N; i++) { v[i] = (0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2]) | 0; hist[v[i]]++; }
+    let sum = 0; for (let t = 0; t < 256; t++) sum += t * hist[t];
+    let sB = 0, wB = 0, best = -1, th = 128;
+    for (let t = 0; t < 256; t++) { wB += hist[t]; if (!wB) continue; const wF = N - wB; if (!wF) break; sB += t * hist[t];
+      const mB = sB / wB, mF = (sum - sB) / wF, b = wB * wF * (mB - mF) * (mB - mF); if (b > best) { best = b; th = t; } }
+    const lab = new Int32Array(N).fill(-1); let bestId = -1, bestN = 0; const q = new Int32Array(N);
+    for (let s0 = 0; s0 < N; s0++) {
+      if (lab[s0] !== -1 || v[s0] <= th) continue;
+      let qh = 0, qt = 0, n = 0; q[qt++] = s0; lab[s0] = s0;
+      while (qh < qt) { const p = q[qh++]; n++; const x = p % w, y = (p / w) | 0;
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const xx = x + dx, yy = y + dy; if (xx < 0 || yy < 0 || xx >= w || yy >= h) continue; const r = yy * w + xx; if (lab[r] === -1 && v[r] > th) { lab[r] = s0; q[qt++] = r; } } }
+      if (n > bestN) { bestN = n; bestId = s0; }
+    }
+    const frac = bestN / N; if (bestId < 0 || frac < 0.12 || frac > 0.9) return null;
+    let tl, tr, br, bl, a1 = Infinity, a2 = -Infinity, a3 = -Infinity, a4 = Infinity, touch = 0;
+    for (let i = 0; i < N; i++) { if (lab[i] !== bestId) continue; const x = i % w, y = (i / w) | 0;
+      if (x === 0 || y === 0 || x === w - 1 || y === h - 1) touch++;
+      if (x + y < a1) { a1 = x + y; tl = [x, y]; } if (x + y > a2) { a2 = x + y; br = [x, y]; }
+      if (x - y > a3) { a3 = x - y; tr = [x, y]; } if (x - y < a4) { a4 = x - y; bl = [x, y]; } }
+    const Qs = [tl, tr, br, bl];
+    // the four corners must make a real, convex shape that covers most of the patch, and the patch must not run off the photo much
+    const area = Math.abs(Qs.reduce((a, p, i) => { const n = Qs[(i + 1) % 4]; return a + p[0] * n[1] - n[0] * p[1]; }, 0)) / 2;
+    const cross = i => { const [a, b, c2] = [Qs[i], Qs[(i + 1) % 4], Qs[(i + 2) % 4]]; return (b[0] - a[0]) * (c2[1] - b[1]) - (b[1] - a[1]) * (c2[0] - b[0]); };
+    const sg = [0, 1, 2, 3].map(cross);
+    if (!(sg.every(x => x > 0) || sg.every(x => x < 0)) || area < bestN * 0.75 || touch > (w + h) * 0.5) return null;
+    return Qs.map(p => [Math.min(c.width, (p[0] + 0.5) / k), Math.min(c.height, (p[1] + 0.5) / k)]);
+  }
+  PhotoFix.findPage = findPage;
 
   // ---------- 3. straighten: the marked corners become a flat rectangle ----------
   function homography(from, to){
@@ -246,9 +285,80 @@
     else { pending = null; setStatus("appOnly", true); }
   }
 
+  // ---------- Hebrew words in their place ----------
+  // The phone's main reader knows only Latin letters and digits; a second reader (Tesseract, Hebrew) gives the Hebrew
+  // words with their place in the photo. Words are grouped into lines by height; a line with Hebrew reads right to left,
+  // with each run of math inside it kept left to right. Where both readers saw the same spot, math wins over a Hebrew
+  // guess at it, and Hebrew wins over the Latin reader's junk for a Hebrew word.
+  const HEB = /[\u05D0-\u05EA]/;
+  const mathy = t => /[0-9=()+^\/;<>∥|√²³°]/.test(t) || /^[A-Z]{1,5}[.,:]?$/.test(t) || /^[a-z][.,]?$/.test(t);
+  function mergeHebrew(text, items){
+    if (!Array.isArray(items)) return null;
+    // a Hebrew word: mostly Hebrew letters (the Hebrew reader also "reads" numbers as Hebrew-ish junk like (ש2;6)א)
+    const heOk = t => { const a = String(t).replace(/[^\u05D0-\u05EAA-Za-z0-9]/g, ""), h = (a.match(/[\u05D0-\u05EA]/g) || []).length; return h >= 1 && h / a.length >= 0.75; };
+    const he = items.filter(i => i && i.he && heOk(i.t)).map(i => Object.assign({}, i, { t: String(i.t).replace(/[A-Za-z0-9]/g, "") })), la = items.filter(i => i && !i.he);
+    if (!he.length) return null;
+    // the point names this exercise really uses: letters right before a "(" (A(2;6)), and names made of them (ABCD)
+    const known = new Set();
+    for (const m of la.slice().sort((a, b) => a.y - b.y || a.x - b.x).map(l => l.t).join(" ").matchAll(/(?<![A-Za-z])([A-Z])\s*\(\s*[-−–]?\s*[\dlIO.]/g)) known.add(m[1]);
+    for (const l of la) { const m = String(l.t).match(/^[.,(]?([A-HKMOST])[.,:)]?$/); if (m) known.add(m[1]); }   // a letter alone: a point's name (E, G; not N, W, I, which the Latin reader makes of Hebrew)
+    const okName = t => t.length === 1 || (t.length <= 5 && [...t].every(c => known.has(c)));
+    // the Latin reader's guesses at Hebrew words ("NN", "IN2DIN", "0n"), inside a line that has Hebrew
+    const junk = (t, mathLine) => {
+      const w = String(t).replace(/[^A-Za-z]/g, "");
+      if (!w) return false;
+      if (/[A-Z]/.test(w) && known.size && !okName(w.replace(/[a-z]/g, "")) && !/\(/.test(t)) return true;
+      if (/[a-z]/.test(w) && /[A-Z]/.test(w) && !/\(/.test(t)) return true;
+      if (!mathLine && /^[a-z]{2,}$/.test(w) && !/^(sin|cos|tan|log|ln|sqrt)$/.test(w)) return true;
+      if (/^[^A-Za-z]*[a-z]{3,}[^A-Za-z]*$/.test(t) && !/^(sin|cos|tan|log|ln|sqrt)$/.test(w)) return true;
+      return false;
+    };
+    const wd = i => i.w || i.h * Math.max(1, String(i.t).length) * 0.55;
+    const overlap = (a, b) => Math.abs(a.y - b.y) < Math.max(a.h, b.h) * 0.6 && Math.abs(a.x - b.x) < (wd(a) + wd(b)) / 2 * 0.85;
+    const keepLa = [], dropHe = new Set();
+    for (const l of la) {
+      const hit = he.filter(h => overlap(l, h));
+      if (!hit.length) { keepLa.push(l); continue; }
+      // math wins; a lone letter only beats an unsure Hebrew word (the Latin reader turns "ב." into "a")
+      const strong = /[0-9=()+^\/;<>∥|√²³°]/.test(l.t) || /^[A-Z]{1,5}[.,:]?$/.test(l.t);
+      // a numbering mark (א. ב. ג.) read with confidence beats a short Latin guess at it ("a", ">]", "7")
+      const marker = hit.some(h => /^[\u05D0-\u05EA]\.$/.test(h.t) && (h.c == null || h.c >= 60)) && String(l.t).length <= 2;
+      if (!marker && mathy(l.t) && !junk(l.t) && (strong || hit.every(h => (h.c == null ? 0 : h.c) < 60))) { keepLa.push(l); hit.forEach(h => dropHe.add(h)); }
+    }
+    const words = keepLa.concat(he.filter(h => !dropHe.has(h))).sort((a, b) => a.y - b.y);
+    const lines = [];
+    for (const w of words) {
+      const L = lines.find(L => Math.abs(L.y - w.y) < Math.max(L.h, w.h) * 0.6);
+      if (L) { L.ws.push(w); if (!w.he) { L.n++; } L.h = Math.max(L.h, w.h); }
+      else lines.push({ y: w.y, h: w.h, ws: [w], n: 0 });
+    }
+    lines.sort((a, b) => a.y - b.y);
+    const out = lines.map(L => {
+      if (!L.ws.some(w => w.he)) {
+        L.ws = L.ws.filter(w => !junk(w.t, true)); if (!L.ws.length) return "";
+        // only math: the page's own line builder (it knows small raised digits are powers)
+        const ids = [...new Set(L.ws.map(w => w.id))].sort((a, b) => Math.min(...L.ws.filter(w => w.id === a).map(w => w.x)) - Math.min(...L.ws.filter(w => w.id === b).map(w => w.x)));
+        try { return ids.map(id => ocrLines("", L.ws.filter(w => w.id === id))[0]).join(" "); } catch (e) { return L.ws.sort((a, b) => a.x - b.x).map(w => w.t).join(" "); }
+      }
+      const ws = L.ws.slice().sort((a, b) => b.x - a.x), parts = []; let run = [];
+      const flush = () => { if (run.length) { parts.push(run.reverse().map(w => w.t).join(" ")); run = []; } };
+      for (const w of ws) { if (w.he) { flush(); parts.push(w.t); } else if (!junk(w.t)) run.push(w); }
+      flush();
+      return parts.join(" ");
+    }).filter(l => l.trim());
+    // "ציר y" read with the Hebrew reader turns into "ציר צ"
+    return { text: out.join("\n").replace(/ציר\s+צ(?=[\s).,]|$)/g, "ציר y").replace(/ציר\s+(?:א|ж)(?=[\s).,]|$)/g, "ציר x"), items: la };
+  }
+  window.PhotoFixMerge = mergeHebrew;
+
   // ---------- 6. "this is what I read" ----------
   const baseOcr = window.onOcr;
   window.onOcr = (text, items) => {
+    const m = mergeHebrew(text, items);
+    if (m) {
+      if (pending) { const p = pending; pending = null; setStatus(""); return confirm(p, m.text, [], m.items); }
+      return photoFor === "geo" ? baseOcr(m.text, m.items) : baseOcr(m.text, []);
+    }
     if (!pending) return baseOcr(text, items);
     const p = pending; pending = null; setStatus("");
     confirm(p, String(text || ""), items || []);
@@ -257,9 +367,11 @@
   window.onOcrError = key => { pending = null; return baseErr ? baseErr(key) : undefined; };
   function cleaned(text, items){
     if (target === "geo") return String(text).trim();
-    try { return ocrLines(text, items).map(cleanOcrLine).filter(l => l.trim()).join("\n"); } catch (e) { return String(text).trim(); }
+    try {
+      return ocrLines(text, items).map(l => HEB.test(l) ? l : cleanOcrLine(l)).filter(l => l.trim() && (!HEB.test(l) || /[\d=]/.test(l))).join("\n");
+    } catch (e) { return String(text).trim(); }
   }
-  function confirm(p, text, items){
+  function confirm(p, text, items, drawItems){
     close();
     const ui = el("div", "pfc"); ui.dir = lang === "he" ? "rtl" : "ltr";
     const card = el("div", "card");
@@ -285,7 +397,7 @@
     ok.onclick = () => {
       const v = ta.value.trim(); close();
       photoFor = p.target;
-      if (p.target === "geo") return baseOcr(v, v === t0 ? items : []);
+      if (p.target === "geo") return baseOcr(v, v === t0 ? (drawItems || items) : []);
       if (!v) return;
       $("problem").value = v; setStatus("checkText"); solveNow();
     };

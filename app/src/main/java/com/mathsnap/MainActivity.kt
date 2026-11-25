@@ -138,6 +138,7 @@ class MainActivity : AppCompatActivity() {
         @JavascriptInterface fun redeemCode(hash: String) = runOnUiThread { account.redeemCode(hash) }
         @JavascriptInterface fun checkCode() = runOnUiThread { account.checkCode() }
         @JavascriptInterface fun idToken() = runOnUiThread { account.idToken() }
+        @JavascriptInterface fun report(json: String) = runOnUiThread { account.report(json) }
 
         // ---- Pro key (bought on the web): asks the Lemon Squeezy license service ----
         @JavascriptInterface fun licenseRequest(id: String, action: String, json: String) {
@@ -166,7 +167,7 @@ class MainActivity : AppCompatActivity() {
             try {
                 val bytes = android.util.Base64.decode(dataUrl.substringAfter(","), android.util.Base64.DEFAULT)
                 val bmp = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: throw Exception("image")
-                recognize(InputImage.fromBitmap(bmp, 0))
+                recognize(InputImage.fromBitmap(bmp, 0), bmp)
             } catch (e: Exception) { js("onOcrError('open')") }
         }
         @JavascriptInterface fun canSelfUpdate(): Boolean = updater.canUpdate()
@@ -262,7 +263,43 @@ class MainActivity : AppCompatActivity() {
         recognize(image)
     }
 
-    private fun recognize(image: InputImage) {
+    // Hebrew words with their place in the photo (Tesseract, on the phone, one at a time)
+    private val tessRun = java.util.concurrent.Executors.newSingleThreadExecutor()
+    private var tess: com.googlecode.tesseract.android.TessBaseAPI? = null
+    private fun hebrewWords(bmp: android.graphics.Bitmap): JSONArray {
+        val out = JSONArray()
+        try {
+            val api = tess ?: run {
+                val dir = java.io.File(filesDir, "tess"); val td = java.io.File(dir, "tessdata"); td.mkdirs()
+                val f = java.io.File(td, "heb.traineddata")
+                if (!f.exists() || f.length() < 1000L) assets.open("tessdata/heb.traineddata").use { i -> f.outputStream().use { o -> i.copyTo(o) } }
+                val t = com.googlecode.tesseract.android.TessBaseAPI()
+                if (!t.init(dir.absolutePath, "heb")) { t.recycle(); return out }
+                tess = t; t
+            }
+            api.setPageSegMode(com.googlecode.tesseract.android.TessBaseAPI.PageSegMode.PSM_AUTO)
+            api.setImage(bmp)
+            api.getUTF8Text()
+            val level = com.googlecode.tesseract.android.TessBaseAPI.PageIteratorLevel.RIL_WORD
+            val heb = Regex("[\\u05D0-\\u05EA]")
+            val ri = api.getResultIterator()
+            if (ri != null) {
+                ri.begin()
+                do {
+                    val t = ri.getUTF8Text(level) ?: continue
+                    if (!heb.containsMatchIn(t) || ri.confidence(level) < 5f) continue
+                    val r = ri.getBoundingRect(level)
+                    out.put(JSONObject().put("t", t.trim()).put("x", r.exactCenterX().toDouble()).put("y", r.exactCenterY().toDouble())
+                        .put("h", r.height()).put("w", r.width()).put("he", true).put("c", ri.confidence(level).toDouble()))
+                } while (ri.next(level))
+                ri.delete()
+            }
+            api.clear()
+        } catch (e: Throwable) { }
+        return out
+    }
+
+    private fun recognize(image: InputImage, hebrewFrom: android.graphics.Bitmap? = null) {
         js("onPhotoStart()")
         recognizer.process(image)
             .addOnSuccessListener { result ->
@@ -277,12 +314,18 @@ class MainActivity : AppCompatActivity() {
                                 .put("x", box.exactCenterX().toDouble())
                                 .put("y", box.exactCenterY().toDouble())
                                 .put("h", box.height())
+                                .put("w", box.width())
                                 .put("line", line.text)
                                 .put("id", "$bi.$li"))
                         }
                     }
                 }
-                js("onOcr(" + JSONObject.quote(result.text) + "," + items.toString() + ")")
+                if (hebrewFrom == null) { js("onOcr(" + JSONObject.quote(result.text) + "," + items.toString() + ")"); return@addOnSuccessListener }
+                tessRun.execute {
+                    val he = hebrewWords(hebrewFrom)
+                    for (i in 0 until he.length()) items.put(he.get(i))
+                    runOnUiThread { js("onOcr(" + JSONObject.quote(result.text) + "," + items.toString() + ")") }
+                }
             }
             .addOnFailureListener {
                 js("onOcrError('read')")

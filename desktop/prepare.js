@@ -25,5 +25,8 @@ const LANG = "https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng/4.0.0_best_int
   const res = await fetch(LANG);
   if (!res.ok) throw new Error("language data: HTTP " + res.status);
   fs.writeFileSync(path.join(ocr, "lang", "eng.traineddata.gz"), Buffer.from(await res.arrayBuffer()));
+  const rh = await fetch(LANG.replace(/eng/g, "heb"));
+  if (!rh.ok) throw new Error("hebrew data: HTTP " + rh.status);
+  fs.writeFileSync(path.join(ocr, "lang", "heb.traineddata.gz"), Buffer.from(await rh.arrayBuffer()));
   console.log("app ready:", fs.readdirSync(OUT).length, "files,", n, "scanner core files");
 })().catch(e => { console.error(e); process.exit(1); });

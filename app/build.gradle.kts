@@ -5,6 +5,7 @@ plugins {
 }
 
 android {
+    androidResources { noCompress += listOf("traineddata") }
     namespace = "com.mathsnap"
     compileSdk = 36
 
@@ -12,8 +13,8 @@ android {
         applicationId = "com.mathsnap"
         minSdk = 24
         targetSdk = 36
-        versionCode = 62
-        versionName = "9.5.1"
+        versionCode = 63
+        versionName = "9.6"
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }
 
@@ -69,6 +70,8 @@ dependencies {
     implementation("com.google.android.material:material:1.12.0")
     // Google's text scanner, runs fully on the phone (no internet)
     implementation("com.google.mlkit:text-recognition:16.0.1")
+    // Tesseract with Hebrew, also on the phone: ML Kit reads only Latin letters, so Hebrew words come from here
+    implementation("cz.adaptech.tesseract4android:tesseract4android:4.8.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
 
     // Optional account: sign-in and synced history (short text only)

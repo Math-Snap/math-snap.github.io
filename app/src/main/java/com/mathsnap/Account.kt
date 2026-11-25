@@ -98,6 +98,23 @@ class Account(private val activity: AppCompatActivity, private val js: (String) 
             .addOnFailureListener { js("onIdToken('')") }
     }
 
+    // "this was wrong": the exercise's text and the app's answer (never a photo or a name), only when the user sends it
+    fun report(json: String) {
+        try {
+            val o = JSONObject(json)
+            @Suppress("DEPRECATION")
+            val version = activity.packageManager.getPackageInfo(activity.packageName, 0).versionName ?: ""
+            val data = hashMapOf<String, Any>(
+                "problem" to o.optString("problem").take(2000), "answer" to o.optString("answer").take(2000),
+                "note" to o.optString("note").take(500), "tab" to o.optString("tab").take(12),
+                "platform" to "android", "version" to version.take(20), "lang" to o.optString("lang").take(4),
+                "at" to FieldValue.serverTimestamp())
+            db.collection("reports").add(data)
+                .addOnSuccessListener { js("window.onReportSent && onReportSent(true)") }
+                .addOnFailureListener { js("window.onReportSent && onReportSent(false)") }
+        } catch (e: Exception) { js("window.onReportSent && onReportSent(false)") }
+    }
+
     fun state(): String {
         val u = auth.currentUser ?: return JSONObject().put("signedIn", false).toString()
         return JSONObject()

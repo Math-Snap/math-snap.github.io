@@ -65,7 +65,9 @@
     } catch (e) { return file; }
   }
 
-  let worker = null;
+  B.appVersion = "9.6";
+  B.appPlatform = D ? "windows" : (/iPhone|iPad|iPod/.test(navigator.userAgent) ? "ios" : "web");
+  let worker = null, hebWorker = null;
   async function scan(file) {
     call("onPhotoStart");
     try {
@@ -80,9 +82,16 @@
       const { data } = await worker.recognize(img);
       const items = [];
       (data.lines || []).forEach((line, li) => (line.words || []).forEach(w => items.push({
-        t: w.text, x: (w.bbox.x0 + w.bbox.x1) / 2, y: (w.bbox.y0 + w.bbox.y1) / 2, h: w.bbox.y1 - w.bbox.y0,
+        t: w.text, x: (w.bbox.x0 + w.bbox.x1) / 2, y: (w.bbox.y0 + w.bbox.y1) / 2, h: w.bbox.y1 - w.bbox.y0, w: w.bbox.x1 - w.bbox.x0,
         line: String(line.text || "").trim(), id: "0." + li,
       })));
+      // Hebrew words (a second reader, with Hebrew): the page puts them in place between the math
+      try {
+        if (!hebWorker) hebWorker = await Tesseract.createWorker("heb", 1, local ? { workerPath: local("ocr/worker.min.js"), corePath: local("ocr/core"), langPath: local("ocr/lang"), workerBlobURL: false } : {});
+        const hd = (await hebWorker.recognize(img)).data;
+        (hd.words || []).forEach(w => { if (/[\u05D0-\u05EA]/.test(w.text) && w.confidence >= 5) items.push({
+          t: w.text, x: (w.bbox.x0 + w.bbox.x1) / 2, y: (w.bbox.y0 + w.bbox.y1) / 2, h: w.bbox.y1 - w.bbox.y0, w: w.bbox.x1 - w.bbox.x0, he: true, c: w.confidence }); });
+      } catch (e) { console.warn("hebrew", e); }
       call("onOcr", data.text || "", items);
     } catch (e) {
       console.error(e);
@@ -244,7 +253,7 @@
       const tr = [{ fieldPath: "last", setToServerValue: "REQUEST_TIME" }, { fieldPath: "opens", increment: { integerValue: "1" } }];
       if (!localStorage.getItem("installSent")) tr.push({ fieldPath: "first", setToServerValue: "REQUEST_TIME" });
       fetch("https://firestore.googleapis.com/v1/" + base + ":commit", { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ writes: [{ update: { name: base + "/installs/" + id, fields: { platform: { stringValue: D ? "windows" : ios ? "ios" : "web" }, version: { stringValue: "9.5.1" } } },
+        body: JSON.stringify({ writes: [{ update: { name: base + "/installs/" + id, fields: { platform: { stringValue: D ? "windows" : ios ? "ios" : "web" }, version: { stringValue: "9.6" } } },
           updateMask: { fieldPaths: ["platform", "version"] }, updateTransforms: tr }] }) })
         .then(r => { if (r.ok) { localStorage.setItem("pingDay", day); localStorage.setItem("installSent", "1"); } }).catch(() => {});
     }

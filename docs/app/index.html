@@ -3897,6 +3897,8 @@ function readPro(){ try { if (hasBridge && typeof Android.proState === "function
 const isOwner = () => !!(typeof account !== "undefined" && account && PRO_OWNERS.includes(String(account.email || "").toLowerCase()));
 // ---- Pro outside Google Play (Windows, iPhone, the APK from the website): a monthly subscription
 // sold on a Lemon Squeezy checkout page. The buyer gets a Pro key by email and enters it here.
+// Stripe in test mode (a sandbox: no real money); the owner's test button in the Pro sheet opens it
+const STRIPE_TEST_LINK = "https://buy.stripe.com/test_cNi28r1wmewKboO9tu9k400";
 const PRO_WEB = {
   checkout: "",   // the Lemon Squeezy checkout link for the monthly Pro subscription
   storeId: 0,     // Lemon Squeezy store number (keys from other stores are refused)
@@ -4183,6 +4185,12 @@ function renderPaywall(feature){
       foot.append(m, rm);
     } else if (codeActive()) {
       foot.append(el("p", "proterms", P("codeOn", account && account.email)));
+    }
+    // the owner only, and never in the Google Play version: try Stripe's checkout in test mode (no real money)
+    if (isOwner() && !proState.play) {
+      const t = el("button", "btn quiet", pick("🧪 Test checkout (Stripe test mode)", "🧪 בדיקת תשלום (Stripe, מצב ניסיון)")); t.type = "button";
+      t.onclick = () => { try { Android.openUrl(STRIPE_TEST_LINK); } catch (e) { window.open(STRIPE_TEST_LINK, "_blank"); } };
+      foot.append(t, el("p", "proterms", pick("Test card 4242 4242 4242 4242, any future date, any CVC. Only you see this button.", "כרטיס ניסיון 4242 4242 4242 4242, כל תאריך עתידי וכל CVC. רק אתה רואה את הכפתור הזה.")));
     }
   } else if (proState.play) {
     foot.append(el("p", "proprice", proState.price ? P("perMonth", proState.price) : P("monthly")));
@@ -4739,6 +4747,7 @@ if (ACC && !account && !seenWelcome()) showWelcome();
 <script src="learn.js"></script>
 <script src="smartread.js"></script>
 <script src="photofix.js"></script>
+<script src="report.js"></script>
 <script src="menu.js"></script>
 <script src="install-gate.js"></script>
 <script>
