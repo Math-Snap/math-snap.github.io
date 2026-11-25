@@ -21,7 +21,7 @@ for (const [q, kind, area] of cases) {
 }
 if (C.detect("A(1,2), B(7,2)")) { bad++; console.log("FAIL two points should stay with the solver"); }
 console.log(bad ? bad + " coordinate failures" : "coordinates: all " + cases.length + " passed");
-process.exit(bad ? 1 : 0);
+if (bad) process.exitCode = 1;
 
 // a missing vertex from a side's equation and a parallel (also as text read from a photo)
 {
@@ -33,4 +33,14 @@ process.exit(bad ? 1 : 0);
   const p = strip(C2.solve("מקבילית ABCD, A(1,1) B(5,1) C(7,4). מצאו את D", "he").answer);
   if (!p.includes("D(3, 4)")) { console.error("FAIL parallelogram D:", p); process.exit(1); }
   console.log("ok missing vertex");
+}
+
+// the exercise's own questions: a side's equation, where it meets the y axis, a height (given foot, or not)
+{
+  const C3 = require("../app/src/main/assets/coord.js"), strip = x => x.replace(/[⁦⁩]/g, "");
+  const base = "קדקודי המרובע ABCD הם: D(-l; 4) , C(5;1) , B(6;4) , A(2;6). א. הוכיחו שהמרובע הוא טרפז. ב. מצאו את משוואת השוק AD. ג. מצאו את שיעורי נקודה G (נקודת החיתוך של AD עם ציר y). ";
+  for (const q of [base + "ד. ידוע כי שיעורי הנקודה E (0.6 , 3.2). מצאו את משוואת הגובה AE.", base + "ד. מצאו את משוואת הגובה AE."]) {
+    const a = strip(C3.solve(q, "he").answer);
+    for (const want of ["ABCD טרפז", "AD: y = ⅔x + 14/3", "G(0, 14/3)", "AE: y = 2x + 2"]) if (!a.includes(want)) { console.log("FAIL questions:", want, "in", a); process.exitCode = 1; }
+  }
 }

@@ -5,9 +5,11 @@
 (function (root) {
   "use strict";
   const PT = /(?<![A-Za-z])([A-HK-NP-Z])\s*\(\s*(-?\d+(?:\.\d+)?)\s*[,;]\s*(-?\d+(?:\.\d+)?)\s*\)/g;
+  // a photo can read 1 as l or I, and 0 as O, inside a point's brackets: D(-l; 4)
+  const fixNums = s => String(s).replace(/\(([^()]{1,24})\)/g, (m, inner) => /[;,]/.test(inner) && /\d/.test(inner) ? "(" + inner.replace(/(^|[\s;,\-−–])[lI|](?=[\s;,)]|$)/g, "$11").replace(/(^|[\s;,\-−–])O(?=[\s;,.]|$)/g, "$10") + ")" : m);
   function points(s){
     const out = [], seen = new Set();
-    for (const m of String(s).replace(/[−–]/g, "-").matchAll(PT)) if (!seen.has(m[1])) { seen.add(m[1]); out.push({ n: m[1], x: +m[2], y: +m[3] }); }
+    for (const m of fixNums(s).replace(/[−–]/g, "-").matchAll(PT)) if (!seen.has(m[1])) { seen.add(m[1]); out.push({ n: m[1], x: +m[2], y: +m[3] }); }
     return out;
   }
   // "AD: y = 3x − 11". A photo of a Hebrew line can read it backwards ("y = 3x - 11 … AD"), so the side's name
@@ -125,13 +127,16 @@
     return { done: false, partial: { problem: pts.map(p => p.n + "(" + F(p.x) + ", " + F(p.y) + ")").join("  "), answer: answer.join(" ,  ") || W("Need one more given", "חסר עוד נתון"), steps, coord: svg(order.filter(c => byN[c]).map(c => byN[c]), drawn, order), kind: "", area: null, perimeter: null } };
   }
 
-  function solve(text, lang){
+  function solve(text, lang, ask){
     const he = lang === "he", W = (en, h) => he ? h : en;
     let pts = points(text);
     const found = findMissing(text, pts, W);
     if (found) { if (!found.done) return found.partial; pts = found.pts; }
     if (pts.length < 3) return null;
-    const use = pts.slice(0, 4), name = use.map(p => p.n).join(""), steps = found ? found.steps.slice() : [];
+    // "the quadrilateral ABCD": its own vertices, in that order (other points like E or G are not corners)
+    const nm0 = String(text).match(/(?<![A-Za-z])([A-HK-NP-Z]{3,4})(?![A-Za-z(])/);
+    const own = nm0 && [...nm0[1]].every(c => pts.some(p => p.n === c)) ? [...nm0[1]].map(c => pts.find(p => p.n === c)) : null;
+    const use = own || pts.slice(0, 4), name = use.map(p => p.n).join(""), steps = found ? found.steps.slice() : [];
     const seg = (A, B) => {
       const dx = B.x - A.x, dy = B.y - A.y, nm = A.n + B.n;
       if (dy === 0) return { nm, dx, dy, len: Math.abs(dx), ls: N(Math.abs(dx)), kind: "h", step: [nm + " = |" + N(B.x) + " − " + P(A.x) + "| = " + N(Math.abs(dx)), W(nm + " is horizontal (same y): count along the x axis", nm + " אופקי (אותו y): סופרים לאורך ציר x")] };
@@ -218,12 +223,110 @@
     const iso = t => /[\u0590-\u05FF]/.test(t) ? t.split(" ,  ").map(part => part.replace(/[A-Za-z0-9(|√−+=·:≈∥∦⊥°²/.\-][^\u0590-\u05FF]*[A-Za-z0-9)|°²]/g, m => "\u2066" + m + "\u2069")).join(" ,  ") : t;
     steps.forEach(st => { st[0] = iso(st[0]); });
     answer = (found ? found.answer : []).concat([name + " " + kind, W("area", "שטח") + " " + N(area), W("perimeter", "היקף") + " " + (Number.isInteger(Math.round(per * 1000) / 1000) ? N(per) : "≈ " + N(Math.round(per * 100) / 100))]);
-    return { problem: use.map(p => p.n + "(" + N(p.x) + ", " + N(p.y) + ")").join("  "), answer: iso(answer.join(" ,  ")), steps, coord: svg(use, found ? found.lines : null), kind, area, perimeter: per };
+    // the exercise's own questions: a side's equation, where a line meets an axis, a height's equation
+    const qs = questions(String(text) + "\n" + String(ask || ""), pts, use, found ? lines(text, pts) : lines(text, pts), W);
+    qs.steps.forEach(st => { st[0] = iso(st[0]); steps.push(st); });
+    answer = answer.concat(qs.answer);
+    const extra = qs.points.filter(p => !use.some(u => u.n === p.n));
+    return { problem: use.concat(pts.filter(p => !use.includes(p))).map(p => p.n + "(" + N(p.x) + ", " + N(p.y) + ")").join("  "), answer: iso(answer.join(" ,  ")), steps, coord: svg(use, (found ? found.lines : []).concat(qs.lines), null, extra), kind, area, perimeter: per };
+  }
+
+  // ---------- the exercise's questions ----------
+  // "מצאו את משוואת השוק AD", "נקודה G (נקודת החיתוך של AD עם ציר y)", "מצאו את משוואת הגובה AE" (E given or not)
+  function questions(text, pts, use, given, W){
+    const t = fixNums(text).replace(/[−–]/g, "-"), byN = {}; pts.forEach(p => byN[p.n] = p);
+    const steps = [], answer = [], drawn = [], made = {}, newPts = [];
+    const lineStr = L => eqStr(L);
+    const slopeOfPts = (A, B) => B.x === A.x ? null : (B.y - A.y) / (B.x - A.x);
+    // a point's coordinates as written (0.6 stays 0.6); worked-out values as fractions (14/3)
+    const dec = v => !Number.isInteger(v) && Math.abs(v * 10 - Math.round(v * 10)) < 1e-9;
+    const Cn = v => dec(v) ? N(v) : F(v), Cp = v => v < 0 ? "(" + Cn(v) + ")" : Cn(v), Fp = v => v < 0 ? "(" + F(v) + ")" : F(v);
+    const mStep = (A, B, nm) => { const m = slopeOfPts(A, B), dy = B.y - A.y, dx = B.x - A.x, fr = Cn(dy) + "/" + Cp(dx);
+      return [m === null ? nm + " " + W("is vertical", "אנכי") : "m" + nm + " = (" + Cn(B.y) + " − " + Cp(A.y) + ") / (" + Cn(B.x) + " − " + Cp(A.x) + ") = " + fr + (F(m) === fr ? "" : " = " + F(m)), W("Slope = the change in y divided by the change in x", "שיפוע = השינוי ב-y חלקי השינוי ב-x")]; };
+    const ptSlope = (Q, m) => m === null ? { vert: true, c: Q.x } : { m, b: Q.y - m * Q.x };
+    const psStep = (Q, m, L, why) => [m === null ? "x = " + F(Q.x) : "y − " + Cp(Q.y) + " = " + K(m) + "(x − " + Cp(Q.x) + ")  →  " + lineStr(L), why];
+    const stage = k => W("The equation of ", "משוואת ") + k;
+    // a side or segment's line, worked out once (through its two known points)
+    function lineOf(k, quiet){
+      const kk = [...k].sort().join("");
+      if (made[kk]) return made[kk];
+      for (const [g, L] of Object.entries(given)) if ([...g].sort().join("") === kk) return made[kk] = L;
+      const A = byN[k[0]], B = byN[k[1]]; if (!A || !B) return null;
+      const m = slopeOfPts(A, B), L = ptSlope(A, m);
+      const st = stage(k);
+      steps.push(mStep(A, B, k).concat(st));
+      steps.push(psStep(A, m, L, W("A line through " + A.n + " with this slope: y − y₁ = m(x − x₁)", "ישר דרך " + A.n + " עם השיפוע הזה: y − y₁ = m(x − x₁)")).concat(st));
+      steps.push([B.n + "(" + F(B.x) + ", " + F(B.y) + "):  " + (L.vert ? "x = " + F(B.x) : F(L.m) + " · " + P(B.x) + (L.b ? (L.b < 0 ? " − " : " + ") + F(Math.abs(L.b)) : "") + " = " + F(L.m * B.x + L.b)) + " ✓", W("Check: " + B.n + " is on the line too", "בדיקה: גם " + B.n + " על הישר")].concat(st));
+      if (!quiet) answer.push(k + ": " + lineStr(L));
+      drawn.push(L); return made[kk] = L;
+    }
+    const sides = use.map((p, i) => p.n + use[(i + 1) % use.length].n);
+    const sideLine = sd => ptSlope(byN[sd[0]], slopeOfPts(byN[sd[0]], byN[sd[1]]));
+    const asks = [];
+    // a height: "משוואת הגובה AE", "the equation of the height AE"
+    for (const m of t.matchAll(/(?:משוואת|equation of)\s*(?:the\s+)?(?:ה)?(?:גובה|height|altitude)\s*(?:ל?-?(?:ה?צלע|ה?בסיס)?\s*)?([A-Z])([A-Z])(?![A-Za-z(])/gi)) asks.push({ i: m.index, kind: "h", a: m[1], b: m[2] });
+    // a side, a diagonal, a line: "משוואת השוק AD"
+    for (const m of t.matchAll(/(?:משוואת|equation of)\s*(?:the\s+)?(?:ה?(?:צלע|שוק|ישר|אלכסון|בסיס|קטע)|side|leg|line|diagonal|base)?\s*([A-Z]{2})(?![A-Za-z(])/gi)) if (!asks.some(a => a.i === m.index)) asks.push({ i: m.index, kind: "eq", k: m[1] });
+    // where a line meets an axis: "G (נקודת החיתוך של AD עם ציר y)", "AD meets the y axis at G"
+    for (const m of t.matchAll(/(?:חיתוך|חותך|נחתך|intersection|meets|cuts)\s*(?:של\s*|of\s*)?(?:ה?(?:צלע|שוק|ישר|אלכסון|בסיס)\s*|the\s+(?:side|line|leg)\s*)?(?:ה?(?:המשך|continuation of)\s*)?([A-Z]{2})(?![A-Za-z(])[^]{0,24}?(?:ציר\s*(?:ה-?)?\s*([xy])|(?:the\s+)?([xy])[\s-]*axis)/gi)) {
+      const back = t.slice(Math.max(0, m.index - 40), m.index), fwd = t.slice(m.index + m[0].length, m.index + m[0].length + 20);
+      const nb = [...back.matchAll(/(?<![A-Za-z])([A-Z])(?![A-Za-z])/g)].pop(), nf = fwd.match(/(?:בנקודה|at|at point)\s*([A-Z])(?![A-Za-z])/i);
+      asks.push({ i: m.index, kind: "axis", k: m[1], axis: (m[2] || m[3]).toLowerCase(), n: nf ? nf[1] : nb ? nb[1] : null });
+    }
+    asks.sort((a, b) => a.i - b.i);
+    const seen = new Set();
+    for (const q of asks) {
+      const id = q.kind + (q.k || q.a + q.b); if (seen.has(id)) continue; seen.add(id);
+      if (q.kind === "eq") {
+        if (!byN[q.k[0]] || !byN[q.k[1]] || made[[...q.k].sort().join("")]) continue;
+        const g = Object.keys(given).some(g => [...g].sort().join("") === [...q.k].sort().join("")); if (g) continue;
+        lineOf(q.k);
+      } else if (q.kind === "axis") {
+        const L = lineOf(q.k, false); if (!L) continue;
+        const nm = q.n || "?", st = W("The coordinates of ", "שיעורי הנקודה ") + nm; let x, y;
+        if (q.axis === "y") { if (L.vert) continue; x = 0; y = L.b;
+          steps.push(["x = 0  →  y = " + K(L.m) + " · 0" + (L.b ? (L.b < 0 ? " − " : " + ") + F(Math.abs(L.b)) : "") + " = " + F(y), W("On the y axis x = 0: put it into the equation of " + q.k, "על ציר y מתקיים x = 0: מציבים במשוואת " + q.k), st]); }
+        else { if (!L.vert && L.m === 0) continue; y = 0; x = L.vert ? L.c : -L.b / L.m;
+          steps.push(["y = 0  →  0 = " + K(L.m) + "x" + (L.b ? (L.b < 0 ? " − " : " + ") + F(Math.abs(L.b)) : "") + "  →  x = " + F(x), W("On the x axis y = 0: put it into the equation of " + q.k, "על ציר x מתקיים y = 0: מציבים במשוואת " + q.k), st]); }
+        const p = { n: nm, x, y }; if (q.n) { byN[nm] = p; newPts.push(p); }
+        answer.push(nm + "(" + F(x) + ", " + F(y) + ")");
+      } else if (q.kind === "h") {
+        const A = byN[q.a], k = q.a + q.b, st = stage(k); if (!A) continue;
+        // the side the height goes down to: the one the foot is on, else the one across (in a trapezoid: the other base)
+        let base = null; const Ft = byN[q.b];
+        if (Ft) base = sides.find(sd => !sd.includes(q.a) && !sd.includes(q.b) && onL(sideLine(sd), Ft));
+        if (!base) { const opp = sides.filter(sd => !sd.includes(q.a));
+          const parOf = sd => sides.find(o => o !== sd && (() => { const a = sideLine(sd), b = sideLine(o); return a.vert ? b.vert : !b.vert && Math.abs(a.m - b.m) < 1e-9; })());
+          base = use.length === 3 ? opp[0] : opp.find(sd => parOf(sd)) || null; }
+        let L, m;
+        if (Ft) { m = slopeOfPts(A, Ft); L = ptSlope(A, m);
+          steps.push(mStep(A, Ft, k).concat(st));
+          if (base) { const bm = slopeOfPts(byN[base[0]], byN[base[1]]);
+            steps.push([bm === null || m === null ? k + " ⊥ " + base : "m" + k + " · m" + base + " = " + F(m) + " · " + Fp(bm) + " = " + F(m * bm) + (Math.abs(m * bm + 1) < 1e-9 ? " ✓" : ""), W("A height is perpendicular to the side: the slopes multiply to −1", "גובה מאונך לצלע: מכפלת השיפועים היא 1−"), st]); }
+          steps.push(psStep(A, m, L, W("A line through " + A.n + " with this slope", "ישר דרך " + A.n + " עם השיפוע הזה")).concat(st));
+        } else {
+          if (!base) continue;
+          const bm = slopeOfPts(byN[base[0]], byN[base[1]]); m = bm === null ? 0 : bm === 0 ? null : -1 / bm; L = ptSlope(A, m);
+          steps.push(mStep(byN[base[0]], byN[base[1]], base).concat(st));
+          steps.push([bm === null ? k + " " + W("is horizontal", "אופקי") : bm === 0 ? k + " " + W("is vertical", "אנכי") : "m" + k + " = −1 / " + Fp(bm) + " = " + F(m), W("A height is perpendicular to " + base + ": the slopes multiply to −1", "גובה מאונך ל-" + base + ": מכפלת השיפועים היא 1−"), st]);
+          steps.push(psStep(A, m, L, W("Through " + A.n, "עובר דרך " + A.n)).concat(st));
+          // the foot of the height, where it meets the base
+          const BL = sideLine(base); let x, y;
+          if (L.vert) { x = L.c; y = BL.m * x + BL.b; } else if (BL.vert) { x = BL.c; y = L.m * x + L.b; } else { x = (BL.b - L.b) / (L.m - BL.m); y = L.m * x + L.b; }
+          const fp = { n: q.b, x, y }; byN[q.b] = fp; newPts.push(fp);
+        }
+        answer.push(k + ": " + lineStr(L)); drawn.push(L); made[[...k].sort().join("")] = L;
+      }
+    }
+    // the points the drawing should show besides the corners (E, G…)
+    const extraPts = pts.filter(p => !use.includes(p)).concat(newPts);
+    return { steps, answer, lines: drawn, points: extraPts };
   }
 
   // the drawing: a grid with the axes, the shape and its points
-  function svg(ps, lns, order){
-    const xs = ps.map(p => p.x).concat(0), ys = ps.map(p => p.y).concat(0);
+  function svg(ps, lns, order, extra){
+    extra = (extra || []).filter(p => isFinite(p.x) && isFinite(p.y));
+    const xs = ps.concat(extra).map(p => p.x).concat(0), ys = ps.concat(extra).map(p => p.y).concat(0);
     const x0 = Math.floor(Math.min(...xs)) - 1, x1 = Math.ceil(Math.max(...xs)) + 1, y0 = Math.floor(Math.min(...ys)) - 1, y1 = Math.ceil(Math.max(...ys)) + 1;
     const u = Math.max(14, Math.min(34, 320 / Math.max(x1 - x0, y1 - y0))), W = (x1 - x0) * u, H = (y1 - y0) * u;
     const X = x => (x - x0) * u, Y = y => (y1 - y) * u, step = (x1 - x0) > 16 || (y1 - y0) > 16 ? 2 : 1;
@@ -243,6 +346,7 @@
     const cx = ps.reduce((a, p) => a + p.x, 0) / ps.length, cy = ps.reduce((a, p) => a + p.y, 0) / ps.length;
     ps.forEach(p => { const dx = p.x - cx, dy = p.y - cy, d = Math.hypot(dx, dy) || 1, lx = X(p.x) + dx / d * 24, ly = Y(p.y) - dy / d * 18;
       g += `<circle cx="${X(p.x)}" cy="${Y(p.y)}" r="3.6" fill="var(--pen,#3346E0)"/><text x="${lx}" y="${ly + 4}" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink,#131A2C)" stroke="var(--surface,#fff)" stroke-width="4" paint-order="stroke" stroke-linejoin="round">${p.n}(${N(p.x)},${N(p.y)})</text>`; });
+    extra.forEach(p => { g += `<circle cx="${X(p.x)}" cy="${Y(p.y)}" r="3.4" fill="var(--ink,#131A2C)"/><text x="${X(p.x) + 7}" y="${Y(p.y) - 7}" font-size="12" font-weight="700" fill="var(--ink,#131A2C)" stroke="var(--surface,#fff)" stroke-width="4" paint-order="stroke" stroke-linejoin="round">${p.n}(${F(p.x)},${F(p.y)})</text>`; });
     return `<svg viewBox="-28 -8 ${W + 56} ${H + 22}" style="width:100%;max-width:420px;direction:ltr" role="img" aria-label="${ps.map(p => p.n).join("")}">${g}</svg>`;
   }
   const api = { detect, points, lines, pars, solve };

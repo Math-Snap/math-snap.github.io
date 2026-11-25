@@ -2534,16 +2534,19 @@ function coordStageKey(t){
   t = String(t || ""); let m;
   if ((m = t.match(/(?:שיפוע|slope of)\s+([A-Z]{2})/i))) return "slope:" + m[1];
   if ((m = t.match(/(?:משוואת|equation of)\s+([A-Z]{2})/i))) return "eq:" + m[1];
-  if ((m = t.match(/(?:הקודקוד|coordinates of)\s+([A-Z])$/i))) return "vertex:" + m[1];
+  if ((m = t.match(/(?:הקודקוד|הנקודה|coordinates of)\s+([A-Z])$/i))) return "vertex:" + m[1];
   if (/אורכי הצלעות|The sides/.test(t)) return "sides";
   if (/^(שטח|Area)$/.test(t)) return "area";
   if (/^(היקף|Perimeter)$/.test(t)) return "per";
   if (/בדיקת|Checking/.test(t)) return "check";
   return "kind";
 }
-function showCoordGeo(r, all){
+function showCoordGeo(r, all, src){
   setGeoStatus("");
-  const wants = all ? [] : coordWants($("geoAsk") ? $("geoAsk").value : "");
+  if (src != null) showCoordGeo.src = src;
+  // what to find: the box, or else the exercise's own questions ("מצאו…", "הוכיחו…")
+  const askBox = $("geoAsk") ? $("geoAsk").value : "", own = String(showCoordGeo.src || "");
+  const wants = all ? [] : coordWants(askBox.trim() ? askBox : /מצא|הוכיח|חשב|הראו|\bfind\b|\bprove\b|\bshow that\b|\bcalculate\b/i.test(own) ? own.replace(/קדקודי|קודקודי|vertices/gi, "") : "");
   const out = $("geoResults"); out.innerHTML = "";
   const box = el("div", "result");
   const pr = mathEl("div", "prob", r.problem); pr.dir = "ltr"; box.append(pr);
@@ -2968,10 +2971,11 @@ function showDetected(d){
 function readGivens(){
   geoFocus = null; geoRightIso = false;
   // lines that state what to prove or find describe the goal, not the givens (a "trapezoid" to prove is not a given trapezoid)
-  const text = $("geoText").value.split("\n").filter(l => !/הוכיח|להוכיח|צ"ל|צ״ל|\bprove\b|\bshow that\b/i.test(l)).join("\n");
+  // points with coordinates: the coordinate solver gets the whole exercise, questions included (it answers them)
+  const full = $("geoText").value;
+  if (typeof Coord !== "undefined" && Coord.detect(full)) { let cr = null; try { cr = Coord.solve(full, lang, $("geoAsk") ? $("geoAsk").value : ""); } catch (e) { console.error(e); } if (cr) { showCoordGeo(cr, false, full); return; } }
+  const text = full.split("\n").filter(l => !/הוכיח|להוכיח|צ"ל|צ״ל|\bprove\b|\bshow that\b/i.test(l)).join("\n");
   if (!text.trim()) { setGeoStatus("noGivens", true); clearGeo(); return; }
-  // points with coordinates belong to the coordinate-system solver in the solve tab
-  if (typeof Coord !== "undefined" && Coord.detect(text)) { let cr = null; try { cr = Coord.solve(text, lang); } catch (e) { console.error(e); } if (cr) { showCoordGeo(cr); return; } }
   if (tryProofEngine(false)) return;
   let plan = null; try { plan = understand(text); } catch (e) { plan = null; }
   if (plan && SH[plan.tool]) {
