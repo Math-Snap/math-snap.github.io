@@ -629,7 +629,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
 </main>
 
 <footer>
-  <div class="wrap"><span>Math Snap · נבנה עם Claude</span><span style="display:flex;gap:18px;align-items:center"><a class="ficon" href="https://www.tiktok.com/@zexor739" target="_blank" rel="noopener" aria-label="TikTok"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.6 3c.3 2.2 1.6 3.7 3.9 3.9v3.1c-1.4.1-2.6-.3-3.9-1.1v5.9c0 4.4-4.4 7.1-8.2 5.3-3.4-1.6-4-6.4-1.1-8.8 1.2-1 2.6-1.4 4.2-1.2v3.2c-.4-.1-.8-.2-1.2-.1-2 .3-2.6 3-.9 4.1 1.7 1.1 3.9-.1 3.9-2.2V3z"/></svg></a><a class="ficon" href="https://www.youtube.com/@Math-SnapApp" target="_blank" rel="noopener" aria-label="YouTube"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M23 7.2a3 3 0 0 0-2.1-2.1C19 4.6 12 4.6 12 4.6s-7 0-8.9.5A3 3 0 0 0 1 7.2 31 31 0 0 0 .5 12 31 31 0 0 0 1 16.8a3 3 0 0 0 2.1 2.1c1.9.5 8.9.5 8.9.5s7 0 8.9-.5a3 3 0 0 0 2.1-2.1c.4-1.6.5-3.2.5-4.8s-.1-3.2-.5-4.8zM9.8 15.1V8.9L15.5 12z"/></svg></a><a href="privacy.html">מדיניות פרטיות</a><a href="#top">חזרה למעלה ↑</a></span></div>
+  <div class="wrap"><span>Math Snap · נבנה עם Claude</span><span style="display:flex;gap:18px;align-items:center"><a class="ficon" href="https://www.tiktok.com/@zexor739" target="_blank" rel="noopener" aria-label="TikTok"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.6 3c.3 2.2 1.6 3.7 3.9 3.9v3.1c-1.4.1-2.6-.3-3.9-1.1v5.9c0 4.4-4.4 7.1-8.2 5.3-3.4-1.6-4-6.4-1.1-8.8 1.2-1 2.6-1.4 4.2-1.2v3.2c-.4-.1-.8-.2-1.2-.1-2 .3-2.6 3-.9 4.1 1.7 1.1 3.9-.1 3.9-2.2V3z"/></svg></a><a class="ficon" href="https://www.youtube.com/@Math-SnapApp" target="_blank" rel="noopener" aria-label="YouTube"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M23 7.2a3 3 0 0 0-2.1-2.1C19 4.6 12 4.6 12 4.6s-7 0-8.9.5A3 3 0 0 0 1 7.2 31 31 0 0 0 .5 12 31 31 0 0 0 1 16.8a3 3 0 0 0 2.1 2.1c1.9.5 8.9.5 8.9.5s7 0 8.9-.5a3 3 0 0 0 2.1-2.1c.4-1.6.5-3.2.5-4.8s-.1-3.2-.5-4.8zM9.8 15.1V8.9L15.5 12z"/></svg></a><a href="terms.html">תנאי שימוש</a><a href="privacy.html">מדיניות פרטיות</a><a href="refunds.html">החזרים</a><a href="#top">חזרה למעלה ↑</a></span></div>
 </footer>
 </div>
 
@@ -959,6 +959,15 @@ service cloud.firestore {
     match /users/{uid}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
+    match /reports/{id} {
+      allow create: if request.resource.data.keys().hasOnly(['problem', 'answer', 'note', 'tab', 'platform', 'version', 'lang', 'at'])
+        && request.resource.data.problem is string && request.resource.data.problem.size() > 0 && request.resource.data.problem.size() <= 2000
+        && request.resource.data.get('answer', '') is string && request.resource.data.get('answer', '').size() <= 2000
+        && request.resource.data.get('note', '') is string && request.resource.data.get('note', '').size() <= 500
+        && request.resource.data.at == request.time;
+      allow read, delete: if request.auth != null && request.auth.token.email_verified == true
+        && request.auth.token.email in ['eitanski11@gmail.com', 'eitandror2012@gmail.com'];
+    }
     match /installs/{id} {
       allow create, update: if id.size() >= 16 && id.size() <= 80
         && request.resource.data.keys().hasOnly(['platform', 'version', 'first', 'last', 'opens'])
@@ -974,6 +983,21 @@ service cloud.firestore {
     const td = v => (v && v.toDate ? v.toDate() : v ? new Date(v) : null);
     return snap.docs.map(d => { const x = d.data(); return { platform: x.platform || "android", version: String(x.version || "?"), first: td(x.first) || td(x.last), last: td(x.last) || td(x.first), opens: +x.opens || 1 }; });
   }
+  // ---------- "something wrong in the solution?" reports from the app ----------
+  async function reports(){
+    if (!firebase.firestore) await loadScript(FB + "firebase-firestore-compat.js");
+    const snap = await firebase.firestore().collection("reports").orderBy("at", "desc").limit(200).get();
+    return snap.docs.map(d => { const x = d.data(); return { id: d.id, problem: x.problem || "", answer: x.answer || "", note: x.note || "", tab: x.tab || "", platform: x.platform || "", version: x.version || "", at: x.at && x.at.toDate ? x.at.toDate() : null }; });
+  }
+  function reportsHTML(list){
+    const rows = list.map(r => '<div class="ocard" style="padding:12px"><div class="onote">' + (r.at ? r.at.toLocaleString("he-IL") : "") + " · " + esc(r.platform) + " " + esc(r.version) + " · " + esc(r.tab) + '</div>'
+      + '<pre class="orules" dir="auto" style="white-space:pre-wrap;margin:6px 0">' + esc(r.problem) + '</pre>'
+      + '<div class="onote" dir="auto"><b>התשובה:</b> ' + esc(r.answer).replace(/\n/g, " · ") + '</div>'
+      + (r.note ? '<div class="onote" dir="auto"><b>הערה:</b> ' + esc(r.note) + '</div>' : "") + '</div>').join("");
+    return '<div class="ocard"><h3>דיווחים על פתרונות לא נכונים (' + fmt(list.length) + ')</h3>'
+      + (list.length ? '<p class="onote">אפשר להעתיק הכול ולשלוח ל-Claude כדי לתקן.</p><div class="obar"><button class="btn primary small" type="button" id="oRepCopy">העתקת כל הדיווחים</button><span class="onote" id="oRepCopied" hidden>הועתק</span></div><div style="display:flex;flex-direction:column;gap:8px;max-height:520px;overflow:auto">' + rows + "</div>" : '<p class="onote">עוד אין דיווחים.</p>') + "</div>";
+  }
+  const reportsText = list => list.map(r => "— " + (r.at ? r.at.toISOString().slice(0, 16) : "") + " " + r.platform + " " + r.version + " [" + r.tab + "]\n" + r.problem + "\nתשובה: " + r.answer.replace(/\n/g, " · ") + (r.note ? "\nהערה: " + r.note : "")).join("\n\n");
   const dayKey = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
   function newPerDay(list){
     const days = [], now = new Date();
@@ -1009,11 +1033,13 @@ service cloud.firestore {
     body.innerHTML = '<div class="obar"><span class="who">מחובר כ-<b dir="ltr">' + esc(user.email) + '</b></span><button class="btn ghost small" type="button" id="oRefresh">רענון</button><button class="btn ghost small" type="button" id="oOut">התנתקות</button></div><div id="oData"><p class="onote">טוען את המספרים…</p></div>';
     $("oOut").onclick = () => { try { localStorage.removeItem("ownerSeen"); } catch (e) {} auth.signOut(); };
     $("oRefresh").onclick = dashboard;
-    const [ph, gh] = await Promise.allSettled([phones(), releases()]);
+    const [ph, gh, rp] = await Promise.allSettled([phones(), releases(), reports()]);
     let html = '<div style="display:flex;flex-direction:column;gap:14px">';
     if (ph.status === "fulfilled") html += phonesHTML(ph.value);
     else if (/permission|insufficient/i.test(String(ph.reason && (ph.reason.code || ph.reason.message)))) html += rulesHTML();
     else html += '<p class="omsg bad">לא הצלחתי לקרוא את מספר הטלפונים. נסו "רענון" בעוד רגע.</p>';
+    if (rp.status === "fulfilled") html += reportsHTML(rp.value);
+    else if (/permission|insufficient/i.test(String(rp.reason && (rp.reason.code || rp.reason.message)))) html += '<div class="ocard"><h3>דיווחים על טעויות: צריך לעדכן את החוקים</h3><p class="onote">ב-Firestore ← Rules מוסיפים את הבלוק <b dir="ltr">match /reports/{id}</b> מתוך החוקים שלמטה (ליד הבלוקים הקיימים, בלי למחוק אותם) ולוחצים Publish.</p><pre class="orules" dir="ltr">' + esc(RULES.slice(RULES.indexOf("    match /reports"), RULES.indexOf("    match /installs"))) + "</pre></div>";
     if (gh.status === "fulfilled") {
       const list = gh.value, total = list.reduce((t, x) => t + x.downloads, 0);
       let prev = null; try { prev = JSON.parse(localStorage.getItem("ownerLast") || "null"); localStorage.setItem("ownerLast", JSON.stringify({ total, at: Date.now() })); } catch (e) {}
@@ -1025,6 +1051,8 @@ service cloud.firestore {
     }
     html += '<p class="onote">טלפון נספר כשפותחים בו את האפליקציה בגרסה 7.4 ומעלה עם אינטרנט. לכל טלפון יש מזהה אנונימי, ולא נשמר שום דבר אישי. באייפון נספרת רק אפליקציה שהותקנה למסך הבית.</p></div>';
     $("oData").innerHTML = html;
+    const rc = $("oRepCopy");
+    if (rc && rp.status === "fulfilled") rc.onclick = async () => { try { await navigator.clipboard.writeText(reportsText(rp.value)); $("oRepCopied").hidden = false; } catch (e) {} };
     const cp = $("oCopy");
     if (cp) cp.onclick = async () => {
       try { await navigator.clipboard.writeText(RULES); } catch (e) { const r = document.createRange(); r.selectNodeContents($("oRules")); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); try { document.execCommand("copy"); } catch (e2) {} }
