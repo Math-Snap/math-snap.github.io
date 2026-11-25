@@ -105,15 +105,14 @@ html[dir="rtl"] .lr-back svg{transform:scaleX(-1)}
 .lr-actions{display:flex;flex-direction:column;gap:10px}
 .lr-next{display:flex;align-items:center;gap:10px}
 /* the video */
-.lr-vid{position:relative;border-radius:20px;overflow:hidden;background:linear-gradient(160deg,var(--surface-2),var(--pen-soft));border:1.5px solid var(--line);aspect-ratio:4/3;max-width:100%;user-select:none;cursor:pointer}
+.lr-vid{position:relative;border-radius:20px;overflow:hidden;background-color:var(--surface);background-image:linear-gradient(color-mix(in srgb,var(--line) 60%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--line) 60%,transparent) 1px,transparent 1px);background-size:24px 24px;border:1.5px solid var(--line);aspect-ratio:4/3;max-width:100%;user-select:none;cursor:pointer;isolation:isolate}
 @media (max-width:560px){.lr-vid{aspect-ratio:1/1}}
 .lr-stage{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:16px 16px 74px}
 .lr-fig{width:100%;max-width:380px;flex:1 1 0;min-height:80px;display:flex;align-items:center;justify-content:center}
 .lr-fig svg{width:100%;height:100%}
 .lr-lines{display:flex;flex-direction:column;align-items:center;gap:6px;max-width:100%;flex:none}
 .lr-cap .lt{direction:ltr;unicode-bidi:isolate}
-.lr-line{font-size:22px;font-weight:600;text-align:center;opacity:0;transform:translateY(8px) scale(.96);transition:opacity .35s,transform .45s cubic-bezier(.2,1.4,.4,1);max-width:100%;overflow-wrap:anywhere}
-.lr-line.on{opacity:1;transform:none}
+.lr-line{position:relative;isolation:isolate;font-size:22px;font-weight:600;text-align:center;clip-path:inset(-4px 100% -4px 0);max-width:100%;overflow-wrap:anywhere}
 .lr-line.mv{font-size:20px}
 .lr-stage.many .lr-line{font-size:18px}
 .lr-cap{position:absolute;left:12px;right:12px;bottom:12px;background:rgba(14,18,34,.82);color:#fff;border-radius:12px;padding:9px 12px;font-size:15px;line-height:1.45;text-align:center;opacity:0;transform:translateY(6px);transition:opacity .3s,transform .3s}
@@ -165,6 +164,61 @@ html[dir="rtl"] .lr-back svg{transform:scaleX(-1)}
 .still svg .d,.qfig.still svg .d{animation:none!important;stroke-dashoffset:0}
 .still svg .t,.still svg .f,.qfig.still svg .t,.qfig.still svg .f{animation:none!important;opacity:1}
 .lr-chk .qfig svg .d{animation-duration:.6s}
+.lr-stage.in{animation:lrin .45s cubic-bezier(.2,.9,.3,1) both}
+.lr-stage.out{animation:lrout .4s ease forwards;pointer-events:none}
+.lr-cap .w{opacity:.42;transition:opacity .25s}
+.lr-cap .w.lit{opacity:1}
+.lr-line.now::before{content:"";position:absolute;inset:auto -4px 3px -4px;height:40%;background:var(--mark);opacity:.6;border-radius:6px;z-index:-1;transform:scaleX(0);transform-origin:left;animation:lrmark .6s ease 1.3s forwards}
+[dir="rtl"].lr-line.now::before{transform-origin:right}
+.lr-pen{position:absolute;left:0;top:0;width:36px;height:36px;pointer-events:none;z-index:2;opacity:0;transition:opacity .2s;filter:drop-shadow(0 3px 3px rgba(0,0,0,.25))}
+.lr-pen.on{opacity:1}
+.lr-vid svg .ask{animation:lrpop .4s ease .7s forwards,lrpulse 1.3s ease-in-out 1.3s infinite}
+.qfig.still svg .ask{animation:lrpulse 1.3s ease-in-out infinite!important;opacity:1}
+.lr-intro .ic{animation:lrdrop .7s cubic-bezier(.2,1.6,.4,1) both}
+.lr-intro b{animation:lrrise .6s ease .3s both}
+.lr-intro.stopper .ic{animation:lrdrop .6s cubic-bezier(.2,1.6,.4,1) both,lrwave 1.4s ease-in-out .6s infinite;transform-origin:70% 90%}
+.lr-fx{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.lr-fx span{position:absolute;bottom:-40px;font-weight:800;opacity:0;animation:lrfloat 10s linear infinite;font-family:var(--mono)}
+.lr-stage .lr-fx span{color:var(--pen)}
+.lr-poster>*:not(.lr-fx){position:relative;z-index:1}
+.lr-poster .ic{font-size:40px;animation:lrdrop .7s cubic-bezier(.2,1.6,.4,1) both}
+.lr-poster .big{animation:lrbreath 2.2s ease-in-out infinite}
+.lr-poster.go{animation:lrout .35s ease forwards}
+.lr-chk{animation:lrup .35s cubic-bezier(.2,1.2,.4,1) both}
+.lr-chk input.shake{animation:lrshake .4s}
+.lr-chk .res{animation:lrup .3s ease both}
+.lr-chk .res.good{animation:lrpop2 .45s ease}
+.lr-prog .stopmark.pop{animation:lrpop2 .5s}
+.lr-ctrl .spd{border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:7px 11px;font:700 13px/1 var(--sans);cursor:pointer;flex:none}
+.lr-ctrl .spd.pop{animation:lrpop2 .3s}
+.lr-end{position:absolute;inset:0;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:14px;text-align:center;animation:lrup .4s ease both;z-index:3;overflow:auto;cursor:default}
+.lr-end .ic{font-size:40px;animation:lrdrop .7s cubic-bezier(.2,1.6,.4,1) both}
+.lr-end b{font-size:22px}
+.lr-end p{margin:0;color:var(--muted);font-weight:600}
+.lr-end .ring{width:70px;height:70px;border-radius:50%;background:conic-gradient(var(--ok) calc(var(--p) * 360deg),var(--surface-2) 0);display:grid;place-items:center;animation:lrpop2 .6s ease .3s both}
+.lr-end .ring span{width:54px;height:54px;border-radius:50%;background:var(--surface);display:grid;place-items:center;font-weight:800;font-size:17px}
+.lr-end .row{display:flex;flex-direction:column;gap:6px;width:100%;max-width:300px}
+.lr-end .row .btn{padding-block:10px;min-height:0}
+.lr-conf{position:absolute;left:50%;top:42%;pointer-events:none;z-index:6}
+.lr-conf i{position:absolute;width:8px;height:12px;border-radius:2px;animation:lrconf 1.3s cubic-bezier(.15,.7,.3,1) forwards}
+.lr-card,.lr-row{animation:lrup .45s cubic-bezier(.2,1,.4,1) both;animation-delay:var(--d,0s)}
+.lr-bar i{transition:width .9s cubic-bezier(.2,1,.3,1)}
+.lr-cont{animation:lrup .45s cubic-bezier(.2,1,.4,1) both}
+.lr-cont .ic{animation:lrdrop .7s cubic-bezier(.2,1.6,.4,1) .15s both}
+@keyframes lrin{from{opacity:0;transform:translateX(-26px) scale(.98)}}
+@keyframes lrout{to{opacity:0;transform:translateX(26px) scale(.98)}}
+@keyframes lrmark{to{transform:scaleX(1)}}
+@keyframes lrpulse{50%{transform:scale(1.4)}}
+@keyframes lrdrop{from{opacity:0;transform:translateY(-36px) scale(.5)}}
+@keyframes lrrise{from{opacity:0;transform:translateY(16px)}}
+@keyframes lrwave{0%,100%{transform:rotate(0)}25%{transform:rotate(16deg)}75%{transform:rotate(-12deg)}}
+@keyframes lrfloat{0%{transform:translateY(0) rotate(0);opacity:0}15%{opacity:.2}85%{opacity:.2}100%{transform:translateY(-460px) rotate(40deg);opacity:0}}
+@keyframes lrbreath{50%{transform:scale(1.07);box-shadow:0 0 0 14px rgba(255,255,255,.14)}}
+@keyframes lrup{from{opacity:0;transform:translateY(18px)}}
+@keyframes lrshake{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+@keyframes lrpop2{50%{transform:scale(1.15)}}
+@keyframes lrconf{0%{transform:translate(0,0) rotate(0);opacity:1}60%{transform:translate(var(--dx),var(--dy)) rotate(calc(var(--r) * .6));opacity:1}100%{transform:translate(var(--dx),calc(var(--dy) + 150px)) rotate(var(--r));opacity:0}}
+@media (prefers-reduced-motion:reduce){.lr-stage.in,.lr-stage.out,.lr-intro .ic,.lr-intro b,.lr-fx,.lr-poster .big,.lr-chk,.lr-end,.lr-end .ic,.lr-card,.lr-row,.lr-cont,.lr-cont .ic,.lr-vid svg .ask,.qfig.still svg .ask{animation:none!important}.lr-line{clip-path:none!important}.lr-pen{display:none}.lr-cap .w{opacity:1}}
 @keyframes lrdraw{to{stroke-dashoffset:0}}
 @keyframes lrpop{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
 @keyframes lrfade{to{opacity:1}}
@@ -258,7 +312,7 @@ html[dir="rtl"] .lr-back svg{transform:scaleX(-1)}
     return ol;
   }
   function backBtn(text, fn){ const b = el("button", "lr-back"); b.type = "button"; b.append(svgEl(ICON.back), el("span", null, text)); b.onclick = fn; return b; }
-  function bar(frac){ const b = el("div", "lr-bar"); const i = el("i"); i.style.width = Math.round(frac * 100) + "%"; b.append(i); return b; }
+  function bar(frac){ const b = el("div", "lr-bar"); const i = el("i"); i.style.width = "0%"; b.append(i); requestAnimationFrame(() => requestAnimationFrame(() => { i.style.width = Math.round(frac * 100) + "%"; })); return b; }
 
   function render(){
     panel.innerHTML = "";
@@ -299,7 +353,7 @@ html[dir="rtl"] .lr-back svg{transform:scaleX(-1)}
         const card = el("button", "lr-card"); card.type = "button";
         const top = el("div", "top"); const ic = el("span", "ic", c.icon); ic.style.background = c.color; top.append(ic, el("b", null, nameOf(c)));
         const d = courseDone(c), meta = el("div", "meta"); meta.append(el("span", null, d ? S("of", d, c.lessons.length) : S("lessons", c.lessons.length)), bar(d / c.lessons.length));
-        card.append(top, rich("p", null, c.blurb), meta); card.onclick = () => go("course", c.id);
+        card.append(top, rich("p", null, c.blurb), meta); card.onclick = () => go("course", c.id); card.style.setProperty("--d", (grid.childElementCount * 0.05).toFixed(2) + "s");
         grid.append(card);
       }
       panel.append(grid);
@@ -320,7 +374,7 @@ html[dir="rtl"] .lr-back svg{transform:scaleX(-1)}
       const r = el("button", "lr-row" + (isDone(l.id) ? " done" : "")); r.type = "button";
       const tx = el("div"); tx.append(el("b", null, nameOf(l)), el("small", null, lessonMeta(l)));
       const pl = el("span", "pl"); pl.append(svgEl(ICON.go));
-      r.append(el("span", "n", isDone(l.id) ? "✓" : String(i + 1)), tx, pl); r.onclick = () => go("lesson", l.id);
+      r.append(el("span", "n", isDone(l.id) ? "✓" : String(i + 1)), tx, pl); r.onclick = () => go("lesson", l.id); r.style.setProperty("--d", (i * 0.06).toFixed(2) + "s");
       list.append(r);
     });
     panel.append(list);
@@ -530,20 +584,55 @@ html[dir="rtl"] .lr-back svg{transform:scaleX(-1)}
   function stopVideo(){ if (player) player.stop(); player = null; }
   const fmt = t => Math.floor(t / 60) + ":" + String(Math.floor(t % 60)).padStart(2, "0");
 
+  const PENCIL = '<svg viewBox="0 0 36 36" width="36" height="36"><g transform="rotate(45 18 18)"><rect x="14" y="-2" width="8" height="26" rx="1.5" fill="#FFC83D" stroke="#1d2240" stroke-width="1.4"/><rect x="14" y="-2" width="8" height="5" rx="1.5" fill="#F4A6B8" stroke="#1d2240" stroke-width="1.4"/><path d="M14 24 L18 33 L22 24 Z" fill="#F3D9B1" stroke="#1d2240" stroke-width="1.4" stroke-linejoin="round"/><path d="M16.6 30 L18 33 L19.4 30 Z" fill="#1d2240"/></g></svg>';
+  // floating maths symbols behind the poster and the opening scene
+  function floaters(){
+    const fx = el("div", "lr-fx");
+    "π √ ∑ x² ÷ ∞ △ ∠ ≈ ½ y= ∫".split(" ").forEach((s, i) => {
+      const e = el("span", null, s);
+      e.style.left = (6 + (i * 37) % 88) + "%"; e.style.animationDelay = (-i * 1.3) + "s"; e.style.animationDuration = (9 + (i % 5) * 1.7) + "s"; e.style.fontSize = (16 + (i % 4) * 7) + "px";
+      fx.append(e);
+    });
+    return fx;
+  }
+  const calm = () => { try { return matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) { return false; } };
+  // a burst of confetti from the middle of an element
+  function confetti(host, color){
+    if (calm()) return;
+    const box = el("div", "lr-conf");
+    const cols = [color || "var(--pen)", "var(--mark)", "var(--ok)", "var(--warn)", "var(--pen)"];
+    for (let k = 0; k < 34; k++) {
+      const p = el("i"), a = Math.random() * Math.PI * 2, d = 70 + Math.random() * 150;
+      p.style.setProperty("--dx", (Math.cos(a) * d).toFixed(0) + "px"); p.style.setProperty("--dy", (Math.sin(a) * d - 60).toFixed(0) + "px");
+      p.style.setProperty("--r", (Math.random() * 720 - 360).toFixed(0) + "deg"); p.style.background = cols[k % cols.length];
+      p.style.animationDelay = (Math.random() * 0.12).toFixed(2) + "s"; if (k % 3 === 0) p.style.borderRadius = "50%";
+      box.append(p);
+    }
+    host.append(box); setTimeout(() => box.remove(), 1500);
+  }
+  const SPEEDS = [1, 1.25, 1.5, 0.75];
+  let speed = (() => { try { const v = +localStorage.getItem("learn.speed"); return SPEEDS.includes(v) ? v : 1; } catch (e) { return 1; } })();
+
   function videoPlayer(l, c){
     stopVideo();
     const box = el("div", "lr-sec");
     const vid = el("div", "lr-vid paused"); vid.style.setProperty("--c", c.color);
-    const stage = el("div", "lr-stage"), cap = el("div", "lr-cap"); cap.dir = "rtl";
-    vid.append(stage, cap);
+    let stage = el("div", "lr-stage");
+    const cap = el("div", "lr-cap"); cap.dir = "rtl";
+    const pen = el("div", "lr-pen"); pen.innerHTML = PENCIL;
+    vid.append(stage, cap, pen);
+    let strokes = [], lineEls = [];
     const { T, video: total } = timeline(l), durs = T.map(sceneDur);
     const starts = []; durs.reduce((a, d, i) => (starts[i] = a, a + d), 0);
+    const checksAll = T.filter(x => x.type === "check").length;
     const poster = el("button", "lr-poster"); poster.type = "button";
     const big = el("span", "big"); big.append(svgEl(ICON.play));
-    poster.append(big, el("b", null, nameOf(l)), el("small", null, lessonMeta(l)));
+    poster.append(floaters(), el("span", "ic", c.icon), big, el("b", null, nameOf(l)), el("small", null, lessonMeta(l)));
     vid.append(poster);
     const ctrl = el("div", "lr-ctrl"), pb = el("button", "pb"); pb.type = "button"; pb.setAttribute("aria-label", S("play")); pb.append(svgEl(ICON.play));
     const segs = el("div", "lr-prog"), fill = el("i", "fill"), time = el("span", "lr-time", "0:00 / " + fmt(total)); time.dir = "ltr";
+    const spd = el("button", "spd", speed + "×"); spd.type = "button"; spd.dir = "ltr"; spd.setAttribute("aria-label", pick("Speed", "מהירות"));
+    spd.onclick = e => { e.stopPropagation(); speed = SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length]; spd.textContent = speed + "×"; try { localStorage.setItem("learn.speed", String(speed)); } catch (er) {} spd.classList.remove("pop"); void spd.offsetWidth; spd.classList.add("pop"); };
     segs.append(fill);
     const marks = [];
     T.forEach((x, i) => {
@@ -558,46 +647,100 @@ html[dir="rtl"] .lr-back svg{transform:scaleX(-1)}
       const f = Math.max(0, Math.min(1, (rtl ? r.right - e.clientX : e.clientX - r.left) / r.width));
       seekTo(f * total); if (!playing) play();
     };
-    ctrl.append(pb, segs, time);
+    ctrl.append(pb, segs, time, spd);
     box.append(vid, ctrl);
 
-    let t = 0, playing = false, last = 0, raf = 0, cur = -1, ended = false, inCheck = false;
-    const passed = new Set();
+    let t = 0, playing = false, last = 0, raf = 0, cur = -1, ended = false, inCheck = false, words = [], readT = 1;
+    const passed = new Set(), results = new Map();   // stop → "first" (right first time) / "later" / "shown"
     function sceneAt(tt){
       for (let i = 0; i < T.length; i++) if (T[i].type === "scene" && tt < starts[i] + durs[i]) return [i, tt - starts[i]];
       const lastScene = T.map(x => x.type).lastIndexOf("scene"); return [lastScene, durs[lastScene]];
     }
-    function setCap(text){ cap.innerHTML = ""; isolate(cap, text); }
-    function build(i){
-      cur = i; const sc = T[i];
-      stage.innerHTML = ""; stage.className = "lr-stage" + ((sc.show || []).length > 3 ? " many" : "") + (sc.head ? " worked" : "");
+    // the caption, word by word at reading pace
+    function setCap(text){
+      cap.innerHTML = ""; isolate(cap, text);
+      words = [];
+      [...cap.childNodes].forEach(n => {
+        if (n.nodeType === 3) {
+          const frag = document.createDocumentFragment();
+          n.textContent.split(/(\s+)/).forEach(w => { if (!w) return; if (/^\s+$/.test(w)) frag.append(w); else { const s = el("span", "w", w); words.push(s); frag.append(s); } });
+          n.replaceWith(frag);
+        } else { n.classList.add("w"); words.push(n); }
+      });
+      readT = Math.max(1.6, plain(text).length / 13);
+    }
+    function build(i, instant){
+      const prev = cur >= 0 ? T[cur] : null, sc = T[i];
+      const flowing = prev && prev.head && sc.head && prev.show && sc.show && prev.show[0] === sc.show[0];   // the same worked example goes on
+      cur = i;
+      const st = el("div", "lr-stage" + ((sc.show || []).length > 3 ? " many" : "") + (sc.head ? " worked" : ""));
       if (sc.intro) {
-        const iv = el("div", "lr-intro"); iv.append(el("div", "ic", sc.icon), el("b", null, sc.title)); stage.append(iv);
+        st.append(floaters());
+        const iv = el("div", "lr-intro"); iv.append(el("div", "ic", sc.icon), el("b", null, sc.title)); st.append(iv);
       }
-      if (sc.stop) { const s = el("div", "lr-intro"); s.append(el("div", "ic", "✋")); stage.append(s); }
-      if (sc.fig) { const f = el("div", "lr-fig" + (sc.keepFig && T[i - 1] && T[i - 1].keepFig ? " still" : "")); f.innerHTML = FIG(sc.fig); stage.append(f); }
-      const ls = el("div", "lr-lines");
+      if (sc.stop) { const s = el("div", "lr-intro stopper"); s.append(el("div", "ic", "✋")); st.append(s); }
+      if (sc.fig) { const f = el("div", "lr-fig" + (sc.keepFig && flowing ? " still" : "")); f.innerHTML = FIG(sc.fig); st.append(f); }
+      const ls = el("div", "lr-lines"), n = (sc.show || []).length;
       (sc.show || []).forEach((s, k) => {
-        const txt = String(s), e = line("lr-line" + (k < (sc.keep || 0) ? " on" : "") + (txt.startsWith("✗") ? " bad" : txt.startsWith("✓") ? " good" : "") + (sc.head && k === 0 ? " q" : ""), txt);
+        const txt = String(s), e = line("lr-line" + (k < (sc.keep || 0) ? " on" : "") + (txt.startsWith("✗") ? " bad" : txt.startsWith("✓") ? " good" : "") + (sc.head && k === 0 ? " q" : "") + (sc.head && k === n - 1 && k > 0 ? " now" : ""), txt);
         ls.append(e);
       });
-      stage.append(ls);
+      st.append(ls);
+      const old = stage;
+      vid.insertBefore(st, cap); stage = st;
+      // the pencil draws every stroke of the drawing, one after another, then writes the lines
+      strokes = [];
+      const fsvg = st.querySelector(".lr-fig:not(.still) svg");
+      if (fsvg) {
+        const ds = [...fsvg.querySelectorAll(".d")];
+        let at = 0.15;
+        ds.forEach(e => {
+          let len = 100; try { len = e.getTotalLength(); } catch (er) {}
+          const dur = Math.max(0.45, Math.min(1.3, len / 260));
+          e.style.animation = "none"; e.style.strokeDashoffset = "1";
+          strokes.push({ e, start: at, dur, len }); at += dur * 0.85;
+        });
+        st.dataset.drawn = String(at);
+      }
+      const keepN = sc.keep || 0, after = fsvg ? +st.dataset.drawn + 0.2 : 0.35;
+      lineEls = [...st.querySelectorAll(".lr-line")].map((e, k) => {
+        const rtl = e.dir === "rtl" || getComputedStyle(e).direction === "rtl";
+        return { e, rtl, start: k < keepN ? -1 : after + (k - keepN) * 1.15, dur: Math.min(1.1, 0.35 + (e.textContent || "").length * 0.04) };
+      });
+      if (!instant && !flowing && old.childElementCount && !calm()) { old.classList.add("out"); st.classList.add("in"); setTimeout(() => old.remove(), 420); }
+      else old.remove();
       setCap(sc.cap || ""); cap.classList.remove("on"); void cap.offsetWidth;
-      stage.style.paddingBottom = (cap.offsetHeight + 24) + "px";
+      st.style.paddingBottom = (cap.offsetHeight + 24) + "px";
     }
     function paint(){
       const [i, lt] = sceneAt(t);
-      if (i !== cur) build(i);
+      if (i !== cur) build(i, false);
       cap.classList.toggle("on", lt > 0.15);
-      const sc = T[i], keep = sc.keep || 0, base = sc.fig ? 0.9 : 0.35;
-      [...stage.querySelectorAll(".lr-line")].forEach((e, k) => { if (k >= keep) e.classList.toggle("on", lt > base + (k - keep) * 1.1); });
+      const lit = Math.ceil(Math.max(0, (lt - 0.2) / readT) * words.length);
+      words.forEach((w, k) => w.classList.toggle("lit", k < lit));
+      const still = calm();
+      let tip = null;
+      for (const s2 of strokes) {
+        const p2 = still ? 1 : Math.max(0, Math.min(1, (lt - s2.start) / s2.dur));
+        s2.e.style.strokeDashoffset = String(1 - p2);
+        if (p2 > 0 && p2 < 1 && !tip) { try { const pt = s2.e.getPointAtLength(p2 * s2.len), m = s2.e.getScreenCTM(); tip = [m.a * pt.x + m.c * pt.y + m.e, m.b * pt.x + m.d * pt.y + m.f]; } catch (er) {} }
+      }
+      for (const L of lineEls) {
+        const p2 = still || L.start < 0 ? 1 : Math.max(0, Math.min(1, (lt - L.start) / L.dur));
+        const cut = ((1 - p2) * 100).toFixed(1) + "%";
+        L.e.style.clipPath = L.rtl ? `inset(-4px 0 -4px ${cut})` : `inset(-4px ${cut} -4px 0)`;
+        L.e.classList.toggle("on", p2 > 0);
+        if (p2 > 0 && p2 < 1 && !tip) { const r = L.e.getBoundingClientRect(); tip = [L.rtl ? r.right - p2 * r.width : r.left + p2 * r.width, r.bottom - 6]; }
+      }
+      if (tip && playing) { const vr = vid.getBoundingClientRect(); pen.style.transform = `translate(${(tip[0] - vr.left - 7.4).toFixed(1)}px, ${(tip[1] - vr.top - 28.6).toFixed(1)}px)`; pen.classList.add("on"); }
+      else pen.classList.remove("on");
       fill.style.width = (t / total * 100).toFixed(2) + "%";
       for (const [k, m] of marks) m.classList.toggle("done", passed.has(k));
       time.textContent = fmt(t) + " / " + fmt(total);
     }
     function frame(now){
       if (!playing) return;
-      const nt = Math.min(total, t + Math.min(0.1, (now - last) / 1000)); last = now;
+      const nt = Math.min(total, t + Math.min(0.1, (now - last) / 1000) * speed); last = now;
       // a practice stop between t and nt: stop there
       for (let i = 0; i < T.length; i++) if (T[i].type === "check" && !passed.has(i) && starts[i] > t - 1e-6 && starts[i] <= nt) { t = starts[i]; paint(); openCheck(i); return; }
       t = nt;
@@ -606,8 +749,9 @@ html[dir="rtl"] .lr-back svg{transform:scaleX(-1)}
     }
     function play(){
       if (inCheck) return;
-      if (ended) { passed.clear(); seekTo(0); ended = false; }
-      poster.remove(); playing = true; vid.classList.remove("paused");
+      if (ended) { passed.clear(); results.clear(); closeEnd(); seekTo(0); ended = false; }
+      if (poster.isConnected) { poster.classList.add("go"); setTimeout(() => poster.remove(), calm() ? 0 : 360); }
+      playing = true; vid.classList.remove("paused");
       pb.innerHTML = ""; pb.append(svgEl(ICON.pause)); pb.setAttribute("aria-label", S("pause"));
       last = performance.now(); paint(); raf = requestAnimationFrame(frame);
     }
@@ -615,20 +759,39 @@ html[dir="rtl"] .lr-back svg{transform:scaleX(-1)}
       playing = false; cancelAnimationFrame(raf); vid.classList.add("paused");
       pb.innerHTML = ""; pb.append(svgEl(ICON.play)); pb.setAttribute("aria-label", S("play"));
     }
+    // ---------- the end of the video: how it went, and where to go next ----------
+    let endBox = null;
+    function closeEnd(){ if (endBox) { endBox.remove(); endBox = null; } }
     function end(){
       pause(); ended = true; markDone(l.id);
       pb.innerHTML = ""; pb.append(svgEl(ICON.redo)); pb.setAttribute("aria-label", S("again"));
+      closeEnd();
+      const right = [...results.values()].filter(v => v !== "shown").length, first = [...results.values()].filter(v => v === "first").length;
+      endBox = el("div", "lr-end"); endBox.onclick = e => e.stopPropagation();
+      const star = right === checksAll && checksAll ? "🏆" : "🎉";
+      endBox.append(el("div", "ic", star), el("b", null, pick("Video done!", "סיימתם את הסרטון!")));
+      const stat = el("p", null, checksAll ? pick(`${right} of ${checksAll} stops solved` + (first ? ` · ${first} right first time` : ""), `פתרתם ${right} מתוך ${checksAll} עצירות` + (first ? ` · ${first} נכון כבר בניסיון הראשון` : "")) : "");
+      endBox.append(stat);
+      const ring = el("div", "ring"); ring.style.setProperty("--p", checksAll ? String(right / checksAll) : "1"); ring.append(el("span", null, checksAll ? Math.round(right / checksAll * 100) + "%" : "✓")); endBox.append(ring);
+      const btns = el("div", "row");
+      if (practiceCount(l)) { const b = el("button", "btn", S("practiceBtn", practiceCount(l))); b.type = "button"; b.onclick = () => startPractice(l); btns.append(b); }
+      const all = Courses.all(), nx = all[all.indexOf(l) + 1];
+      if (nx) { const b = el("button", "btn quiet", "⏭ " + S("next") + ": " + nameOf(nx)); b.type = "button"; b.onclick = () => go("lesson", nx.id); btns.append(b); }
+      const again = el("button", "btn quiet", "↺ " + S("again")); again.type = "button"; again.onclick = () => play(); btns.append(again);
+      endBox.append(btns);
+      vid.append(endBox);
+      confetti(vid, c.color);
     }
-    function seekTo(x){ closeCheck(); t = Math.max(0, Math.min(total - 0.01, x)); cur = -1; ended = false; build(sceneAt(t)[0]); paint(); }
+    function seekTo(x){ closeCheck(); closeEnd(); t = Math.max(0, Math.min(total - 0.01, x)); cur = -1; ended = false; build(sceneAt(t)[0], true); paint(); }
 
     // ---------- a practice stop inside the video ----------
     let chk = null;
     function closeCheck(){ if (chk) { chk.remove(); chk = null; } inCheck = false; }
     function openCheck(i){
-      pause(); closeCheck(); poster.remove(); inCheck = true;
-      const it = T[i].item, n = T.slice(0, i + 1).filter(x => x.type === "check").length, all = T.filter(x => x.type === "check").length;
+      pause(); closeCheck(); closeEnd(); poster.remove(); inCheck = true;
+      const it = T[i].item, n = T.slice(0, i + 1).filter(x => x.type === "check").length;
       chk = el("div", "lr-chk"); chk.onclick = e => e.stopPropagation();
-      const head = el("div", "hd"); head.append(el("b", null, "✋ " + pick("Your turn", "עצירה לתרגול")), el("small", null, n + " / " + all));
+      const head = el("div", "hd"); head.append(el("b", null, "✋ " + pick("Your turn", "עצירה לתרגול")), el("small", null, n + " / " + checksAll));
       const q = line("q", plain(it.problem));
       const qf = figFor(it.problem, l) || lessonFig(l);
       const figBox = qf ? (() => { const f = el("div", "qfig still"); f.innerHTML = FIG(qf); return f; })() : null;
@@ -642,16 +805,19 @@ html[dir="rtl"] .lr-back svg{transform:scaleX(-1)}
       const cont = () => { const b = el("button", "btn", "▶ " + pick("Continue the video", "המשך בסרטון")); b.type = "button"; b.onclick = () => { passed.add(i); closeCheck(); t = starts[i] + 1e-4; play(); }; return b; };
       const reveal = (good) => {
         fb.innerHTML = ""; inp.disabled = true; row.remove();
-        const r = el("div", good ? "res good" : "res"); r.append(el("b", null, good ? pick("✓ Correct!", "✓ נכון! כל הכבוד") : pick("Here's how:", "ככה פותרים:")));
+        results.set(i, good ? (tries <= 1 ? "first" : "later") : "shown");
+        const r = el("div", good ? "res good" : "res"); r.append(el("b", null, good ? pick("✓ Correct!", tries <= 1 ? "✓ נכון! כל הכבוד" : "✓ נכון! יפה שלא ויתרתם") : pick("Here's how:", "ככה פותרים:")));
         const a = el("div", "ans"); a.append(el("span", null, S("answer") + ": "), line("lr-m", plain(it.answer))); r.append(a);
         if (!good && it.result && it.result.steps) r.append(steps(it.result.steps.map(([c2, w]) => [plain(c2), plain(w)])));
         fb.append(r, cont()); try { chk.scrollTop = 0; r.scrollIntoView({ block: "nearest" }); } catch (e) {}
+        if (good) { confetti(vid, c.color); const m = marks.find(([k]) => k === i); if (m) { m[1].classList.add("done", "pop"); } }
       };
       ok.onclick = () => {
         const v = inp.value.trim(); if (!v) { inp.focus(); return; }
         let good = false; try { good = !!it.check(v); } catch (e) { good = false; }
         tries++;
         if (good) return reveal(true);
+        inp.classList.remove("shake"); void inp.offsetWidth; inp.classList.add("shake");
         fb.innerHTML = ""; fb.append(el("div", "res bad", tries < 2 ? pick("Not yet. Try again, or tap “Show me”.", "עוד לא. נסו שוב, או לחצו \"הראו לי\".") : pick("Still not it. Tap “Show me” to see the solution.", "עדיין לא. לחצו \"הראו לי\" כדי לראות את הפתרון.")));
         inp.select();
       };
@@ -661,9 +827,12 @@ html[dir="rtl"] .lr-back svg{transform:scaleX(-1)}
     }
 
     poster.onclick = e => { e.stopPropagation(); play(); };
-    pb.onclick = () => { if (inCheck) return; playing ? pause() : play(); };
-    vid.onclick = e => { if (inCheck || e.target === poster || poster.contains(e.target)) return; playing ? pause() : play(); };
-    player = { stop: () => { pause(); } };
+    pb.onclick = () => { if (inCheck) return; if (ended) return play(); playing ? pause() : play(); };
+    vid.onclick = e => { if (inCheck || endBox || e.target === poster || poster.contains(e.target)) return; playing ? pause() : play(); };
+    // space bar plays and pauses (not while typing an answer)
+    const key = e => { if (!vid.isConnected) { document.removeEventListener("keydown", key); return; } if (e.code === "Space" && !/INPUT|TEXTAREA|BUTTON/.test(document.activeElement.tagName) && !inCheck) { e.preventDefault(); playing ? pause() : play(); } };
+    document.addEventListener("keydown", key);
+    player = { stop: () => { pause(); document.removeEventListener("keydown", key); } };
     return box;
   }
 
@@ -684,7 +853,7 @@ html[dir="rtl"] .lr-back svg{transform:scaleX(-1)}
       const dx = p[0] - cx, dy = p[1] - cy, d = Math.hypot(dx, dy) || 1;
       out += txt((p[0] + dx / d * 16).toFixed(1), (p[1] + dy / d * 16 + 5).toFixed(1), names[i], "t t3", 15, INK);
       const v = labels[names[i]];
-      if (v) out += txt((p[0] - dx / d * 34).toFixed(1), (p[1] - dy / d * 30 + 5).toFixed(1), v, "t t3", 15, v.includes("?") ? WARN : PEN);
+      if (v) out += txt((p[0] - dx / d * 34).toFixed(1), (p[1] - dy / d * 30 + 5).toFixed(1), v, "t t3" + (v.includes("?") ? " ask" : ""), 15, v.includes("?") ? WARN : PEN);
     });
     return out;
   }
@@ -786,7 +955,8 @@ html[dir="rtl"] .lr-back svg{transform:scaleX(-1)}
       let b = fillPoly([A, B, C]) + poly([A, B, C]) + `<rect class="f" x="70" y="157" width="18" height="18" fill="none" stroke="${INK}" stroke-width="2"/>`;
       const L = v => v === null || v === undefined ? null : String(v);
       const ta = L(la) ?? "a = " + a, tb = L(lb) ?? "b = " + bb, tc = L(lc) ?? "c = ?";
-      b += txt(58, 175 - Hh / 2 + 5, ta, "t", 15, ta.includes("?") ? WARN : INK, "end") + txt(70 + Ww / 2, 196, tb, "t t2", 15, tb.includes("?") ? WARN : INK) + txt(70 + Ww / 2 + 14, 175 - Hh / 2 - 6, tc, "t t3", 15, tc.includes("?") ? WARN : INK, "start");
+      const aq = x => x.includes("?") ? " ask" : "";
+      b += txt(58, 175 - Hh / 2 + 5, ta, "t" + aq(ta), 15, ta.includes("?") ? WARN : INK, "end") + txt(70 + Ww / 2, 196, tb, "t t2" + aq(tb), 15, tb.includes("?") ? WARN : INK) + txt(70 + Ww / 2 + 14, 175 - Hh / 2 - 6, tc, "t t3" + aq(tc), 15, tc.includes("?") ? WARN : INK, "start");
       return svg(320, 205, b);
     },
     quad({ kind = "para", labels = null, sides = null }){
@@ -839,6 +1009,68 @@ html[dir="rtl"] .lr-back svg{transform:scaleX(-1)}
       s2 += `<line x1="10" y1="${Y(0)}" x2="310" y2="${Y(0)}" stroke="${MUTED}" stroke-width="2"/><line x1="${X(0)}" y1="10" x2="${X(0)}" y2="${10 + H}" stroke="${MUTED}" stroke-width="2"/>`;
       s2 += `<defs><clipPath id="lrcc"><rect x="10" y="10" width="${W}" height="${H}"/></clipPath></defs><g clip-path="url(#lrcc)">` + path(d, "d", PEN, 3.5) + "</g>";
       return svg(320, 220, s2 + txt(300, 30, "y = " + expr, "t t2", 13, PEN, "end"));
+    },
+    pow({ base = 2, n = 4 }){
+      // 2¹, 2², 2³, 2⁴: the same squares, doubling every row
+      let b = ""; const sz = 15, gap = 3;
+      for (let k = 1; k <= n; k++) {
+        const cnt = Math.pow(base, k), y = 18 + (k - 1) * 40;
+        b += txt(40, y + 13, base + "^" + k, "t", 14, INK, "end").replace(base + "^" + k, base + "<tspan dy='-6' font-size='10'>" + k + "</tspan>");
+        for (let j = 0; j < cnt; j++) b += `<rect class="f" style="animation-delay:${(0.3 + (k - 1) * 0.7 + j * 0.03).toFixed(2)}s" x="${52 + j * (sz + gap)}" y="${y}" width="${sz}" height="${sz}" rx="3" fill="${SOFT}" stroke="${PEN}" stroke-width="2"/>`;
+        b += path(`M52,${y + sz + 5} L${52 + cnt * (sz + gap) - gap},${y + sz + 5}`, "d", WARN, 2.5);
+        b += txt(60 + cnt * (sz + gap), y + 13, "= " + cnt, "t t" + Math.min(3, k), 14, WARN, "start");
+      }
+      return svg(400, 180, b);
+    },
+    rootsq({ side = 7 }){
+      const S = 140, x0 = 90, y0 = 20, c = S / side;
+      let b = `<rect class="d" pathLength="1" x="${x0}" y="${y0}" width="${S}" height="${S}" fill="${SOFT}" stroke="${PEN}" stroke-width="3"/>`;
+      for (let k = 1; k < side; k++) b += `<path class="f" style="animation-delay:${(0.6 + k * 0.08).toFixed(2)}s" d="M${x0 + k * c},${y0} L${x0 + k * c},${y0 + S} M${x0},${y0 + k * c} L${x0 + S},${y0 + k * c}" stroke="var(--line)" stroke-width="1.2" fill="none"/>`;
+      b += path(`M${x0},${y0 + S + 8} L${x0 + S},${y0 + S + 8}`, "d", WARN, 2.5) + path(`M${x0 - 8},${y0} L${x0 - 8},${y0 + S}`, "d", WARN, 2.5);
+      b += txt(x0 + S / 2, y0 + S / 2 + 6, "S = " + side * side, "t t2", 18, INK);
+      b += txt(x0 + S / 2, y0 + S + 22, String(side), "t t3", 16, WARN) + txt(x0 - 12, y0 + S / 2 + 5, String(side), "t t3", 16, WARN, "end");
+      return svg(320, 190, b + txt(x0 + S + 14, y0 + S / 2 + 5, "√" + side * side + " = " + side, "t t3", 15, PEN, "start"));
+    },
+    areamodel({ cols = ["x", "4"], rows = ["3"], cells = [["3x", "12"]] }){
+      // a rectangle split into parts: the area of the whole = the sum of the parts
+      const W = 230, H = rows.length > 1 ? 140 : 90, x0 = 60, y0 = 34;
+      const cw = cols.map((c2, i) => i === 0 ? W * 0.62 : W * 0.38 / (cols.length - 1)), rh = rows.map((r, i) => rows.length === 1 ? H : i === 0 ? H * 0.62 : H * 0.38);
+      let b = "", x = x0;
+      cols.forEach((c2, i) => { let y = y0; rows.forEach((r, j) => {
+        b += `<rect class="d${(i + j) ? " d" + Math.min(4, 1 + i + j) : ""}" pathLength="1" x="${x}" y="${y}" width="${cw[i]}" height="${rh[j]}" fill="${(i + j) % 2 ? SOFT : "color-mix(in srgb, var(--mark) 45%, transparent)"}" stroke="${PEN}" stroke-width="2.5"/>`;
+        b += txt(x + cw[i] / 2, y + rh[j] / 2 + 6, cells[j][i], "t t" + Math.min(3, 1 + i + j), 17, INK);
+        y += rh[j]; });
+        b += txt(x + cw[i] / 2, y0 - 10, c2, "t", 16, WARN); x += cw[i]; });
+      let y = y0; rows.forEach((r, j) => { b += txt(x0 - 12, y + rh[j] / 2 + 6, r, "t", 16, WARN, "end"); y += rh[j]; });
+      return svg(320, y0 + H + 20, b);
+    },
+    series2({ kind = "series" }){
+      let b = path("M40,40 L40,150 L280,150 L280,40", "d", INK, 3);
+      b += `<rect class="f" x="25" y="85" width="30" height="26" fill="var(--surface)"/>` + path("M28,92 L52,92", "d d2", INK, 3) + path("M33,104 L47,104", "d d2", INK, 5);
+      if (kind === "series") {
+        b += path("M40,40 L100,40", "d", INK, 3) + `<rect class="d d2" pathLength="1" x="100" y="28" width="46" height="24" rx="4" fill="${SOFT}" stroke="${PEN}" stroke-width="3"/>` + path("M146,40 L174,40", "d d2", INK, 3) + `<rect class="d d3" pathLength="1" x="174" y="28" width="46" height="24" rx="4" fill="${SOFT}" stroke="${PEN}" stroke-width="3"/>` + path("M220,40 L280,40", "d d3", INK, 3);
+        b += txt(123, 22, "R₁", "t t2", 14, PEN) + txt(197, 22, "R₂", "t t3", 14, PEN) + txt(160, 100, "R = R₁ + R₂", "t t3", 15, WARN);
+      } else {
+        b += path("M40,40 L110,40 M210,40 L280,40", "d", INK, 3) + path("M110,40 L110,20 L210,20 L210,40 M110,40 L110,64 L210,64 L210,40", "d d2", INK, 2.5);
+        b += `<rect class="d d3" pathLength="1" x="137" y="9" width="46" height="22" rx="4" fill="${SOFT}" stroke="${PEN}" stroke-width="3"/><rect class="d d3" pathLength="1" x="137" y="53" width="46" height="22" rx="4" fill="${SOFT}" stroke="${PEN}" stroke-width="3"/>`;
+        b += txt(100, 14, "R₁", "t t2", 13, PEN, "end") + txt(100, 78, "R₂", "t t2", 13, PEN, "end") + txt(160, 115, "1/R = 1/R₁ + 1/R₂", "t t3", 15, WARN);
+      }
+      return svg(320, 170, b);
+    },
+    beaker(){
+      let b = path("M100,30 L100,150 Q100,165 115,165 L205,165 Q220,165 220,150 L220,30", "d", INK, 3) + path("M92,30 L108,30 M212,30 L228,30", "d", INK, 3);
+      b += `<rect class="f" x="104" y="80" width="112" height="81" rx="8" fill="${SOFT}"/>`;
+      for (let k = 0; k < 18; k++) { const x = 115 + (k * 37) % 92, y = 92 + ((k * 23) % 60); b += `<circle class="t${k % 3 ? " t2" : ""}" cx="${x}" cy="${y}" r="5" fill="${k % 4 ? PEN : WARN}"/>`; }
+      return svg(320, 185, b + txt(160, 20, "1 mol = 6.02·10²³", "t t3", 15, PEN));
+    },
+    water(){
+      const H = (x, y, k = "t") => `<circle class="${k}" cx="${x}" cy="${y}" r="9" fill="${PEN}"/>`, O = (x, y, k = "t") => `<circle class="${k}" cx="${x}" cy="${y}" r="14" fill="${WARN}"/>`;
+      let b = "";
+      b += H(30, 60) + H(48, 60) + H(30, 100) + H(48, 100);                           // 2 H₂
+      b += txt(75, 86, "+", "t", 20, INK) + O(100, 80, "t t2") + O(124, 80, "t t2");  // O₂
+      b += path("M150,80 L188,80", "d d3", INK, 3) + path("M180,72 L190,80 L180,88", "d d3", INK, 3);
+      b += O(225, 60, "t t3") + H(209, 74, "t t3") + H(241, 74, "t t3") + O(225, 112, "t t3") + H(209, 126, "t t3") + H(241, 126, "t t3");  // 2 H₂O
+      return svg(280, 150, b + txt(40, 136, "2H₂", "t", 13, INK) + txt(112, 136, "O₂", "t t2", 13, INK) + txt(226, 148, "2H₂O", "t t3", 13, INK));
     },
     seq({ vals = [] }){
       const n = vals.length, w = 280 / n, mx = Math.max(...vals);
@@ -926,7 +1158,7 @@ html[dir="rtl"] .lr-back svg{transform:scaleX(-1)}
   };
   function FIG(f){ try { return (FIGS[f.type] || (() => ""))(f); } catch (e) { console.error(e); return ""; } }
   window.LearnFigures = FIGS;
-  window.LearnCheck = { accept, numOf, startPractice, timeline };
+  window.LearnCheck = { accept, numOf, startPractice, timeline, sceneDur };
 
   // ---------- after solving: a link to the lesson on that topic ----------
   const TOPIC_LESSON = { fractions: "fractions", percent: "percent", powers: "powers", roots: "roots", distrib: "distrib", linear: "linear", quadratic: "quadratic",
